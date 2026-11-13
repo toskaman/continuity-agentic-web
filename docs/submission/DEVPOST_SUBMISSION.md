@@ -1,14 +1,30 @@
 # Devpost Submission Draft — CONTINUITY
 
-> **Status:** Complete, verified against Official Rules (`https://cognizant-agenticweb.devpost.com/rules`). Do **not** submit until public HTTPS URLs and the `< 2 minute` human-narrated YouTube video URL are inserted and approved by the user.
+> **Status:** Complete & Publicly Verified against Official Rules (`https://cognizant-agenticweb.devpost.com/rules`). All public HTTPS URLs, GitHub repositories, and 8 screenshots (`docs/submission/screenshots/`) are ready. Only the `< 2 minute` human-narrated YouTube URL and your Otari account email remain for you to paste when submitting.
 
 ---
 
-## 1. Core Fields
+## 1. Core Fields & Live Public URLs
 
 - **Project Title:** `CONTINUITY — Safe Change Coordination for the Open Agentic Web`
 - **Tagline:** `One change. Every commitment re-aligned across independent Open Agentic Websites.`
-- **Built With:** `neuro-san`, `nsdeploy`, `open-agentic-web`, `mozilla-otari`, `mcp`, `javascript`, `web-crypto`, `html5`, `css3`, `nodejs`
+- **Public Open Agentic Website URL ("Try it out" link):** `https://toskaman.github.io/continuity-agentic-web/`
+- **Public Source Code Repository URL:** `https://github.com/toskaman/continuity-agentic-web`
+- **Independent Peer Agentic Website URLs (Cross-Origin Composition):**
+  - `https://gpaschercher-sudo.github.io/moveco-agentic-peer/` (`moveco_dispatch`)
+  - `https://gpaschercher-sudo.github.io/permitflow-agentic-peer/` (`permitflow_advisor`)
+  - `https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/` (`homeconnect_scheduler`)
+  - `https://gpaschercher-sudo.github.io/powerflow-agentic-peer/` (`powerflow_grid`)
+- **Screenshot & Architecture Assets Ready to Upload (`docs/submission/screenshots/`):**
+  1. `00_architecture_diagram.png` — System Topology & Trust Boundaries
+  2. `01_continuity_mission_baseline.png` — Main Mission Coordinator & 6-Commitment SVG Graph
+  3. `02_ripple_recovery_prepared_plan.png` — Ripple Failure Armed + Minimal-Change Plan Prepared
+  4. `03_bound_approval_modal.png` — SHA-256 Bound Human Confirmation Dialog
+  5. `04_committed_verified_ed25519.png` — Verified Commit & Ed25519 Provider Signatures
+  6. `05_chaos_lab_15_passed.png` — Built-in Chaos Lab (`15/15` Distributed Fault Scenarios Passed)
+  7. `06_open_agentic_web_runtime_otari_byok.png` — Cognizant Browser Runtime & Mozilla Otari BYOK Panel
+  8. `07_independent_peer_moveco.png` — Standalone MoveCo Express Open Agentic Website
+- **Built With:** `neuro-san`, `nsdeploy`, `open-agentic-web`, `mozilla-otari`, `project-nanda`, `a2a`, `mcp`, `javascript`, `web-crypto`, `html5`
 
 ---
 
@@ -44,8 +60,8 @@ LLMs interpret natural language and summarize options, but **cannot** override u
 - **Chaos Lab (`@continuity/chaos-lab`):** Interactive browser & CLI testbench verifying **15 deterministic distributed failure scenarios** (`15/15` passing).
 
 ### Reusable Open-Source Contributions Shared With the Community
-Under Apache-2.0, we share **11 zero-dependency ES modules** (`packages/*`) that any Open Agentic Web builder can drop into static browser sites or Node services:
-`@continuity/shared-schemas`, `@continuity/mission-core`, `@continuity/mission-graph`, `@continuity/impact-engine`, `@continuity/constraint-solver`, `@continuity/capability-adapter`, `@continuity/approval-engine`, `@continuity/outcome-reconciliation`, `@continuity/saga-engine`, `@continuity/proof-verifier`, and `@continuity/chaos-lab`.
+Under Apache-2.0, we share **12 zero-dependency ES modules** (`packages/*`) that any Open Agentic Web builder can drop into static browser sites or Node services:
+`@continuity/shared-schemas`, `@continuity/mission-core`, `@continuity/mission-graph`, `@continuity/impact-engine`, `@continuity/constraint-solver`, `@continuity/capability-adapter`, `@continuity/approval-engine`, `@continuity/outcome-reconciliation`, `@continuity/saga-engine`, `@continuity/proof-verifier`, `@continuity/nanda-resolver` (implementing Project NANDA `draft-raskar-agentic-web-federated-resolution-02` sequence/authority verification & A2A v1.0 Agent Card validation), and `@continuity/chaos-lab`.
 
 ### Honest Scope & Simulation Disclosure
 All four provider peers are controlled, independent demonstration services built to prove real cross-origin HTTP, CORS, Neuro SAN browser composition, MCP `2025-06-18`, idempotency, and Ed25519 receipt verification. No real commercial bookings, credit-card charges, or municipal government permits are modified.

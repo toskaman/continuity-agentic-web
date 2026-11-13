@@ -4,6 +4,19 @@
 
 Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agenticweb.devpost.com/)** · Conforms 100% to the **[Worldwide Agentic Web MVP Specification (Profile 0.2)](https://github.com/cognizant-ai-labs/agentic-web/blob/main/docs/worldwide_agentic_web_mvp_spec.md)**.
 
+## Live Public HTTPS Deployments (Verified Cross-Origin Ecosystem)
+
+- **Primary Coordinator (`CONTINUITY`):** `https://toskaman.github.io/continuity-agentic-web/`
+  - Public Manifest: `https://toskaman.github.io/continuity-agentic-web/agent-manifest.json`
+  - Public Network JSON: `https://toskaman.github.io/continuity-agentic-web/continuity_coordinator.network.json`
+  - Public A2A v1.0 Agent Card: `https://toskaman.github.io/continuity-agentic-web/.well-known/agent-card.json`
+- **4 Independent Peer Websites (Distinct Origin `https://gpaschercher-sudo.github.io`):**
+  - **Peer A — MoveCo Express:** `https://gpaschercher-sudo.github.io/moveco-agentic-peer/` (`moveco_dispatch`)
+  - **Peer B — PermitFlow Civic Prep:** `https://gpaschercher-sudo.github.io/permitflow-agentic-peer/` (`permitflow_advisor`)
+  - **Peer C — HomeConnect Fiber:** `https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/` (`homeconnect_scheduler`)
+  - **Peer D — PowerFlow Energy:** `https://gpaschercher-sudo.github.io/powerflow-agentic-peer/` (`powerflow_grid`)
+- **Public Source Repository:** `https://github.com/toskaman/continuity-agentic-web`
+
 ---
 
 ## What CONTINUITY Does
@@ -63,7 +76,7 @@ continuity/
 │   ├── demo-permitflow/       # Peer B: Public curbside bay notice check & demo dossier drafts
 │   ├── demo-homeconnect/      # Peer C: Fiber ONT technician scheduling & 10-min holds
 │   └── demo-powerflow/        # Peer D: Remote smart-meter electricity energization
-├── packages/                  # 11 Reusable Open-Source Community Modules (Apache-2.0)
+├── packages/                  # 12 Reusable Open-Source Community Modules (Apache-2.0)
 │   ├── shared-schemas/        # Canonical JSON (JCS), SHA-256 Web Crypto, strict JSON Schema
 │   ├── mission-core/          # Mission compiler & hard-invariant guard
 │   ├── mission-graph/         # Open Mission Graph with 3-color DFS cycle rejection
@@ -74,6 +87,7 @@ continuity/
 │   ├── outcome-reconciliation/# 14-state operation ledger & UNKNOWN timeout reconciler
 │   ├── saga-engine/           # Prepare-first, commit-last Saga coordinator
 │   ├── proof-verifier/        # Ed25519 receipt verification & explicit trust classification
+│   ├── nanda-resolver/        # Project NANDA authority/sequence verifier & A2A v1.0 validator
 │   └── chaos-lab/             # 15 deterministic failure-injection scenarios
 ├── providers/                 # Standalone CORS + MCP (2025-06-18) servers for each peer
 ├── skills/agentify-website/   # Official Cognizant runtime & compliance validators
