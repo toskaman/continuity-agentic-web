@@ -1,0 +1,18 @@
+{
+  "protocol": "nsdeploy-link/v1",
+  "exports": [
+    {
+      "network": "permitflow_advisor",
+      "front_man": "permitflow_assistant",
+      "aliases": [
+        "permitflow_advisor",
+        "permitflow_assistant"
+      ],
+      "url": "permitflow_advisor"
+    }
+  ],
+  "imports": [],
+  "link_updates": {
+    "mode": "browser-local"
+  }
+}

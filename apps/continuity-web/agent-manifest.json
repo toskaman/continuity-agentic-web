@@ -1,0 +1,88 @@
+{
+  "brand": "CONTINUITY Change Coordinator",
+  "networks": [
+    {
+      "name": "continuity_coordinator",
+      "front_man": "continuity_orchestrator",
+      "hocon": "./continuity_coordinator.network.json",
+      "description": "Coordinate multi-provider schedule changes across independent Open Agentic Websites while preserving unaffected commitments and enforcing budget invariants.",
+      "tags": [
+        "agentified-website",
+        "open-agentic-web",
+        "change-coordination",
+        "multi-agent-saga"
+      ],
+      "sample_queries": [
+        "Which commitments in my current relocation mission are scheduled for Tuesday and what is my budget ceiling?",
+        "My move changed from Tuesday to Friday. Prepare a minimal-change plan below €700 without cancelling anything yet.",
+        "Switch my prepared relocation plan to PLAN_B_LOWEST_COST and show the cost difference.",
+        "Commit my currently prepared minimal-change relocation package.",
+        "Ask MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber, and PowerFlow Energy what relocation services each offers.",
+        "Can you charge my credit card directly or issue an official municipal parking permit?"
+      ]
+    }
+  ],
+  "llm_router": {
+    "base_url": "https://api.otari.ai/api/v1",
+    "mock": false,
+    "byok_router": "https://api.otari.ai/api/v1"
+  },
+  "allowed_peers": [
+    "http://127.0.0.1:8081",
+    "http://localhost:8082",
+    "http://127.0.0.1:8083",
+    "http://localhost:8084"
+  ],
+  "peer_policy": {
+    "mode": "closed",
+    "deny_origins": [],
+    "note": "Calls only the four independent partner origins in allowed_peers, after the visitor agrees on a consent card."
+  },
+  "agent_mcp": {
+    "protocol": "nsdeploy-agent-mcp/v1",
+    "network": "continuity_coordinator",
+    "front_man": "continuity_orchestrator",
+    "available": false,
+    "reason": "This is a static browser-executed coordinator bundle."
+  },
+  "theme": {
+    "primary": "#0369a1"
+  },
+  "linking": {
+    "protocol": "nsdeploy-link/v1",
+    "exports": [
+      {
+        "network": "continuity_coordinator",
+        "front_man": "continuity_orchestrator",
+        "aliases": [
+          "continuity_coordinator",
+          "continuity_orchestrator"
+        ],
+        "url": "continuity_coordinator"
+      }
+    ],
+    "imports": [],
+    "link_updates": {
+      "mode": "browser-local"
+    }
+  },
+  "deployment": {
+    "mode": "static",
+    "self_contained_runtime": true,
+    "browser_mock": false,
+    "direct_byok": true,
+    "direct_mcp_requires_cors": true,
+    "public_mcp_facade": false
+  },
+  "actions": {
+    "version": 1,
+    "module": "./site-actions.js",
+    "bridge": "./bridge/action-bridge.html",
+    "agentTools": [
+      "get_mission_state",
+      "analyze_and_prepare_change",
+      "select_change_plan",
+      "commit_prepared_change_package"
+    ]
+  }
+}

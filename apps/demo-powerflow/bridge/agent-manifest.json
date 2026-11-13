@@ -1,0 +1,10 @@
+{
+  "networks": [
+    {
+      "name": "powerflow_grid"
+    }
+  ],
+  "actions": {
+    "version": 1
+  }
+}

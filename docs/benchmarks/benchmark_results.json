@@ -1,0 +1,76 @@
+{
+  "measuredAtIso": "2026-11-13T22:25:27.451Z",
+  "environment": {
+    "nodeVersion": "v26.13.1",
+    "platform": "win32 x64",
+    "cpuModel": "AMD Ryzen 7 5700X 8-Core Processor             ",
+    "cpuCores": 16,
+    "networkTopology": "5 independent local HTTP origins (127.0.0.1 & localhost ports 28080..28084)"
+  },
+  "manualStructuralBaseline": {
+    "classification": "Structural workflow step count (no fabricated human stopwatch time)",
+    "totalCommitmentsInMission": 6,
+    "manualUserInteractionsWithoutContinuity": 18,
+    "breakdown": "6 site logins/lookups + 6 availability checks + 6 manual reschedule/hold/verify actions (high risk of premature cancellation or touching unaffected bookings)"
+  },
+  "continuityMeasuredNormalScenario": {
+    "sampleSize": 30,
+    "compileMs": {
+      "mean": 0.119,
+      "p95": 0.128
+    },
+    "impactMs": {
+      "mean": 0.098,
+      "p95": 0.132
+    },
+    "quoteLatencyMs": {
+      "mean": 2.126,
+      "p95": 3.729
+    },
+    "solveMs": {
+      "mean": 0.458,
+      "p95": 0.224
+    },
+    "totalEndToEndMs": {
+      "mean": 13.32,
+      "p95": 21.238
+    },
+    "httpRequestsPerRun": 13,
+    "providersContacted": 4,
+    "unnecessaryProvidersAvoided": 2,
+    "changedCommitments": 3,
+    "preservedCommitments": 3,
+    "totalCostEur": 649,
+    "allSucceededRatePct": 100
+  },
+  "continuityMeasuredRippleRecoveryScenario": {
+    "sampleSize": 30,
+    "compileMs": {
+      "mean": 0.069,
+      "p95": 0.123
+    },
+    "impactMs": {
+      "mean": 0.079,
+      "p95": 0.13
+    },
+    "quoteLatencyMs": {
+      "mean": 1.956,
+      "p95": 3.256
+    },
+    "solveMs": {
+      "mean": 0.123,
+      "p95": 0.217
+    },
+    "totalEndToEndMs": {
+      "mean": 9.567,
+      "p95": 12.788
+    },
+    "httpRequestsPerRun": 13,
+    "providersContacted": 4,
+    "unnecessaryProvidersAvoided": 2,
+    "changedCommitments": 3,
+    "preservedCommitments": 3,
+    "totalCostEur": 659,
+    "allSucceededRatePct": 100
+  }
+}

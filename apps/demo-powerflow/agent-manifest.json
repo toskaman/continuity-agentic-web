@@ -1,0 +1,79 @@
+{
+  "brand": "PowerFlow Energy Assistant",
+  "networks": [
+    {
+      "name": "powerflow_grid",
+      "front_man": "powerflow_assistant",
+      "hocon": "./powerflow_grid.network.json",
+      "description": "Check PowerFlow remote smart-meter grid energization schedules, rules, or confirm a date modification.",
+      "tags": [
+        "agentified-website",
+        "open-agentic-web",
+        "utility-provider"
+      ],
+      "sample_queries": [
+        "What energization dates and modification fees apply to smart-meter schedule PFW-9921?",
+        "Stage Friday 2026-11-20 for smart-meter activation PFW-9921.",
+        "Confirm shifting smart-meter activation PFW-9921 to Friday 2026-11-20.",
+        "Can you install rooftop solar panels or service a gas boiler?"
+      ]
+    }
+  ],
+  "llm_router": {
+    "base_url": "https://api.otari.ai/api/v1",
+    "mock": false,
+    "byok_router": "https://api.otari.ai/api/v1"
+  },
+  "allowed_peers": [],
+  "peer_policy": {
+    "mode": "closed",
+    "deny_origins": [],
+    "note": "Local agents and page-local actions only."
+  },
+  "agent_mcp": {
+    "protocol": "nsdeploy-agent-mcp/v1",
+    "network": "powerflow_grid",
+    "front_man": "powerflow_assistant",
+    "available": false,
+    "reason": "This is a static bundle; the optional live demo server separately exposes /mcp."
+  },
+  "theme": {
+    "primary": "#b45309"
+  },
+  "linking": {
+    "protocol": "nsdeploy-link/v1",
+    "exports": [
+      {
+        "network": "powerflow_grid",
+        "front_man": "powerflow_assistant",
+        "aliases": [
+          "powerflow_grid",
+          "powerflow_assistant"
+        ],
+        "url": "powerflow_grid"
+      }
+    ],
+    "imports": [],
+    "link_updates": {
+      "mode": "browser-local"
+    }
+  },
+  "deployment": {
+    "mode": "static",
+    "self_contained_runtime": true,
+    "browser_mock": false,
+    "direct_byok": true,
+    "direct_mcp_requires_cors": true,
+    "public_mcp_facade": false
+  },
+  "actions": {
+    "version": 1,
+    "module": "./site-actions.js",
+    "bridge": "./bridge/action-bridge.html",
+    "agentTools": [
+      "get_powerflow_state",
+      "stage_energization_date",
+      "confirm_energization_shift"
+    ]
+  }
+}

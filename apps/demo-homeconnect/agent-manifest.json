@@ -1,0 +1,79 @@
+{
+  "brand": "HomeConnect Fiber Assistant",
+  "networks": [
+    {
+      "name": "homeconnect_scheduler",
+      "front_man": "homeconnect_assistant",
+      "hocon": "./homeconnect_scheduler.network.json",
+      "description": "Check HomeConnect 2 Gbps fiber installation technician windows, hold a slot, or reschedule appointment HC-5510.",
+      "tags": [
+        "agentified-website",
+        "open-agentic-web",
+        "broadband-provider"
+      ],
+      "sample_queries": [
+        "What technician windows and fees are available to reschedule fiber appointment HC-5510?",
+        "Hold the Friday 2026-11-20 technician window without changing my current appointment.",
+        "Confirm rescheduling fiber appointment HC-5510 to Friday 2026-11-20.",
+        "Can you port my mobile phone SIM card or sell a Wi-Fi mesh router?"
+      ]
+    }
+  ],
+  "llm_router": {
+    "base_url": "https://api.otari.ai/api/v1",
+    "mock": false,
+    "byok_router": "https://api.otari.ai/api/v1"
+  },
+  "allowed_peers": [],
+  "peer_policy": {
+    "mode": "closed",
+    "deny_origins": [],
+    "note": "Local agents and page-local actions only."
+  },
+  "agent_mcp": {
+    "protocol": "nsdeploy-agent-mcp/v1",
+    "network": "homeconnect_scheduler",
+    "front_man": "homeconnect_assistant",
+    "available": false,
+    "reason": "This is a static bundle; the optional live demo server separately exposes /mcp."
+  },
+  "theme": {
+    "primary": "#6d28d9"
+  },
+  "linking": {
+    "protocol": "nsdeploy-link/v1",
+    "exports": [
+      {
+        "network": "homeconnect_scheduler",
+        "front_man": "homeconnect_assistant",
+        "aliases": [
+          "homeconnect_scheduler",
+          "homeconnect_assistant"
+        ],
+        "url": "homeconnect_scheduler"
+      }
+    ],
+    "imports": [],
+    "link_updates": {
+      "mode": "browser-local"
+    }
+  },
+  "deployment": {
+    "mode": "static",
+    "self_contained_runtime": true,
+    "browser_mock": false,
+    "direct_byok": true,
+    "direct_mcp_requires_cors": true,
+    "public_mcp_facade": false
+  },
+  "actions": {
+    "version": 1,
+    "module": "./site-actions.js",
+    "bridge": "./bridge/action-bridge.html",
+    "agentTools": [
+      "get_homeconnect_state",
+      "hold_fiber_window",
+      "confirm_fiber_reschedule"
+    ]
+  }
+}

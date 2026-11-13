@@ -1,0 +1,18 @@
+{
+  "protocol": "nsdeploy-link/v1",
+  "exports": [
+    {
+      "network": "moveco_dispatch",
+      "front_man": "moveco_assistant",
+      "aliases": [
+        "moveco_dispatch",
+        "moveco_assistant"
+      ],
+      "url": "moveco_dispatch"
+    }
+  ],
+  "imports": [],
+  "link_updates": {
+    "mode": "browser-local"
+  }
+}

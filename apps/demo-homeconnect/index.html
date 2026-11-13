@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HomeConnect Fiber — Independent Open Agentic Broadband Appointments (Demo)</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="script.js"></script>
+  <script type="module" src="site.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="brand-row">
+        <span class="pill-badge">OPEN AGENTIC PEER · SIMULATION</span>
+        <a id="coordinator-link" href="http://127.0.0.1:8080/">Connected with CONTINUITY Coordinator →</a>
+      </div>
+      <h1>HomeConnect Fiber</h1>
+      <p class="subtitle">2 Gbps Symmetric Fiber ONT Technician Scheduling · Demonstration Service</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card" aria-labelledby="appt-heading">
+      <h2 id="appt-heading">Confirmed Technician Appointment</h2>
+      <div id="appt-panel" class="state-box"></div>
+      <p id="policy-note" class="policy-note">Zero reschedule fee (€0.00). Tenant must have keys and active apartment electricity during ONT optical splice testing. Off-peak Saturday appointments receive a €10.00 installation discount (€39.00 instead of €49.00). No router hardware sales, mobile SIM transfers, or TV bundle upgrades on this site.</p>
+    </section>
+
+    <section class="card" aria-labelledby="win-heading">
+      <h2 id="win-heading">Technician Windows</h2>
+      <div class="controls-row">
+        <label for="win-select">Choose technician window</label>
+        <select id="win-select">
+          <option value="2026-11-20">Fri, Nov 20, 2026 — 14:00–17:00 (€49.00, €0 reschedule fee)</option>
+          <option value="2026-11-21">Sat, Nov 21, 2026 — 09:00–12:00 (€39.00 off-peak, €0 reschedule fee)</option>
+        </select>
+        <button id="hold-btn" type="button" class="secondary-btn">Hold Technician Window</button>
+        <button id="change-btn" type="button" class="primary-btn">Confirm New Appointment</button>
+      </div>
+      <p id="action-feedback" role="status" class="feedback"></p>
+    </section>
+
+    <section id="assistant" class="assistant" aria-labelledby="assistant-heading">
+      <h2 id="assistant-heading">Ask HomeConnect Fiber</h2>
+      <p>Check fiber installation technician windows, hold a slot, or reschedule appointment HC-5510.</p>
+      <p class="assistant-note">Your messages and this page's data go to the LLM provider you choose in the settings below. You confirm anything that cannot be undone before it happens.</p>
+      <p id="assistant-status" role="status">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
+      <div id="agent-app">
+        <div data-ns-slot="header"></div>
+        <div class="assistant-panels">
+          <div data-ns-slot="chat"></div>
+          <div data-ns-slot="agents"></div>
+        </div>
+        <div data-ns-slot="settings"></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

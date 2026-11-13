@@ -1,0 +1,10 @@
+{
+  "networks": [
+    {
+      "name": "permitflow_advisor"
+    }
+  ],
+  "actions": {
+    "version": 1
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "protocol": "nsdeploy-link/v1",
+  "exports": [
+    {
+      "network": "continuity_coordinator",
+      "front_man": "continuity_orchestrator",
+      "aliases": [
+        "continuity_coordinator",
+        "continuity_orchestrator"
+      ],
+      "url": "continuity_coordinator"
+    }
+  ],
+  "imports": [],
+  "link_updates": {
+    "mode": "browser-local"
+  }
+}

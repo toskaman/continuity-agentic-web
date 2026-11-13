@@ -1,0 +1,7 @@
+{
+  "protocol": "nsdeploy-agent-mcp/v1",
+  "network": "permitflow_advisor",
+  "front_man": "permitflow_assistant",
+  "available": false,
+  "reason": "This is a static bundle; the optional live demo server separately exposes /mcp."
+}

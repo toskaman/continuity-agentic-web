@@ -1,0 +1,10 @@
+{
+  "networks": [
+    {
+      "name": "continuity_coordinator"
+    }
+  ],
+  "actions": {
+    "version": 1
+  }
+}

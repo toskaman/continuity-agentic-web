@@ -1,0 +1,10 @@
+{
+  "networks": [
+    {
+      "name": "homeconnect_scheduler"
+    }
+  ],
+  "actions": {
+    "version": 1
+  }
+}

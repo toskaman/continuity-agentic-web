@@ -1,0 +1,7 @@
+{
+  "protocol": "nsdeploy-agent-mcp/v1",
+  "network": "moveco_dispatch",
+  "front_man": "moveco_assistant",
+  "available": false,
+  "reason": "This is a static bundle; the optional live demo server separately exposes /mcp."
+}

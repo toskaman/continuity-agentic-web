@@ -1,0 +1,79 @@
+{
+  "brand": "MoveCo Express Assistant",
+  "networks": [
+    {
+      "name": "moveco_dispatch",
+      "front_man": "moveco_assistant",
+      "hocon": "./moveco_dispatch.network.json",
+      "description": "Check MoveCo Express residential moving van availability, place a 15-minute slot hold, or confirm a crew reschedule.",
+      "tags": [
+        "agentified-website",
+        "open-agentic-web",
+        "moving-provider"
+      ],
+      "sample_queries": [
+        "What crew dates and reschedule fees are available for booking MC-8841?",
+        "Place a 15-minute hold on the Friday November 20 crew slot without changing my current booking.",
+        "Confirm rescheduling booking MC-8841 to Friday 2026-11-20.",
+        "Can you ship a container overseas through customs and sell packing boxes?"
+      ]
+    }
+  ],
+  "llm_router": {
+    "base_url": "https://api.otari.ai/api/v1",
+    "mock": false,
+    "byok_router": "https://api.otari.ai/api/v1"
+  },
+  "allowed_peers": [],
+  "peer_policy": {
+    "mode": "closed",
+    "deny_origins": [],
+    "note": "Local agents and page-local actions only."
+  },
+  "agent_mcp": {
+    "protocol": "nsdeploy-agent-mcp/v1",
+    "network": "moveco_dispatch",
+    "front_man": "moveco_assistant",
+    "available": false,
+    "reason": "This is a static bundle; the optional live demo server separately exposes /mcp."
+  },
+  "theme": {
+    "primary": "#1d4ed8"
+  },
+  "linking": {
+    "protocol": "nsdeploy-link/v1",
+    "exports": [
+      {
+        "network": "moveco_dispatch",
+        "front_man": "moveco_assistant",
+        "aliases": [
+          "moveco_dispatch",
+          "moveco_assistant"
+        ],
+        "url": "moveco_dispatch"
+      }
+    ],
+    "imports": [],
+    "link_updates": {
+      "mode": "browser-local"
+    }
+  },
+  "deployment": {
+    "mode": "static",
+    "self_contained_runtime": true,
+    "browser_mock": false,
+    "direct_byok": true,
+    "direct_mcp_requires_cors": true,
+    "public_mcp_facade": false
+  },
+  "actions": {
+    "version": 1,
+    "module": "./site-actions.js",
+    "bridge": "./bridge/action-bridge.html",
+    "agentTools": [
+      "get_moveco_state",
+      "hold_crew_slot",
+      "confirm_van_reschedule"
+    ]
+  }
+}

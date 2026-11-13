@@ -1,0 +1,79 @@
+{
+  "brand": "PermitFlow Civic Prep Assistant",
+  "networks": [
+    {
+      "name": "permitflow_advisor",
+      "front_man": "permitflow_assistant",
+      "hocon": "./permitflow_advisor.network.json",
+      "description": "Check public curbside loading-bay eligibility rules and update prepared demonstration permit dossiers on PermitFlow.",
+      "tags": [
+        "agentified-website",
+        "open-agentic-web",
+        "permit-prep"
+      ],
+      "sample_queries": [
+        "What are the curbside loading-bay notice rules and current date for dossier PF-2049?",
+        "Stage a preview for Friday 2026-11-20 on dossier PF-2049.",
+        "Update prepared dossier PF-2049 to Friday 2026-11-20.",
+        "Can you directly approve an official city hall permit or cancel a municipal parking fine?"
+      ]
+    }
+  ],
+  "llm_router": {
+    "base_url": "https://api.otari.ai/api/v1",
+    "mock": false,
+    "byok_router": "https://api.otari.ai/api/v1"
+  },
+  "allowed_peers": [],
+  "peer_policy": {
+    "mode": "closed",
+    "deny_origins": [],
+    "note": "Local agents and page-local actions only."
+  },
+  "agent_mcp": {
+    "protocol": "nsdeploy-agent-mcp/v1",
+    "network": "permitflow_advisor",
+    "front_man": "permitflow_assistant",
+    "available": false,
+    "reason": "This is a static bundle; the optional live demo server separately exposes /mcp."
+  },
+  "theme": {
+    "primary": "#0f766e"
+  },
+  "linking": {
+    "protocol": "nsdeploy-link/v1",
+    "exports": [
+      {
+        "network": "permitflow_advisor",
+        "front_man": "permitflow_assistant",
+        "aliases": [
+          "permitflow_advisor",
+          "permitflow_assistant"
+        ],
+        "url": "permitflow_advisor"
+      }
+    ],
+    "imports": [],
+    "link_updates": {
+      "mode": "browser-local"
+    }
+  },
+  "deployment": {
+    "mode": "static",
+    "self_contained_runtime": true,
+    "browser_mock": false,
+    "direct_byok": true,
+    "direct_mcp_requires_cors": true,
+    "public_mcp_facade": false
+  },
+  "actions": {
+    "version": 1,
+    "module": "./site-actions.js",
+    "bridge": "./bridge/action-bridge.html",
+    "agentTools": [
+      "get_permitflow_state",
+      "stage_dossier_preview",
+      "amend_prepared_dossier"
+    ]
+  }
+}

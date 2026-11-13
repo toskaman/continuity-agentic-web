@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PowerFlow Energy — Independent Open Agentic Grid Activation (Demo)</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="script.js"></script>
+  <script type="module" src="site.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="brand-row">
+        <span class="pill-badge">OPEN AGENTIC PEER · SIMULATION</span>
+        <a id="coordinator-link" href="http://127.0.0.1:8080/">Connected with CONTINUITY Coordinator →</a>
+      </div>
+      <h1>PowerFlow Energy</h1>
+      <p class="subtitle">Remote Smart-Meter Grid Energization &amp; Schedule Control · Demonstration Service</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card" aria-labelledby="grid-heading">
+      <h2 id="grid-heading">Scheduled Smart-Meter Activation</h2>
+      <div id="grid-panel" class="state-box"></div>
+      <p id="policy-note" class="policy-note">Remote smart-meter energization fee: €30.00. Zero date-modification fee (€0.00). Earlier activation dates remain technically valid if the tenant moves in later that week. No solar panel installation, gas boiler servicing, or tariff plan switching on this site.</p>
+    </section>
+
+    <section class="card" aria-labelledby="shift-heading">
+      <h2 id="shift-heading">Modify Energization Date</h2>
+      <div class="controls-row">
+        <label for="grid-select">Select energization date</label>
+        <select id="grid-select">
+          <option value="2026-11-20">Fri, Nov 20, 2026 — 08:00–12:00 (€30.00, €0 modification fee)</option>
+          <option value="2026-11-19">Thu, Nov 19, 2026 — 08:00–12:00 (€30.00, €0 modification fee)</option>
+        </select>
+        <button id="stage-btn" type="button" class="secondary-btn">Stage Date Selection</button>
+        <button id="shift-btn" type="button" class="primary-btn">Confirm Energization Date</button>
+      </div>
+      <p id="action-feedback" role="status" class="feedback"></p>
+    </section>
+
+    <section id="assistant" class="assistant" aria-labelledby="assistant-heading">
+      <h2 id="assistant-heading">Ask PowerFlow Energy</h2>
+      <p>Check smart-meter activation rules or modify energization schedule PFW-9921.</p>
+      <p class="assistant-note">Your messages and this page's data go to the LLM provider you choose in the settings below. You confirm anything that cannot be undone before it happens.</p>
+      <p id="assistant-status" role="status">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
+      <div id="agent-app">
+        <div data-ns-slot="header"></div>
+        <div class="assistant-panels">
+          <div data-ns-slot="chat"></div>
+          <div data-ns-slot="agents"></div>
+        </div>
+        <div data-ns-slot="settings"></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

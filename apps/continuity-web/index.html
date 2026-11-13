@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="CONTINUITY — Decentralized Open Agentic Web coordinator for safe multi-provider schedule change reconciliation, minimal-change optimization, and cryptographic approval binding.">
+  <title>CONTINUITY — Open Agentic Change Coordinator</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="script.js"></script>
+  <script type="module" src="site.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#mission-input">Skip to primary change coordinator</a>
+
+  <header class="top-bar" role="banner">
+    <div class="shell top-bar-inner">
+      <div class="brand-cluster">
+        <div class="brand-mark" aria-hidden="true">◈</div>
+        <div>
+          <div class="brand-name-row">
+            <span class="brand-title">CONTINUITY</span>
+            <span class="spec-pill">Open Agentic Web MVP 0.2</span>
+            <span id="transport-badge" class="mode-pill">Detecting Peer Origins…</span>
+          </div>
+          <p class="brand-tagline">One change. Every commitment re-aligned.</p>
+        </div>
+      </div>
+
+      <nav class="top-actions" aria-label="Workspace controls">
+        <button id="theme-toggle-btn" type="button" class="ghost-btn">Light / Dark Theme</button>
+        <button id="inject-ripple-btn" type="button" class="ghost-btn" title="Inject primary Friday crew refusal on MoveCo so CONTINUITY recovers via overflow partner">Inject Ripple Failure</button>
+        <button id="reset-mission-btn" type="button" class="ghost-btn">Reset Demo Mission</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell main-stack">
+    <!-- SECTION 1: HERO COMMAND & EXISTING MISSION OVERVIEW -->
+    <section class="hero-card" aria-labelledby="hero-heading">
+      <div class="hero-header">
+        <div>
+          <h1 id="hero-heading">Safe Multi-Provider Change Reconciliation</h1>
+          <p class="hero-lead">Describe one schedule change. CONTINUITY identifies affected commitments across independent Open Agentic Websites, holds replacements before touching working bookings, enforces your hard budget, and verifies cryptographic receipts.</p>
+        </div>
+        <div class="peer-links-strip" aria-label="Independent peer websites">
+          <span class="strip-label">Independent Peer Origins:</span>
+          <a id="peer-link-moveco" href="http://127.0.0.1:8081/" target="_blank" rel="noopener">MoveCo Express ↗</a>
+          <a id="peer-link-permitflow" href="http://localhost:8082/" target="_blank" rel="noopener">PermitFlow Civic ↗</a>
+          <a id="peer-link-homeconnect" href="http://127.0.0.1:8083/" target="_blank" rel="noopener">HomeConnect Fiber ↗</a>
+          <a id="peer-link-powerflow" href="http://localhost:8084/" target="_blank" rel="noopener">PowerFlow Energy ↗</a>
+        </div>
+      </div>
+
+      <div class="prompt-composer">
+        <label for="mission-input" class="input-label">Describe the change to your active relocation mission (<code id="mission-id-badge">move_paris_lyon_001</code>)</label>
+        <textarea id="mission-input" rows="4">My move was originally scheduled for Tuesday, but I need to move everything to Friday.
+Update every affected service.
+Keep my current reservations until replacements are secured.
+Maintain my total budget below €700.
+Do not cancel anything or approve additional fees without my confirmation.</textarea>
+
+        <div class="composer-actions">
+          <button id="analyze-plan-btn" type="button" class="cta-btn">1. Analyze Impact &amp; Prepare Minimal-Change Plan</button>
+          <button id="approve-commit-btn" type="button" class="approve-btn" disabled>2. Review &amp; Approve Bound Operations</button>
+          <span id="status-banner" role="status" aria-live="polite" class="status-banner">Ready — 6 confirmed demonstration commitments active (€624.00 baseline).</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: IMPACT METRICS BAR -->
+    <section class="kpi-grid" aria-label="Mission impact metrics">
+      <article class="kpi-card">
+        <span class="kpi-label">Affected Commitments</span>
+        <strong id="kpi-affected" class="kpi-value">0 / 6</strong>
+        <span id="kpi-affected-sub" class="kpi-sub">Awaiting change request</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Preserved Untouched</span>
+        <strong id="kpi-preserved" class="kpi-value">6</strong>
+        <span id="kpi-preserved-sub" class="kpi-sub">Zero unnecessary cancellations</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Projected Mission Total</span>
+        <strong id="kpi-cost" class="kpi-value">€624.00</strong>
+        <span id="kpi-cost-sub" class="kpi-sub">Hard ceiling: €700.00</span>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Human Approvals Required</span>
+        <strong id="kpi-approvals" class="kpi-value">0</strong>
+        <span id="kpi-approvals-sub" class="kpi-sub">Bound by SHA-256 hash</span>
+      </article>
+    </section>
+
+    <!-- SECTION 3: INTERACTIVE MISSION DEPENDENCY GRAPH + UNIFIED CHANGE PACKAGE -->
+    <div class="workspace-two-col">
+      <section class="panel-card graph-panel" aria-labelledby="graph-heading">
+        <div class="panel-header">
+          <div>
+            <h2 id="graph-heading">Open Mission Dependency Graph</h2>
+            <p class="panel-sub">Every edge encodes a verified temporal or prerequisite rule. State labels use text + icon + badge (never color alone).</p>
+          </div>
+          <div class="zoom-controls" role="group" aria-label="Graph zoom controls">
+            <button id="zoom-out-btn" type="button" class="mini-btn" title="Zoom out">−</button>
+            <span id="zoom-readout" class="zoom-readout">100%</span>
+            <button id="zoom-in-btn" type="button" class="mini-btn" title="Zoom in">+</button>
+            <button id="zoom-reset-btn" type="button" class="mini-btn">Reset</button>
+          </div>
+        </div>
+
+        <div id="graph-viewport" class="graph-viewport">
+          <svg id="mission-graph-svg" viewBox="0 0 920 430" role="img" aria-label="Interactive mission commitment dependency graph"></svg>
+        </div>
+
+        <div id="node-inspector" class="node-inspector" aria-live="polite">
+          Click any commitment node above to inspect its provider origin, booking reference, cancellation rules, dependency edges, and receipt proof level.
+        </div>
+      </section>
+
+      <section class="panel-card package-panel" aria-labelledby="package-heading">
+        <h2 id="package-heading">Unified Change Package &amp; Candidate Plans</h2>
+        <div id="change-summary-box" class="narrative-summary">
+          No active change proposal yet. Run <strong>Analyze Impact &amp; Prepare Minimal-Change Plan</strong> above or ask the Open Agentic Web assistant below.
+        </div>
+
+        <div id="plans-selector" class="plans-list" role="region" aria-label="Feasible minimal-change plans"></div>
+
+        <h3 class="sub-heading">Prepared Operations &amp; Cryptographic Receipts</h3>
+        <div id="operations-list" class="operations-list">
+          <p class="muted-empty">Existing reservations remain locked in CONFIRMED state until replacements are prepared and explicitly approved.</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- SECTION 4: PROGRESSIVE DISCLOSURE TABS (PRIVACY MINIMIZATION · AUDIT TIMELINE · CHAOS LAB) -->
+    <section class="panel-card tabs-section" aria-labelledby="diagnostics-heading">
+      <div class="tabs-bar">
+        <h2 id="diagnostics-heading" class="sr-only">Verification, Privacy, and Chaos Lab</h2>
+        <div role="tablist" aria-label="Inspection panels" class="tablist">
+          <button role="tab" id="tab-btn-commitments" aria-selected="true" aria-controls="tab-panel-commitments" class="tab-btn active">All 6 Commitments</button>
+          <button role="tab" id="tab-btn-privacy" aria-selected="false" aria-controls="tab-panel-privacy" class="tab-btn">Privacy &amp; Data Minimization</button>
+          <button role="tab" id="tab-btn-timeline" aria-selected="false" aria-controls="tab-panel-timeline" class="tab-btn">Immutable Saga Audit Log</button>
+          <button role="tab" id="tab-btn-chaos" aria-selected="false" aria-controls="tab-panel-chaos" class="tab-btn">Chaos Lab (15 Scenarios)</button>
+        </div>
+      </div>
+
+      <div id="tab-panel-commitments" role="tabpanel" aria-labelledby="tab-btn-commitments" class="tab-panel">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Commitment</th>
+                <th>Independent Provider</th>
+                <th>Ref</th>
+                <th>Scheduled Date</th>
+                <th>Price</th>
+                <th>State</th>
+                <th>Proof Trust Level</th>
+              </tr>
+            </thead>
+            <tbody id="commitments-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-panel-privacy" role="tabpanel" aria-labelledby="tab-btn-privacy" class="tab-panel" hidden>
+        <p class="panel-sub">Strict Cross-Origin Data Minimization: peers receive ONLY the target date and opaque booking/capability fields needed for availability or modification — never your full mission graph, budget ceiling, or LLM BYOK key.</p>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Peer Origin</th>
+                <th>Fields Transmitted</th>
+                <th>Fields Withheld Locally</th>
+                <th>LLM Key Exposure</th>
+              </tr>
+            </thead>
+            <tbody id="privacy-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-panel-timeline" role="tabpanel" aria-labelledby="tab-btn-timeline" class="tab-panel" hidden>
+        <ol id="audit-timeline-list" class="timeline-list">
+          <li>Mission initialized with 6 demonstration commitments (baseline €624.00).</li>
+        </ol>
+      </div>
+
+      <div id="tab-panel-chaos" role="tabpanel" aria-labelledby="tab-btn-chaos" class="tab-panel" hidden>
+        <div class="chaos-header">
+          <div>
+            <strong>Deterministic Chaos Lab (Isolated Simulation Sandbox)</strong>
+            <p class="panel-sub">Executes all 15 distributed failure scenarios (timeouts after commit, price drift after approval, forged Ed25519 receipts, budget overflow, dependency cycles, partial-failure compensation guards) without mutating your live mission above.</p>
+          </div>
+          <button id="run-chaos-suite-btn" type="button" class="cta-btn">Run All 15 Chaos Scenarios</button>
+        </div>
+        <div id="chaos-summary" class="chaos-summary" role="status">Click "Run All 15 Chaos Scenarios" to verify every reliability invariant in your browser.</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Scenario</th>
+                <th>Injected Fault</th>
+                <th>Observed Transition</th>
+                <th>Human Gate</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody id="chaos-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <p id="policy-note" class="disclosure-footer">Disclosure: MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber, and PowerFlow Energy are independent demonstration services created for the Cognizant Open Agentic Web Challenge. PermitFlow prepares demonstration application drafts only and never accesses or modifies official municipal government permits. CONTINUITY cannot process real credit-card charges, guarantee cross-company ACID database locks, or cancel existing commitments without explicit user confirmation.</p>
+
+    <!-- SECTION 5: OFFICIAL OPEN AGENTIC WEB BROWSER RUNTIME & PEER COMPOSITION MOUNT -->
+    <section id="assistant" class="assistant panel-card" aria-labelledby="assistant-heading">
+      <h2 id="assistant-heading">Ask CONTINUITY — Open Agentic Web Browser Runtime</h2>
+      <p>Run portable Neuro SAN HOCON agent networks in your browser with Mozilla Otari or your chosen BYOK provider, compose independent peer networks across origins with explicit consent cards, and coordinate mission changes.</p>
+      <p class="assistant-note">Your messages and this page's mission state go to the LLM provider you configure below. Partner peer networks run locally in this browser on your chosen router and NEVER receive your API key. You confirm every irreversible operation before it runs.</p>
+      <p id="assistant-status" role="status">Connecting the Open Agentic Web runtime… If this message stays, the assistant could not load. You can still use the full coordinator above directly.</p>
+      <div id="agent-app">
+        <div data-ns-slot="header"></div>
+        <div class="assistant-panels">
+          <div data-ns-slot="chat"></div>
+          <div data-ns-slot="agents"></div>
+        </div>
+        <div data-ns-slot="settings"></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

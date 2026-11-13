@@ -1,0 +1,10 @@
+{
+  "networks": [
+    {
+      "name": "moveco_dispatch"
+    }
+  ],
+  "actions": {
+    "version": 1
+  }
+}

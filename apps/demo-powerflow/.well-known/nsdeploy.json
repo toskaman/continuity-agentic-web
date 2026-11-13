@@ -1,0 +1,18 @@
+{
+  "protocol": "nsdeploy-link/v1",
+  "exports": [
+    {
+      "network": "powerflow_grid",
+      "front_man": "powerflow_assistant",
+      "aliases": [
+        "powerflow_grid",
+        "powerflow_assistant"
+      ],
+      "url": "powerflow_grid"
+    }
+  ],
+  "imports": [],
+  "link_updates": {
+    "mode": "browser-local"
+  }
+}

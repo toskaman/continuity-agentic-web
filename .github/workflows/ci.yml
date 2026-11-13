@@ -1,0 +1,32 @@
+name: CONTINUITY — Open Agentic Web Compliance & Test Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  compliance-and-tests:
+    name: Validate HOCON, Manifests, Bridges, Security & Chaos Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate all 5 Open Agentic Web manifests, HOCON networks, and action bridges
+        run: node scripts/build_all_networks.mjs --check
+
+      - name: Verify live 5-origin CORS, manifests, and partner bridges
+        run: node scripts/verify_live_ecosystem.mjs
+
+      - name: Run full unit, contract, integration, security, chaos, and site test suites
+        run: node scripts/run_all_tests.mjs
