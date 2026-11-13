@@ -381,13 +381,16 @@ html[data-theme="light"] .approve-btn:disabled { background: #e2e8f0; color: #47
 #agent-app.ns-composed-app [data-ns-slot="chat"] { height: 680px; }
 #agent-app .ns-chat { background: var(--ns-bg); }
 #agent-app input[type="checkbox"], #agent-app input[type="radio"] { width: auto; }
-#agent-app .ns-header { flex-wrap: wrap; color: var(--ink); }
+#agent-app .ns-header { flex-wrap: wrap; background: #ffffff; color: #0f172a; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; }
 #agent-app .ns-header .ns-brand,
-#agent-app .ns-header h3,
+#agent-app .ns-header h3 { color: #0f172a; }
+#agent-app .ns-devtoggle:not(.on) { color: #0f172a; background: #f1f5f9; border: 1px solid #64748b; }
+#agent-app .ns-settings { background: #ffffff; color: #0f172a; border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px 14px; margin-top: 12px; }
 #agent-app .ns-settings summary,
 #agent-app .ns-settings-body,
-#agent-app .ns-settings-body label { color: var(--ink); }
-#agent-app .ns-devtoggle:not(.on) { color: var(--ink); border-color: var(--border); }
+#agent-app .ns-settings-body label { color: #0f172a; }
+#agent-app .ns-key-required-hint,
+#agent-app .ns-setup-warn { color: #9a3412 !important; font-weight: 600; }
 #agent-app .ns-settings-body label { margin: 4px 0; font-weight: 400; }
 #agent-app .ns-w-label { font-family: inherit; }
 #agent-app .ns-widget label { margin: 0; }

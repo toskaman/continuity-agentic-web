@@ -107,6 +107,12 @@ export class ContinuityCoordinatorPage {
 
   async probeLivePeerOrigins() {
     if (typeof fetch !== "function") return false;
+    // Static GitHub Pages hosts (`*.github.io`) serve static Open Agentic Web bundles only (no `/api/*` server);
+    // skip probing `/api/public-key` there so the browser console stays 100% free of 404 warnings.
+    if (/\.github\.io$/i.test(new URL(this.peerOrigins.moveco).hostname)) {
+      this.livePeersDetected = false;
+      return false;
+    }
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 900);
@@ -699,28 +705,6 @@ export class ContinuityCoordinatorPage {
     }
 
     const { clients } = await this.ensureProviderClients();
-
-    // Adjust simulated harness fee if backup overflow crew was selected in offline simulation mode
-    if (!this.livePeersDetected && this.rippleFailureInjected && clients.moveco?.signer) {
-      const { signProviderReceipt } = await import("./vendor/proof-verifier/index.js");
-      clients.moveco.executeCommit = async ({ idempotencyKey, arguments: a }) => {
-        const body = {
-          receipt_id: "rcpt_mc_overflow_1",
-          provider_id: "moveco",
-          booking_ref: a.booking_ref,
-          scheduled_date: a.new_date,
-          window: a.window,
-          total_charged_eur: 405,
-          idempotency_key: idempotencyKey,
-          issued_at: new Date().toISOString(),
-        };
-        return {
-          execution_state: "COMMITTED",
-          status: "CONFIRMED",
-          receipt_envelope: await signProviderReceipt(body, clients.moveco.signer),
-        };
-      };
-    }
 
     const approvals = await this.saga.approvePreparedOperations(
       this.preparedOps.map((o) => o.operation_id),
