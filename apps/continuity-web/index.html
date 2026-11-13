@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="CONTINUITY — Decentralized Open Agentic Web coordinator for safe multi-provider schedule change reconciliation, minimal-change optimization, and cryptographic approval binding.">
   <title>CONTINUITY — Open Agentic Change Coordinator</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="script.js"></script>
   <script type="module" src="site.js"></script>
@@ -15,11 +16,16 @@
   <header class="top-bar" role="banner">
     <div class="shell top-bar-inner">
       <div class="brand-cluster">
-        <div class="brand-mark" aria-hidden="true">◈</div>
+        <svg class="brand-mark-svg" width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+          <rect width="36" height="36" rx="9" fill="#0B5ED7"/>
+          <path d="M10 18a8 8 0 0 1 13.66-5.66M26 18a8 8 0 0 1-13.66 5.66" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+          <circle cx="24" cy="12" r="2.5" fill="#fff"/>
+          <circle cx="12" cy="24" r="2.5" fill="#7DD3FC"/>
+        </svg>
         <div>
           <div class="brand-name-row">
             <span class="brand-title">CONTINUITY</span>
-            <span class="spec-pill">Open Agentic Web MVP 0.2</span>
+            <span class="spec-pill">Open Agentic Web · MVP 0.2</span>
             <span id="transport-badge" class="mode-pill">Detecting Peer Origins…</span>
           </div>
           <p class="brand-tagline">One change. Every commitment re-aligned.</p>
@@ -35,24 +41,57 @@
   </header>
 
   <main class="shell main-stack">
-    <!-- SECTION 1: HERO COMMAND & EXISTING MISSION OVERVIEW -->
+    <!-- SECTION 1: COMMAND WORKBENCH -->
     <section class="hero-card" aria-labelledby="hero-heading">
       <div class="hero-header">
-        <div>
-          <h1 id="hero-heading">Safe Multi-Provider Change Reconciliation</h1>
-          <p class="hero-lead">Describe one schedule change. CONTINUITY identifies affected commitments across independent Open Agentic Websites, holds replacements before touching working bookings, enforces your hard budget, and verifies cryptographic receipts.</p>
+        <div class="hero-copy">
+          <div class="eyebrow-row">
+            <span class="eyebrow">MULTI-ORIGIN COMMITMENT RECONCILIATION</span>
+            <span class="mono-ref">MISSION ID <code id="mission-id-badge">move_paris_lyon_001</code></span>
+          </div>
+          <h1 id="hero-heading">Safe Multi-Provider Change Coordination</h1>
+          <p class="hero-lead">Describe one schedule change. CONTINUITY computes bounded graph impact across independent Open Agentic Websites, places temporary replacement holds before touching working reservations, enforces your hard budget, and verifies Ed25519 receipts.</p>
         </div>
-        <div class="peer-links-strip" aria-label="Independent peer websites">
-          <span class="strip-label">Independent Peer Origins:</span>
-          <a id="peer-link-moveco" href="http://127.0.0.1:8081/" target="_blank" rel="noopener">MoveCo Express ↗</a>
-          <a id="peer-link-permitflow" href="http://localhost:8082/" target="_blank" rel="noopener">PermitFlow Civic ↗</a>
-          <a id="peer-link-homeconnect" href="http://127.0.0.1:8083/" target="_blank" rel="noopener">HomeConnect Fiber ↗</a>
-          <a id="peer-link-powerflow" href="http://localhost:8084/" target="_blank" rel="noopener">PowerFlow Energy ↗</a>
-        </div>
+
+        <aside class="peer-directory-card" aria-label="Independent peer websites">
+          <div class="peer-dir-head">
+            <span class="strip-label">Connected Peer Origins (4)</span>
+            <a href="./agent-manifest.json" target="_blank" rel="noopener" class="artifact-chip">agent-manifest.json</a>
+          </div>
+          <div class="peer-links-grid">
+            <a id="peer-link-moveco" href="http://127.0.0.1:8081/" target="_blank" rel="noopener" class="peer-chip">
+              <span class="peer-dot dot-blue" aria-hidden="true"></span>
+              <span>MoveCo Express</span>
+              <span class="peer-arrow" aria-hidden="true">↗</span>
+            </a>
+            <a id="peer-link-permitflow" href="http://localhost:8082/" target="_blank" rel="noopener" class="peer-chip">
+              <span class="peer-dot dot-teal" aria-hidden="true"></span>
+              <span>PermitFlow Civic</span>
+              <span class="peer-arrow" aria-hidden="true">↗</span>
+            </a>
+            <a id="peer-link-homeconnect" href="http://127.0.0.1:8083/" target="_blank" rel="noopener" class="peer-chip">
+              <span class="peer-dot dot-indigo" aria-hidden="true"></span>
+              <span>HomeConnect Fiber</span>
+              <span class="peer-arrow" aria-hidden="true">↗</span>
+            </a>
+            <a id="peer-link-powerflow" href="http://localhost:8084/" target="_blank" rel="noopener" class="peer-chip">
+              <span class="peer-dot dot-amber" aria-hidden="true"></span>
+              <span>PowerFlow Energy</span>
+              <span class="peer-arrow" aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </aside>
       </div>
 
       <div class="prompt-composer">
-        <label for="mission-input" class="input-label">Describe the change to your active relocation mission (<code id="mission-id-badge">move_paris_lyon_001</code>)</label>
+        <div class="composer-label-row">
+          <label for="mission-input" class="input-label">Change Request Specification</label>
+          <div class="invariant-tags" aria-label="Active hard invariants">
+            <span class="inv-tag">Cap ≤ €700.00</span>
+            <span class="inv-tag">Hold-Before-Release</span>
+            <span class="inv-tag">Zero Auto-Cancel</span>
+          </div>
+        </div>
         <textarea id="mission-input" rows="4">My move was originally scheduled for Tuesday, but I need to move everything to Friday.
 Update every affected service.
 Keep my current reservations until replacements are secured.
@@ -67,7 +106,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
       </div>
     </section>
 
-    <!-- SECTION 2: IMPACT METRICS BAR -->
+    <!-- SECTION 2: TELEMETRY METRICS -->
     <section class="kpi-grid" aria-label="Mission impact metrics">
       <article class="kpi-card">
         <span class="kpi-label">Affected Commitments</span>
@@ -91,13 +130,13 @@ Do not cancel anything or approve additional fees without my confirmation.</text
       </article>
     </section>
 
-    <!-- SECTION 3: INTERACTIVE MISSION DEPENDENCY GRAPH + UNIFIED CHANGE PACKAGE -->
+    <!-- SECTION 3: INTERACTIVE MISSION GRAPH + UNIFIED CHANGE PACKAGE -->
     <div class="workspace-two-col">
       <section class="panel-card graph-panel" aria-labelledby="graph-heading">
         <div class="panel-header">
           <div>
             <h2 id="graph-heading">Open Mission Dependency Graph</h2>
-            <p class="panel-sub">Every edge encodes a verified temporal or prerequisite rule. State labels use text + icon + badge (never color alone).</p>
+            <p class="panel-sub">Directed edges encode verified temporal rules. Node states combine icon + badge + label (never color alone).</p>
           </div>
           <div class="zoom-controls" role="group" aria-label="Graph zoom controls">
             <button id="zoom-out-btn" type="button" class="mini-btn" title="Zoom out">−</button>
@@ -112,14 +151,14 @@ Do not cancel anything or approve additional fees without my confirmation.</text
         </div>
 
         <div id="node-inspector" class="node-inspector" aria-live="polite">
-          Click any commitment node above to inspect its provider origin, booking reference, cancellation rules, dependency edges, and receipt proof level.
+          Select any commitment node above to inspect its provider origin, booking reference, cancellation fee, dependency rules, and cryptographic proof level.
         </div>
       </section>
 
       <section class="panel-card package-panel" aria-labelledby="package-heading">
         <h2 id="package-heading">Unified Change Package &amp; Candidate Plans</h2>
         <div id="change-summary-box" class="narrative-summary">
-          No active change proposal yet. Run <strong>Analyze Impact &amp; Prepare Minimal-Change Plan</strong> above or ask the Open Agentic Web assistant below.
+          No active change proposal yet. Run <strong>1. Analyze Impact &amp; Prepare Minimal-Change Plan</strong> above or ask the Open Agentic Web assistant below.
         </div>
 
         <div id="plans-selector" class="plans-list" role="region" aria-label="Feasible minimal-change plans"></div>
@@ -131,7 +170,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
       </section>
     </div>
 
-    <!-- SECTION 4: PROGRESSIVE DISCLOSURE TABS (PRIVACY MINIMIZATION · AUDIT TIMELINE · CHAOS LAB) -->
+    <!-- SECTION 4: INSPECTION LEDGERS & CHAOS LAB -->
     <section class="panel-card tabs-section" aria-labelledby="diagnostics-heading">
       <div class="tabs-bar">
         <h2 id="diagnostics-heading" class="sr-only">Verification, Privacy, and Chaos Lab</h2>
@@ -212,14 +251,29 @@ Do not cancel anything or approve additional fees without my confirmation.</text
       </div>
     </section>
 
-    <p id="policy-note" class="disclosure-footer">Disclosure: MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber, and PowerFlow Energy are independent demonstration services created for the Cognizant Open Agentic Web Challenge. PermitFlow prepares demonstration application drafts only and never accesses or modifies official municipal government permits. CONTINUITY cannot process real credit-card charges, guarantee cross-company ACID database locks, or cancel existing commitments without explicit user confirmation.</p>
+    <footer class="protocol-footer">
+      <div class="protocol-links">
+        <span>Machine-Readable Artifacts:</span>
+        <a href="./agent-manifest.json" target="_blank" rel="noopener">agent-manifest.json</a>
+        <a href="./continuity_coordinator.network.json" target="_blank" rel="noopener">continuity_coordinator.network.json</a>
+        <a href="./links.json" target="_blank" rel="noopener">links.json</a>
+        <a href="./.well-known/agent-card.json" target="_blank" rel="noopener">.well-known/agent-card.json</a>
+      </div>
+      <p id="policy-note" class="disclosure-footer">Disclosure: MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber, and PowerFlow Energy are independent demonstration services created for the Cognizant Open Agentic Web Challenge. PermitFlow prepares demonstration application drafts only and never accesses or modifies official municipal government permits. CONTINUITY cannot process real credit-card charges, guarantee cross-company ACID database locks, or cancel existing commitments without explicit user confirmation.</p>
+    </footer>
 
     <!-- SECTION 5: OFFICIAL OPEN AGENTIC WEB BROWSER RUNTIME & PEER COMPOSITION MOUNT -->
     <section id="assistant" class="assistant panel-card" aria-labelledby="assistant-heading">
-      <h2 id="assistant-heading">Ask CONTINUITY — Open Agentic Web Browser Runtime</h2>
-      <p>Run portable Neuro SAN HOCON agent networks in your browser with Mozilla Otari or your chosen BYOK provider, compose independent peer networks across origins with explicit consent cards, and coordinate mission changes.</p>
-      <p class="assistant-note">Your messages and this page's mission state go to the LLM provider you configure below. Partner peer networks run locally in this browser on your chosen router and NEVER receive your API key. You confirm every irreversible operation before it runs.</p>
-      <p id="assistant-status" role="status">Connecting the Open Agentic Web runtime… If this message stays, the assistant could not load. You can still use the full coordinator above directly.</p>
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">BROWSER-EXECUTED PORTABLE AGENT GRAPH</span>
+          <h2 id="assistant-heading">Ask CONTINUITY — Open Agentic Web Runtime</h2>
+        </div>
+        <span class="spec-pill">Default Router: Mozilla Otari</span>
+      </div>
+      <p class="panel-sub">Runs resolved Neuro SAN HOCON networks directly in your browser. Partner peer networks execute locally on your chosen router after explicit consent cards and NEVER receive your API key.</p>
+      <p class="assistant-note">Your messages and this page's mission state go to the LLM provider you configure below. You confirm every irreversible operation before it runs.</p>
+      <p id="assistant-status" role="status" class="runtime-status-pill">Connecting the Open Agentic Web runtime… If this message stays, the assistant could not load. You can still use the full coordinator above directly.</p>
       <div id="agent-app">
         <div data-ns-slot="header"></div>
         <div class="assistant-panels">

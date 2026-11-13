@@ -3,49 +3,95 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HomeConnect Fiber — Independent Open Agentic Broadband Appointments (Demo)</title>
+  <meta name="description" content="HomeConnect Fiber — Independent Open Agentic 2 Gbps FTTH optical installation technician scheduling portal.">
+  <title>HomeConnect Fiber — FTTH Optical Technician Portal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="script.js"></script>
   <script type="module" src="site.js"></script>
 </head>
 <body>
   <header class="site-header">
-    <div class="container">
-      <div class="brand-row">
-        <span class="pill-badge">OPEN AGENTIC PEER · SIMULATION</span>
-        <a id="coordinator-link" href="http://127.0.0.1:8080/">Connected with CONTINUITY Coordinator →</a>
+    <div class="container header-bar">
+      <div class="brand-lockup">
+        <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+          <rect width="34" height="34" rx="8" fill="#4F46E5"/>
+          <path d="M9 22c4-8 12-8 16 0M12 24c2.5-4.5 7.5-4.5 10 0" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+          <circle cx="17" cy="25" r="2.2" fill="#C7D2FE"/>
+        </svg>
+        <div>
+          <span class="brand-name">HomeConnect Fiber</span>
+          <span class="brand-domain">FTTH OPTICAL SPLICE &amp; ONT FIELD OPS</span>
+        </div>
       </div>
-      <h1>HomeConnect Fiber</h1>
-      <p class="subtitle">2 Gbps Symmetric Fiber ONT Technician Scheduling · Demonstration Service</p>
+      <div class="header-meta">
+        <span class="pill-badge">OPEN AGENTIC PEER · DEMO</span>
+        <a id="coordinator-link" href="http://127.0.0.1:8080/" class="coord-link">CONTINUITY Coordinator ↗</a>
+      </div>
     </div>
   </header>
 
-  <main class="container">
-    <section class="card" aria-labelledby="appt-heading">
-      <h2 id="appt-heading">Confirmed Technician Appointment</h2>
-      <div id="appt-panel" class="state-box"></div>
-      <p id="policy-note" class="policy-note">Zero reschedule fee (€0.00). Tenant must have keys and active apartment electricity during ONT optical splice testing. Off-peak Saturday appointments receive a €10.00 installation discount (€39.00 instead of €49.00). No router hardware sales, mobile SIM transfers, or TV bundle upgrades on this site.</p>
-    </section>
-
-    <section class="card" aria-labelledby="win-heading">
-      <h2 id="win-heading">Technician Windows</h2>
-      <div class="controls-row">
-        <label for="win-select">Choose technician window</label>
-        <select id="win-select">
-          <option value="2026-11-20">Fri, Nov 20, 2026 — 14:00–17:00 (€49.00, €0 reschedule fee)</option>
-          <option value="2026-11-21">Sat, Nov 21, 2026 — 09:00–12:00 (€39.00 off-peak, €0 reschedule fee)</option>
-        </select>
-        <button id="hold-btn" type="button" class="secondary-btn">Hold Technician Window</button>
-        <button id="change-btn" type="button" class="primary-btn">Confirm New Appointment</button>
+  <main class="container main-layout">
+    <section class="hero-strip">
+      <div>
+        <span class="eyebrow">FIELD TECHNICIAN INSTALLATION ORDER</span>
+        <h1>2 Gbps Symmetric Fiber &amp; ONT Activation</h1>
+        <p class="subtitle">Coordinate optical splice technician visits, reserve 10-minute appointment holds, or switch to off-peak Saturday installation windows.</p>
       </div>
-      <p id="action-feedback" role="status" class="feedback"></p>
+      <div class="artifact-links">
+        <a href="./agent-manifest.json" target="_blank" rel="noopener">agent-manifest.json</a>
+        <a href="./homeconnect_scheduler.network.json" target="_blank" rel="noopener">homeconnect_scheduler.network.json</a>
+        <a href="./.well-known/agent-card.json" target="_blank" rel="noopener">agent-card.json</a>
+      </div>
     </section>
 
-    <section id="assistant" class="assistant" aria-labelledby="assistant-heading">
-      <h2 id="assistant-heading">Ask HomeConnect Fiber</h2>
-      <p>Check fiber installation technician windows, hold a slot, or reschedule appointment HC-5510.</p>
+    <div class="two-col-cards">
+      <section class="card" aria-labelledby="appt-heading">
+        <div class="card-head">
+          <h2 id="appt-heading">Confirmed Technician Visit</h2>
+          <span class="status-chip">CONFIRMED</span>
+        </div>
+        <div id="appt-panel" class="state-box"></div>
+        <dl class="spec-grid">
+          <div><dt>Optical Profile</dt><dd>XGS-PON 2 Gbps Symmetric + ONT</dd></div>
+          <div><dt>Site Prerequisite</dt><dd>Tenant present + active mains power</dd></div>
+          <div><dt>Off-Peak Incentive</dt><dd>Saturday morning €39.00 (−€10.00)</dd></div>
+          <div><dt>Reschedule Fee</dt><dd>€0.00 modification · €30.00 cancel</dd></div>
+        </dl>
+        <p id="policy-note" class="policy-note">Zero reschedule fee (€0.00). Tenant must have keys and active apartment electricity during ONT optical splice testing. Off-peak Saturday appointments receive a €10.00 installation discount (€39.00 instead of €49.00). No router hardware sales, mobile SIM transfers, or TV bundle upgrades on this site.</p>
+      </section>
+
+      <section class="card" aria-labelledby="win-heading">
+        <div class="card-head">
+          <h2 id="win-heading">Available Field Windows</h2>
+          <span class="mono-tag">10-MIN HOLD SUPPORTED</span>
+        </div>
+        <div class="controls-stack">
+          <label for="win-select" class="field-label">Select optical technician arrival window</label>
+          <select id="win-select">
+            <option value="2026-11-20">Fri, Nov 20, 2026 — 14:00–17:00 (€49.00, €0 reschedule fee)</option>
+            <option value="2026-11-21">Sat, Nov 21, 2026 — 09:00–12:00 (€39.00 off-peak, €0 reschedule fee)</option>
+          </select>
+          <div class="btn-row">
+            <button id="hold-btn" type="button" class="secondary-btn">Hold Technician Window</button>
+            <button id="change-btn" type="button" class="primary-btn">Confirm New Appointment</button>
+          </div>
+        </div>
+        <p id="action-feedback" role="status" class="feedback"></p>
+      </section>
+    </div>
+
+    <section id="assistant" class="assistant card" aria-labelledby="assistant-heading">
+      <div class="card-head">
+        <div>
+          <span class="eyebrow">BROWSER-EXECUTED AGENT NETWORK</span>
+          <h2 id="assistant-heading">Ask HomeConnect Fiber</h2>
+        </div>
+        <span class="mono-tag">homeconnect_scheduler</span>
+      </div>
+      <p class="sub-copy">Check fiber installation technician windows, hold a slot, or reschedule appointment HC-5510.</p>
       <p class="assistant-note">Your messages and this page's data go to the LLM provider you choose in the settings below. You confirm anything that cannot be undone before it happens.</p>
-      <p id="assistant-status" role="status">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
+      <p id="assistant-status" role="status" class="status-line">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
       <div id="agent-app">
         <div data-ns-slot="header"></div>
         <div class="assistant-panels">

@@ -3,50 +3,97 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MoveCo Express — Independent Open Agentic Moving Service (Demo)</title>
+  <meta name="description" content="MoveCo Express — Independent Open Agentic Moving Service offering residential Luton van dispatch, 15-minute slot holds, and idempotent booking reschedules.">
+  <title>MoveCo Express — Residential Freight &amp; Crew Dispatch</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="script.js"></script>
   <script type="module" src="site.js"></script>
 </head>
 <body>
   <header class="site-header">
-    <div class="container">
-      <div class="brand-row">
-        <span class="pill-badge">OPEN AGENTIC PEER · SIMULATION</span>
-        <a id="coordinator-link" href="http://127.0.0.1:8080/">Connected with CONTINUITY Coordinator →</a>
+    <div class="container header-bar">
+      <div class="brand-lockup">
+        <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+          <rect width="34" height="34" rx="8" fill="#1D4ED8"/>
+          <path d="M6 12h13v10H6zM19 15h5l4 4v3h-9z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+          <circle cx="11" cy="24" r="2.2" fill="#93C5FD"/>
+          <circle cx="24" cy="24" r="2.2" fill="#93C5FD"/>
+        </svg>
+        <div>
+          <span class="brand-name">MoveCo Express</span>
+          <span class="brand-domain">DISPATCH PORTAL · ZONE B LYON</span>
+        </div>
       </div>
-      <h1>MoveCo Express</h1>
-      <p class="subtitle">Residential Luton Van &amp; Crew Dispatch · Demonstration Service for the Open Agentic Web</p>
+      <div class="header-meta">
+        <span class="pill-badge">OPEN AGENTIC PEER · DEMO</span>
+        <a id="coordinator-link" href="http://127.0.0.1:8080/" class="coord-link">CONTINUITY Coordinator ↗</a>
+      </div>
     </div>
   </header>
 
-  <main class="container">
-    <section class="card" aria-labelledby="booking-heading">
-      <h2 id="booking-heading">Active Demonstration Reservation</h2>
-      <div id="booking-panel" class="state-box"></div>
-      <p id="policy-note" class="policy-note">Reschedule fee: €25.00 when modifying an existing crew date. Temporary 15-minute slot holds keep your current reservation active until confirmed. Cancellation fee: €65.00. No online card payments, packing box sales, or international customs shipping.</p>
-    </section>
-
-    <section class="card" aria-labelledby="slots-heading">
-      <h2 id="slots-heading">Available Crew Windows</h2>
-      <div id="slots-panel" class="slots-grid"></div>
-      <div class="controls-row">
-        <label for="slot-select">Select replacement crew slot</label>
-        <select id="slot-select">
-          <option value="2026-11-20">Fri, Nov 20, 2026 — 08:00–13:00 (€390 + €25 reschedule fee)</option>
-          <option value="2026-11-21">Sat, Nov 21, 2026 — 09:00–14:00 (€420 + €25 reschedule fee)</option>
-        </select>
-        <button id="hold-btn" type="button" class="secondary-btn">Place 15-Min Slot Hold</button>
-        <button id="reschedule-btn" type="button" class="primary-btn">Confirm Reschedule</button>
+  <main class="container main-layout">
+    <section class="hero-strip">
+      <div>
+        <span class="eyebrow">ACTIVE CUSTOMER DISPATCH RECORD</span>
+        <h1>Residential Luton Van &amp; 3-Mover Crew</h1>
+        <p class="subtitle">Manage crew dispatch dates, place non-destructive 15-minute slot holds, or confirm schedule changes with cryptographic receipt verification.</p>
       </div>
-      <p id="action-feedback" role="status" class="feedback"></p>
+      <div class="artifact-links">
+        <a href="./agent-manifest.json" target="_blank" rel="noopener">agent-manifest.json</a>
+        <a href="./moveco_dispatch.network.json" target="_blank" rel="noopener">moveco_dispatch.network.json</a>
+        <a href="./.well-known/agent-card.json" target="_blank" rel="noopener">agent-card.json</a>
+      </div>
     </section>
 
-    <section id="assistant" class="assistant" aria-labelledby="assistant-heading">
-      <h2 id="assistant-heading">Ask MoveCo Express</h2>
-      <p>Check crew slots, place a temporary hold, or reschedule booking MC-8841 with your own AI provider key.</p>
+    <div class="two-col-cards">
+      <section class="card" aria-labelledby="booking-heading">
+        <div class="card-head">
+          <h2 id="booking-heading">Confirmed Reservation</h2>
+          <span class="status-chip">CONFIRMED · ACTIVE</span>
+        </div>
+        <div id="booking-panel" class="state-box"></div>
+        <dl class="spec-grid">
+          <div><dt>Vehicle Spec</dt><dd>20m³ Luton Tail-Lift + 3 Movers</dd></div>
+          <div><dt>Origin → Destination</dt><dd>Rue de Rivoli → Place Bellecour</dd></div>
+          <div><dt>Hold Policy</dt><dd>15-min lock (keeps original active)</dd></div>
+          <div><dt>Reschedule / Cancel</dt><dd>€25.00 mod · €65.00 cancel</dd></div>
+        </dl>
+        <p id="policy-note" class="policy-note">Reschedule fee: €25.00 when modifying an existing crew date. Temporary 15-minute slot holds keep your current reservation active until confirmed. Cancellation fee: €65.00. No online card payments, packing box sales, or international customs shipping.</p>
+      </section>
+
+      <section class="card" aria-labelledby="slots-heading">
+        <div class="card-head">
+          <h2 id="slots-heading">Replacement Crew Windows</h2>
+          <span class="mono-tag">LIVE FLEET SCHEDULE</span>
+        </div>
+        <div id="slots-panel" class="slots-grid"></div>
+        <div class="controls-stack">
+          <label for="slot-select" class="field-label">Select replacement dispatch window</label>
+          <select id="slot-select">
+            <option value="2026-11-20">Fri, Nov 20, 2026 — 08:00–13:00 (€390 + €25 reschedule fee)</option>
+            <option value="2026-11-21">Sat, Nov 21, 2026 — 09:00–14:00 (€420 + €25 reschedule fee)</option>
+          </select>
+          <div class="btn-row">
+            <button id="hold-btn" type="button" class="secondary-btn">Place 15-Min Slot Hold</button>
+            <button id="reschedule-btn" type="button" class="primary-btn">Confirm Reschedule</button>
+          </div>
+        </div>
+        <p id="action-feedback" role="status" class="feedback"></p>
+      </section>
+    </div>
+
+    <section id="assistant" class="assistant card" aria-labelledby="assistant-heading">
+      <div class="card-head">
+        <div>
+          <span class="eyebrow">BROWSER-EXECUTED AGENT NETWORK</span>
+          <h2 id="assistant-heading">Ask MoveCo Express</h2>
+        </div>
+        <span class="mono-tag">moveco_dispatch</span>
+      </div>
+      <p class="sub-copy">Check crew slots, place a temporary hold, or reschedule booking MC-8841 with your own AI provider key.</p>
       <p class="assistant-note">Your messages and this page's data go to the LLM provider you choose in the settings below. You confirm anything that cannot be undone before it happens.</p>
-      <p id="assistant-status" role="status">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
+      <p id="assistant-status" role="status" class="status-line">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
       <div id="agent-app">
         <div data-ns-slot="header"></div>
         <div class="assistant-panels">

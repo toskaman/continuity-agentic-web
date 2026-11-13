@@ -3,49 +3,95 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PermitFlow Civic Prep — Independent Open Agentic Permit Dossier Service (Demo)</title>
+  <meta name="description" content="PermitFlow Civic Prep — Independent Open Agentic curbside loading-bay notice verification and demonstration application dossier service.">
+  <title>PermitFlow Civic Prep — Curbside Bay Dossier Portal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="script.js"></script>
   <script type="module" src="site.js"></script>
 </head>
 <body>
   <header class="site-header">
-    <div class="container">
-      <div class="brand-row">
-        <span class="pill-badge">OPEN AGENTIC PEER · SIMULATION DOSSIER PREP</span>
-        <a id="coordinator-link" href="http://127.0.0.1:8080/">Connected with CONTINUITY Coordinator →</a>
+    <div class="container header-bar">
+      <div class="brand-lockup">
+        <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+          <rect width="34" height="34" rx="8" fill="#0F766E"/>
+          <path d="M10 8h10l4 4v14H10z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M13 16h8M13 20h6" stroke="#99F6E4" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <span class="brand-name">PermitFlow Civic Prep</span>
+          <span class="brand-domain">PUBLIC SPACE NOTICE &amp; DOSSIER PREPARATION</span>
+        </div>
       </div>
-      <h1>PermitFlow Civic Prep</h1>
-      <p class="subtitle">Curbside Loading-Bay Eligibility &amp; Application Draft Preparation · Independent Demo Service</p>
+      <div class="header-meta">
+        <span class="pill-badge">OPEN AGENTIC PEER · SIMULATION DRAFT</span>
+        <a id="coordinator-link" href="http://127.0.0.1:8080/" class="coord-link">CONTINUITY Coordinator ↗</a>
+      </div>
     </div>
   </header>
 
-  <main class="container">
-    <section class="card" aria-labelledby="dossier-heading">
-      <h2 id="dossier-heading">Prepared Permit Application Dossier</h2>
-      <div id="dossier-panel" class="state-box"></div>
-      <p id="policy-note" class="policy-note">Disclosure: PermitFlow prepares demonstration curbside loading-bay application drafts and checks public municipal notice-period rules (minimum 48h prior notice; €10.00 draft amendment fee). This site has no access to municipal government databases, cannot issue official permits, and cannot waive city traffic fines.</p>
-    </section>
-
-    <section class="card" aria-labelledby="amend-heading">
-      <h2 id="amend-heading">Amend Dossier Date</h2>
-      <div class="controls-row">
-        <label for="date-select">Target bay occupation date</label>
-        <select id="date-select">
-          <option value="2026-11-20">Fri, Nov 20, 2026 — 07:30–14:00 (Zone B 15m Bay · €10.00 amendment)</option>
-          <option value="2026-11-21">Sat, Nov 21, 2026 — 08:00–14:00 (Zone B 15m Bay · €10.00 amendment)</option>
-        </select>
-        <button id="draft-btn" type="button" class="secondary-btn">Preview Eligibility</button>
-        <button id="amend-btn" type="button" class="primary-btn">Update Prepared Dossier</button>
+  <main class="container main-layout">
+    <section class="hero-strip">
+      <div>
+        <span class="eyebrow">CIVIC CURBSIDE OCCUPATION DOSSIER</span>
+        <h1>15m Loading-Bay Application Draft</h1>
+        <p class="subtitle">Verify municipal 48-hour prior-notice rules and prepare standardized loading-bay application dossiers in the demonstration environment.</p>
       </div>
-      <p id="action-feedback" role="status" class="feedback"></p>
+      <div class="artifact-links">
+        <a href="./agent-manifest.json" target="_blank" rel="noopener">agent-manifest.json</a>
+        <a href="./permitflow_advisor.network.json" target="_blank" rel="noopener">permitflow_advisor.network.json</a>
+        <a href="./.well-known/agent-card.json" target="_blank" rel="noopener">agent-card.json</a>
+      </div>
     </section>
 
-    <section id="assistant" class="assistant" aria-labelledby="assistant-heading">
-      <h2 id="assistant-heading">Ask PermitFlow Civic Prep</h2>
-      <p>Check curbside loading-bay notice rules or update prepared dossier PF-2049 with your own AI provider key.</p>
+    <div class="two-col-cards">
+      <section class="card" aria-labelledby="dossier-heading">
+        <div class="card-head">
+          <h2 id="dossier-heading">Prepared Application Dossier</h2>
+          <span class="status-chip">DRAFT READY</span>
+        </div>
+        <div id="dossier-panel" class="state-box"></div>
+        <dl class="spec-grid">
+          <div><dt>Curbside Zone</dt><dd>Zone B · Place Bellecour (15m)</dd></div>
+          <div><dt>Notice Requirement</dt><dd>≥ 48 hours prior to occupation</dd></div>
+          <div><dt>Authority Scope</dt><dd>Application draft only (Non-Gov)</dd></div>
+          <div><dt>Prep / Amendment</dt><dd>€35.00 base · €10.00 date update</dd></div>
+        </dl>
+        <p id="policy-note" class="policy-note">Disclosure: PermitFlow prepares demonstration curbside loading-bay application drafts and checks public municipal notice-period rules (minimum 48h prior notice; €10.00 draft amendment fee). This site has no access to municipal government databases, cannot issue official permits, and cannot waive city traffic fines.</p>
+      </section>
+
+      <section class="card" aria-labelledby="amend-heading">
+        <div class="card-head">
+          <h2 id="amend-heading">Amend Dossier Occupation Date</h2>
+          <span class="mono-tag">REVERSIBLE DRAFT</span>
+        </div>
+        <div class="controls-stack">
+          <label for="date-select" class="field-label">Target curbside bay occupation window</label>
+          <select id="date-select">
+            <option value="2026-11-20">Fri, Nov 20, 2026 — 07:30–14:00 (Zone B 15m Bay · €10.00 amendment)</option>
+            <option value="2026-11-21">Sat, Nov 21, 2026 — 08:00–14:00 (Zone B 15m Bay · €10.00 amendment)</option>
+          </select>
+          <div class="btn-row">
+            <button id="draft-btn" type="button" class="secondary-btn">Preview Eligibility</button>
+            <button id="amend-btn" type="button" class="primary-btn">Update Prepared Dossier</button>
+          </div>
+        </div>
+        <p id="action-feedback" role="status" class="feedback"></p>
+      </section>
+    </div>
+
+    <section id="assistant" class="assistant card" aria-labelledby="assistant-heading">
+      <div class="card-head">
+        <div>
+          <span class="eyebrow">BROWSER-EXECUTED AGENT NETWORK</span>
+          <h2 id="assistant-heading">Ask PermitFlow Civic Prep</h2>
+        </div>
+        <span class="mono-tag">permitflow_advisor</span>
+      </div>
+      <p class="sub-copy">Check curbside loading-bay notice rules or update prepared dossier PF-2049 with your own AI provider key.</p>
       <p class="assistant-note">Your messages and this page's data go to the LLM provider you choose in the settings below. You confirm anything that cannot be undone before it happens.</p>
-      <p id="assistant-status" role="status">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
+      <p id="assistant-status" role="status" class="status-line">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
       <div id="agent-app">
         <div data-ns-slot="header"></div>
         <div class="assistant-panels">
