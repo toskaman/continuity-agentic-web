@@ -381,7 +381,13 @@ html[data-theme="light"] .approve-btn:disabled { background: #e2e8f0; color: #47
 #agent-app.ns-composed-app [data-ns-slot="chat"] { height: 680px; }
 #agent-app .ns-chat { background: var(--ns-bg); }
 #agent-app input[type="checkbox"], #agent-app input[type="radio"] { width: auto; }
-#agent-app .ns-header { flex-wrap: wrap; }
+#agent-app .ns-header { flex-wrap: wrap; color: var(--ink); }
+#agent-app .ns-header .ns-brand,
+#agent-app .ns-header h3,
+#agent-app .ns-settings summary,
+#agent-app .ns-settings-body,
+#agent-app .ns-settings-body label { color: var(--ink); }
+#agent-app .ns-devtoggle:not(.on) { color: var(--ink); border-color: var(--border); }
 #agent-app .ns-settings-body label { margin: 4px 0; font-weight: 400; }
 #agent-app .ns-w-label { font-family: inherit; }
 #agent-app .ns-widget label { margin: 0; }

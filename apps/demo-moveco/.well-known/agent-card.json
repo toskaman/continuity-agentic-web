@@ -1,0 +1,51 @@
+{
+  "name": "MoveCo Express Assistant",
+  "description": "Check MoveCo Express residential moving van availability, place a 15-minute slot hold, or confirm a crew reschedule.",
+  "version": "1.0.0",
+  "url": "http://127.0.0.1:8081/moveco_dispatch",
+  "supportedInterfaces": [
+    {
+      "url": "http://127.0.0.1:8081/moveco_dispatch",
+      "protocolBinding": "HTTP+JSON",
+      "protocolVersion": "1.0"
+    }
+  ],
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "extendedAgentCard": false
+  },
+  "defaultInputModes": [
+    "text/plain",
+    "application/json"
+  ],
+  "defaultOutputModes": [
+    "text/plain",
+    "application/json"
+  ],
+  "skills": [
+    {
+      "id": "moving-crew-dispatch",
+      "name": "Moving Van Quotes, 15m Slot Holds & Rescheduling",
+      "description": "Provides demonstration residential Luton van crew quotes, non-destructive 15-minute slot holds, and idempotent booking reschedules.",
+      "tags": [
+        "moving",
+        "logistics",
+        "slot-hold",
+        "demo-peer"
+      ]
+    }
+  ],
+  "extensions": {
+    "org.worldwideagenticweb": {
+      "mvpProfile": "0.2",
+      "manifestUrl": "http://127.0.0.1:8081/agent-manifest.json",
+      "networkUrl": "http://127.0.0.1:8081/moveco_dispatch.network.json",
+      "browserExecuted": true
+    },
+    "org.projectnanda": {
+      "subjectUrnHint": "urn:air:127.0.0.1:agent:moveco_dispatch",
+      "resolutionProfile": "known-subject-resolution-02"
+    }
+  }
+}

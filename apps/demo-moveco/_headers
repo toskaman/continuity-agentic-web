@@ -10,5 +10,7 @@
   Access-Control-Allow-Origin: *
 /.well-known/nsdeploy-agent.json
   Access-Control-Allow-Origin: *
+/.well-known/agent-card.json
+  Access-Control-Allow-Origin: *
 /runtime/sandbox-worker.js
   Content-Security-Policy: default-src 'none'; script-src blob:; connect-src 'none'; worker-src 'none'

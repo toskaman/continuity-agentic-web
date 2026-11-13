@@ -1,0 +1,56 @@
+name: Deploy CONTINUITY Primary Open Agentic Website to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Configure public cross-origin HTTPS peer URLs & validate all 5 bundles
+        run: |
+          node scripts/configure_origins.mjs \
+            --mode github-pages \
+            --continuity "https://toskaman.github.io/continuity-agentic-web" \
+            --moveco "https://gpaschercher-sudo.github.io/moveco-agentic-peer" \
+            --permitflow "https://gpaschercher-sudo.github.io/permitflow-agentic-peer" \
+            --homeconnect "https://gpaschercher-sudo.github.io/homeconnect-agentic-peer" \
+            --powerflow "https://gpaschercher-sudo.github.io/powerflow-agentic-peer"
+          node scripts/build_all_networks.mjs --check
+
+      - name: Prepare Jekyll-free static artifact (.nojekyll)
+        run: touch apps/continuity-web/.nojekyll
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "apps/continuity-web"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

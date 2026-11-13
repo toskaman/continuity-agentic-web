@@ -1,0 +1,51 @@
+{
+  "name": "PowerFlow Energy Assistant",
+  "description": "Check PowerFlow remote smart-meter grid energization schedules, rules, or confirm a date modification.",
+  "version": "1.0.0",
+  "url": "http://localhost:8084/powerflow_grid",
+  "supportedInterfaces": [
+    {
+      "url": "http://localhost:8084/powerflow_grid",
+      "protocolBinding": "HTTP+JSON",
+      "protocolVersion": "1.0"
+    }
+  ],
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "extendedAgentCard": false
+  },
+  "defaultInputModes": [
+    "text/plain",
+    "application/json"
+  ],
+  "defaultOutputModes": [
+    "text/plain",
+    "application/json"
+  ],
+  "skills": [
+    {
+      "id": "smart-meter-energization",
+      "name": "Remote Smart-Meter Electricity Activation Scheduling",
+      "description": "Checks remote smart-meter energization dates and executes zero-fee schedule shifts in the demonstration environment.",
+      "tags": [
+        "electricity",
+        "utility",
+        "smart-meter",
+        "demo-peer"
+      ]
+    }
+  ],
+  "extensions": {
+    "org.worldwideagenticweb": {
+      "mvpProfile": "0.2",
+      "manifestUrl": "http://localhost:8084/agent-manifest.json",
+      "networkUrl": "http://localhost:8084/powerflow_grid.network.json",
+      "browserExecuted": true
+    },
+    "org.projectnanda": {
+      "subjectUrnHint": "urn:air:localhost:agent:powerflow_grid",
+      "resolutionProfile": "known-subject-resolution-02"
+    }
+  }
+}

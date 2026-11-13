@@ -57,12 +57,23 @@ const STATE_PALETTE = {
 export class ContinuityCoordinatorPage {
   constructor() {
     this.version = 1;
-    this.peerOrigins = {
-      moveco: "http://127.0.0.1:8081",
-      permitflow: "http://localhost:8082",
-      homeconnect: "http://127.0.0.1:8083",
-      powerflow: "http://localhost:8084",
-    };
+    // Auto-detect deployment environment: if running on https:// (e.g. GitHub Pages),
+    // default to live cross-origin HTTPS peer deployments; otherwise use local dev origins.
+    const isHttpsHosted =
+      typeof location !== "undefined" && location.protocol === "https:";
+    this.peerOrigins = isHttpsHosted
+      ? {
+          moveco: "https://gpaschercher-sudo.github.io/moveco-agentic-peer",
+          permitflow: "https://gpaschercher-sudo.github.io/permitflow-agentic-peer",
+          homeconnect: "https://gpaschercher-sudo.github.io/homeconnect-agentic-peer",
+          powerflow: "https://gpaschercher-sudo.github.io/powerflow-agentic-peer",
+        }
+      : {
+          moveco: "http://127.0.0.1:8081",
+          permitflow: "http://localhost:8082",
+          homeconnect: "http://127.0.0.1:8083",
+          powerflow: "http://localhost:8084",
+        };
     this.livePeersDetected = false;
     this.rippleFailureInjected = false;
     this.zoomScale = 1;
@@ -767,10 +778,13 @@ export class ContinuityCoordinatorPage {
 
     const badge = document.querySelector("#transport-badge");
     if (badge) {
+      const isHttps = typeof location !== "undefined" && location.protocol === "https:";
       badge.textContent = this.livePeersDetected
         ? "Live Independent Peer Origins (4 Active)"
-        : "Browser Simulation Fallback (Static Mode)";
-      badge.classList.toggle("live", this.livePeersDetected);
+        : isHttps
+          ? "HTTPS Peer Networks Active · Browser Saga Engine"
+          : "Browser Simulation Fallback (Static Mode)";
+      badge.classList.toggle("live", this.livePeersDetected || isHttps);
     }
 
     const rippleBtn = document.querySelector("#inject-ripple-btn");

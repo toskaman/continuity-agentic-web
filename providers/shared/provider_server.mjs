@@ -59,6 +59,7 @@ export class IndependentProviderHost {
       "/agent-mcp.json",
       "/.well-known/nsdeploy.json",
       "/.well-known/nsdeploy-agent.json",
+      "/.well-known/agent-card.json",
     ]);
   }
 

@@ -179,7 +179,7 @@ export class AssistantMount {
 
   static keepFocusInChat() {
     if (document.activeElement === document.body || document.activeElement === null) {
-      document.querySelector("#ns-input")?.focus();
+      document.querySelector("#ns-input")?.focus({ preventScroll: true });
     }
   }
 }

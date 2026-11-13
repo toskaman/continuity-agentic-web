@@ -133,7 +133,10 @@ for (const peerDir of ["demo-moveco", "demo-permitflow", "demo-homeconnect", "de
   await writeFile(pHtmlPath, pHtml, "utf8");
 }
 
-// 4. Rebuild & validate all 5 bundles
+// 4. Rebuild & validate all 5 bundles + regenerate A2A Agent Cards & _headers
+const { writeAgentCardsAndHeaders } = await import("./write_static_headers.mjs");
+await writeAgentCardsAndHeaders(targets);
+
 const build = spawnSync(process.execPath, [path.join(ROOT, "scripts", "build_all_networks.mjs")], {
   stdio: "inherit",
 });

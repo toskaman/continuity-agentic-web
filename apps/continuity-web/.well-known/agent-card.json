@@ -1,0 +1,51 @@
+{
+  "name": "CONTINUITY Change Coordinator",
+  "description": "Coordinate multi-provider schedule changes across independent Open Agentic Websites while preserving unaffected commitments and enforcing budget invariants.",
+  "version": "1.0.0",
+  "url": "http://127.0.0.1:8080/continuity_coordinator",
+  "supportedInterfaces": [
+    {
+      "url": "http://127.0.0.1:8080/continuity_coordinator",
+      "protocolBinding": "HTTP+JSON",
+      "protocolVersion": "1.0"
+    }
+  ],
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "extendedAgentCard": false
+  },
+  "defaultInputModes": [
+    "text/plain",
+    "application/json"
+  ],
+  "defaultOutputModes": [
+    "text/plain",
+    "application/json"
+  ],
+  "skills": [
+    {
+      "id": "coordinate-commitment-change",
+      "name": "Safe Multi-Provider Change Reconciliation",
+      "description": "Compiles schedule changes, computes bounded dependency impact, resolves minimal-change plans, binds SHA-256 approvals, and verifies Ed25519 receipts.",
+      "tags": [
+        "change-coordination",
+        "open-agentic-web",
+        "saga",
+        "minimal-change"
+      ]
+    }
+  ],
+  "extensions": {
+    "org.worldwideagenticweb": {
+      "mvpProfile": "0.2",
+      "manifestUrl": "http://127.0.0.1:8080/agent-manifest.json",
+      "networkUrl": "http://127.0.0.1:8080/continuity_coordinator.network.json",
+      "browserExecuted": true
+    },
+    "org.projectnanda": {
+      "subjectUrnHint": "urn:air:127.0.0.1:agent:continuity_coordinator",
+      "resolutionProfile": "known-subject-resolution-02"
+    }
+  }
+}
