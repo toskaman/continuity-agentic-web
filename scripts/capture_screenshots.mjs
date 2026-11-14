@@ -199,6 +199,10 @@ try {
     deviceScaleFactor: 1.5,
     mobile: false,
   });
+  // Reduced motion: scroll-reveal fades are skipped so every capture is fully rendered.
+  await cdp.send("Emulation.setEmulatedMedia", {
+    features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+  });
 
   const snapPng = async (filename) => {
     const { data } = await cdp.send("Page.captureScreenshot", {
@@ -224,12 +228,15 @@ try {
     })()`,
     awaitPromise: true,
   });
+  await cdp.send("Runtime.evaluate", {
+    expression: `document.querySelector("#mission")?.scrollIntoView({ behavior: "instant" })`,
+  });
   await new Promise((r) => setTimeout(r, 350));
   await snapPng("02_ripple_recovery_prepared_plan.png");
 
   // Screenshot 2B: Interactive SVG Pareto Plot & Live Hold Safety Countdown
   await cdp.send("Runtime.evaluate", {
-    expression: `document.querySelector(".workspace-two-col")?.scrollIntoView({ behavior: "instant" })`,
+    expression: `document.querySelector("#plans")?.scrollIntoView({ behavior: "instant" })`,
   });
   await new Promise((r) => setTimeout(r, 250));
   await snapPng("08_pareto_frontier_and_hold_countdown.png");
@@ -290,6 +297,17 @@ try {
   await cdp.send("Page.navigate", { url: "http://127.0.0.1:8081/" });
   await new Promise((r) => setTimeout(r, 700));
   await snapPng("07_independent_peer_moveco.png");
+
+  // Screenshots 10-12: the other three independent peers (each has its own identity and origin)
+  for (const [port, host, name] of [
+    [8082, "localhost", "10_independent_peer_permitflow.png"],
+    [8083, "127.0.0.1", "11_independent_peer_homeconnect.png"],
+    [8084, "localhost", "12_independent_peer_powerflow.png"],
+  ]) {
+    await cdp.send("Page.navigate", { url: `http://${host}:${port}/` });
+    await new Promise((r) => setTimeout(r, 700));
+    await snapPng(name);
+  }
 
   // Screenshot 7: Architecture SVG rendered cleanly to PNG
   const archFileUrl = "file:///" + path.join(OUT_DIR, "00_architecture_diagram.svg").replace(/\\/g, "/");

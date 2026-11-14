@@ -334,3 +334,7 @@
   .brand-domain { display: none; }
   .graph-viewport { min-height: 280px; }
 }
+
+/* Merged-strategy explanation (e.g. Plan A is also the lowest-cost plan) */
+.plans-note { margin: 0 0 var(--s-4); font-size: var(--fs-sm); color: var(--ink-2); padding: 12px 16px; border-radius: var(--r-md); background: var(--info-bg); border: 1px solid var(--info-line); }
+.plans-note::before { content: "ℹ "; color: var(--info); font-weight: 700; }

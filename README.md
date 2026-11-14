@@ -2,7 +2,19 @@
 
 **One change. Every commitment re-aligned.**
 
-Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agenticweb.devpost.com/)** · Conforms 100% to the **[Worldwide Agentic Web MVP Specification (Profile 0.2)](https://github.com/cognizant-ai-labs/agentic-web/blob/main/docs/worldwide_agentic_web_mvp_spec.md)**.
+Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agenticweb.devpost.com/)** · All 5 sites pass the official Cognizant validators (`build_network.mjs --check`, `check_partner.mjs`) for the **[Worldwide Agentic Web MVP Specification (Profile 0.2)](https://github.com/cognizant-ai-labs/agentic-web/blob/main/docs/worldwide_agentic_web_mvp_spec.md)**.
+
+![CONTINUITY coordinator](docs/submission/screenshots/01_continuity_mission_baseline.png)
+
+## Try it in 60 seconds (no API key needed)
+
+1. Open **https://toskaman.github.io/continuity-agentic-web/** and click **Run the 2-minute demo** (top right).
+2. CONTINUITY injects a real provider failure (MoveCo's Friday crew is full), recovers through an overflow partner, compares plans and holds replacements — your original bookings stay untouched.
+3. The approval dialog lists every operation, price and provider. Click **Approve & commit**: three providers commit, three bookings stay untouched (two are never even contacted), and each commit returns an Ed25519-signed receipt.
+4. Click a provider in the network map (e.g. **MoveCo Express**): its own site, on another origin, verifies the signed receipt and shows the new date.
+5. Optional: **Try without a key** in *Ask CONTINUITY* runs the real agent networks, `website_*` tools and consent cards with a scripted model.
+
+> Demo data: the four providers are independent demonstration services built for this challenge. No real bookings, payments or permits are touched.
 
 ## Live Public HTTPS Deployments (Verified Cross-Origin Ecosystem)
 
@@ -57,7 +69,7 @@ node scripts/run_all_tests.mjs
 This single command executes:
 1. Official Cognizant `build_network.mjs --check` across all 5 websites (**0 errors, 0 warnings**).
 2. Official Cognizant `check_partner.mjs` across all 5 live origins (**CORS, manifests, networks, and `bridge/action-bridge.html` verified**).
-3. All **35 automated test suites** (unit, Google ADK → HOCON converter & cycle/secret guards, mandate & Nash bargaining bypasses, SHA-256 hash-chained ledger tamper detection, multi-domain intake & `.ics` round-trip, cross-origin browser bridge & signed receipt handoffs, WebMCP guardrails, live 7-point MVP 0.2 + NANDA conformance auditor, provider MCP contracts, cross-origin runtime composition & key isolation, adversarial security boundaries, and all **15 Chaos Lab scenarios**).
+3. All **38 automated tests in 12 suites** (unit, Google ADK → HOCON converter & cycle/secret guards, mandate & Nash bargaining bypasses, SHA-256 hash-chained ledger tamper detection, multi-domain intake & `.ics` round-trip, cross-origin browser bridge & signed receipt handoffs, WebMCP guardrails, live 7-point MVP 0.2 + NANDA conformance auditor, provider MCP contracts, cross-origin runtime composition & key isolation, adversarial security boundaries, and all **15 Chaos Lab scenarios**).
 
 ### 3. Reproduce Before/After Benchmarks (`N = 60` Live Cross-Origin Runs)
 
@@ -97,6 +109,7 @@ continuity/
 │   └── chaos-lab/             # 15 deterministic failure-injection scenarios
 ├── providers/                 # Standalone CORS + MCP (2025-06-18) servers for each peer
 ├── skills/agentify-website/   # Official Cognizant runtime & compliance validators
+├── design-system/             # Shared tokens, components, per-site themes (built by scripts/write_peer_styles.mjs)
 ├── scripts/                   # Ecosystem launcher, validator, origin rewriter & benchmark suite
 ├── tests/                     # Unit, Contract, Integration, Security & Chaos tests
 └── docs/                      # Compliance audit, architecture, threat model, benchmarks, Devpost
@@ -129,6 +142,8 @@ When deploying any `apps/*` bundle to a public HTTPS host (Netlify, Cloudflare P
 - [Complete Pitch Suite & Tough Judge Q&A](docs/submission/PITCH_AND_JUDGE_QA_DECK.md)
 - [Video Production Bible & QC Report](docs/video-production/VIDEO_QC_AND_REVIEW_REPORT.md)
 - [Devpost Submission Draft](docs/submission/DEVPOST_SUBMISSION.md)
+- [Human-Narrated Video Recording Script (< 2 min)](docs/submission/VIDEO_RECORDING_SCRIPT.md)
+- [Design System](design-system/README.md)
 
 ---
 

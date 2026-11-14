@@ -107,14 +107,27 @@ function update() {
     });
   }
 
+  const OBJECTIVE = { minimal_change: "Minimum changes", lowest_cost: "Lowest cost", fastest_resolution: "Fastest alignment", feasible_alternative: "Alternative" };
+  const plans = page.solverResult?.plans || [];
   document.querySelectorAll("#plans-selector .plan-option").forEach((btn) => {
+    if (btn.querySelector(".plan-letter")) return;
     const pid = btn.getAttribute("data-plan-id") || "";
+    const plan = plans.find((p) => p.plan_id === pid);
     const meta = Object.entries(PLAN_META).find(([k]) => pid.startsWith(k))?.[1];
-    if (meta && !btn.querySelector(".plan-letter")) {
-      btn.dataset.letter = meta.letter;
-      btn.insertAdjacentHTML("afterbegin", `<span class="plan-letter" aria-hidden="true">${e(meta.letter)}</span><span class="plan-kind">${e(meta.name)}</span>`);
-    }
+    const kinds = (plan?.co_optimizes || []).map((k) => OBJECTIVE[k]).filter(Boolean);
+    const letter = meta?.letter || "+";
+    btn.dataset.letter = letter;
+    btn.insertAdjacentHTML("afterbegin", `<span class="plan-letter" aria-hidden="true">${e(letter)}</span><span class="plan-kind">${e(kinds.join(" · ") || meta?.name || "Alternative")}</span>`);
   });
+  // Explain merged strategies instead of silently showing fewer than three named plans.
+  const note = document.querySelector("#plans-merge-note");
+  if (note) {
+    const merged = plans.filter((p) => (p.co_optimizes || []).length > 1);
+    note.hidden = merged.length === 0;
+    note.textContent = merged
+      .map((p) => `${p.label.split(" — ")[0]} is also the best plan for: ${p.co_optimizes.slice(1).map((k) => (OBJECTIVE[k] || k).toLowerCase()).join(", ")} — so those strategies are merged into one card.`)
+      .join(" ");
+  }
 }
 
 // Hook into every real render.

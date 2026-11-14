@@ -1,6 +1,6 @@
 # Devpost Submission Draft — CONTINUITY
 
-> **Status:** Complete & Publicly Verified against Official Rules (`https://cognizant-agenticweb.devpost.com/rules`). All public HTTPS URLs, GitHub repositories, and 8 screenshots (`docs/submission/screenshots/`) are ready. Only the `< 2 minute` human-narrated YouTube URL and your Otari account email remain for you to paste when submitting.
+> **Status (Nov 14, 2026):** Public URLs live and verified end to end after the UI redesign; 13 fresh screenshots in `docs/submission/screenshots/`. **Still required from the entrant:** (1) a new < 2 min video **narrated in your own voice** (Rules: the entrant must explain the project; the existing `CONTINUITY_JURY_MASTER_OMEGA.mp4` uses Kokoro TTS and the pre-redesign UI, so it must not be submitted) — script in `VIDEO_RECORDING_SCRIPT.md`; (2) your Otari account email; (3) the YouTube link.
 
 ---
 
@@ -15,20 +15,28 @@
   - `https://gpaschercher-sudo.github.io/permitflow-agentic-peer/` (`permitflow_advisor`)
   - `https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/` (`homeconnect_scheduler`)
   - `https://gpaschercher-sudo.github.io/powerflow-agentic-peer/` (`powerflow_grid`)
-- **Screenshot & Architecture Assets Ready to Upload (`docs/submission/screenshots/`):**
-  1. `00_architecture_diagram.png` — System Topology & Trust Boundaries
-  2. `01_continuity_mission_baseline.png` — Main Mission Coordinator & 6-Commitment SVG Graph
-  3. `02_ripple_recovery_prepared_plan.png` — Ripple Failure Armed + Minimal-Change Plan Prepared
-  4. `03_bound_approval_modal.png` — SHA-256 Bound Human Confirmation Dialog
-  5. `04_committed_verified_ed25519.png` — Verified Commit & Ed25519 Provider Signatures
-  6. `05_chaos_lab_15_passed.png` — Built-in Chaos Lab (`15/15` Distributed Fault Scenarios Passed)
-  7. `06_open_agentic_web_runtime_otari_byok.png` — Cognizant Browser Runtime & Mozilla Otari BYOK Panel
-  8. `07_independent_peer_moveco.png` — Standalone MoveCo Express Open Agentic Website
+- **Screenshots to upload (`docs/submission/screenshots/`, captured from the redesigned UI):**
+  1. `01_continuity_mission_baseline.png` — Landing: one change, every commitment re-aligned + live network map
+  2. `02_ripple_recovery_prepared_plan.png` — Mission map + Approval Center after a provider failure is recovered
+  3. `08_pareto_frontier_and_hold_countdown.png` — Plan comparison (A/C/Alternative) + what-if budget frontier
+  4. `03_bound_approval_modal.png` — SHA-256-bound human approval dialog
+  5. `04_committed_verified_ed25519.png` — Committed & verified with Ed25519 receipts
+  6. `05_chaos_lab_15_passed.png` — Chaos Lab: 15 failure scenarios in the browser
+  7. `09_mandate_arbiter_and_bypasses_denied.png` — Mandate & arbiter: 4 bypass attempts denied
+  8. `06_open_agentic_web_runtime_otari_byok.png` — Open Agentic Web runtime, consent cards, Otari BYOK
+  9. `07`, `10`, `11`, `12` — The four independent provider sites (MoveCo, PermitFlow, HomeConnect, PowerFlow)
+  10. `00_architecture_diagram.png` — Topology & trust boundaries
 - **Built With:** `neuro-san`, `nsdeploy`, `open-agentic-web`, `mozilla-otari`, `project-nanda`, `a2a`, `mcp`, `javascript`, `web-crypto`, `html5`
 
 ---
 
 ## 2. Full Project Description (Copy-Ready Markdown)
+
+**In one sentence:** When one date in your life changes, CONTINUITY asks every affected provider's own agentic website what is possible, holds replacements before releasing anything, and lets you approve one verified plan instead of calling six companies.
+
+**Try it in 60 seconds, no API key:** open the public URL and click **Run the 2-minute demo** → a real provider failure is recovered → approve → three providers commit with signed receipts, three bookings stay untouched (two are never even contacted) → click a provider to see it verify the receipt on its own origin.
+
+**Built during the submission period:** first commit Nov 13, 2026 (period opened Nov 11, 2026, 8:00 pm PT).
 
 ### The Problem: Greenfield Planning Is Easy — Day-Two Changes Break Everything
 Most AI agent demos plan something from scratch: order a pizza, pick a hotel, or draft an itinerary. Real life breaks **after** commitments are already confirmed. Moving a home relocation from Tuesday to Friday triggers a ripple effect across independent organizations — moving vans, curbside loading-bay permit preparation, fiber optic installation technicians, smart-meter electricity activation, buffer storage, and furniture delivery. Today, humans manually call six websites, repeat details, pay avoidable cancellation penalties, or accidentally cancel a working booking before a replacement is secured.
