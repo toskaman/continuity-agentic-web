@@ -153,11 +153,18 @@ export class AssistantMount {
     }
     const confirmButton = document.createElement("button");
     confirmButton.textContent = content.confirm;
-    confirmButton.addEventListener("click", dialog.close.bind(dialog, "confirm"));
+    // Resolve on click too: the "close" event can be delayed in background tabs.
+    confirmButton.addEventListener("click", () => {
+      dialog.close("confirm");
+      AssistantMount.finishDialog(dialog, resolve);
+    });
     const declineButton = document.createElement("button");
     declineButton.className = "assistant-decline";
     declineButton.textContent = content.decline;
-    declineButton.addEventListener("click", dialog.close.bind(dialog, "decline"));
+    declineButton.addEventListener("click", () => {
+      dialog.close("decline");
+      AssistantMount.finishDialog(dialog, resolve);
+    });
     dialog.addEventListener("close", AssistantMount.finishDialog.bind(null, dialog, resolve));
     dialog.append(exact, confirmButton, declineButton);
     document.body.append(dialog);
