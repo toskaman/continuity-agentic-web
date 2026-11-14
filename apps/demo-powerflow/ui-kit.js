@@ -27,7 +27,9 @@ export function afterEachRender(page, onRender) {
       console.warn("[ui] enhancement skipped:", err);
     }
   };
-  page.render();
+  // Re-render once, keeping any message the page already showed (e.g. a
+  // signed receipt verified by peer-sync.js before this module loaded).
+  page.render(document.querySelector("#action-feedback")?.textContent || "");
 }
 
 /** Turn a native <select> into accessible radio cards. The select stays the source of truth. */
