@@ -1,0 +1,31 @@
+/* PermitFlow Civic Prep — institutional, calm, reassuring. Civic blue + soft green. */
+:root {
+  --accent: #1F4F8F;
+  --accent-2: #2E9D74;
+  --accent-strong: #163A6B;
+  --accent-soft: #EEF4FB;
+  --accent-line: #C9D9EE;
+  --hero-bg: #0F2240;
+  --paper: #F7F9FA;
+}
+.peer-hero h1 { max-width: 16ch; }
+.peer-hero h1 em { font-style: normal; color: var(--accent-2); }
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.check-item { display: grid; grid-template-columns: 28px 1fr auto; gap: 14px; align-items: start; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); transition: border-color .2s, background .2s; }
+.check-icon { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: 13px; font-weight: 800; background: var(--surface-2); color: var(--muted); border: 1px solid var(--line-strong); }
+.check-item[data-status="ready"] .check-icon { background: #E8F6F0; color: #1D7A57; border-color: #A6DEC6; }
+.check-item[data-status="ready"] .check-icon::before { content: "✓"; }
+.check-item[data-status="review"] { background: var(--warn-bg); border-color: var(--warn-line); }
+.check-item[data-status="review"] .check-icon { background: #fff; color: var(--warn); border-color: var(--warn-line); }
+.check-item[data-status="review"] .check-icon::before { content: "!"; }
+.check-item[data-status="progress"] .check-icon { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-line); }
+.check-item[data-status="progress"] .check-icon::before { content: "…"; }
+.check-item[data-status="todo"] .check-icon::before { content: ""; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; }
+.check-title { font-weight: 620; font-size: var(--fs-sm); }
+.check-desc { font-size: var(--fs-xs); color: var(--muted); margin-top: 2px; }
+.official-banner { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-radius: var(--r-md); background: #F1F4F8; border: 1px solid var(--line-strong); font-size: var(--fs-xs); color: var(--ink-2); }
+.official-banner strong { color: var(--ink); }
+.summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.summary-grid h4 { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+.summary-grid ul { margin: 0; padding-left: 18px; font-size: var(--fs-sm); color: var(--ink-2); display: grid; gap: 4px; }
+@media (max-width: 600px) { .summary-grid { grid-template-columns: 1fr; } .check-item { grid-template-columns: 28px 1fr; } .check-item .badge { grid-column: 2; justify-self: start; } }

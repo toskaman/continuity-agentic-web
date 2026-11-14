@@ -1,0 +1,32 @@
+/* HomeConnect Fiber — premium telecom, technical but warm. Cyan + navy + turquoise. */
+:root {
+  --accent: #0B6E8A;
+  --accent-2: #14B8A6;
+  --accent-strong: #08506A;
+  --accent-soft: #ECF8FB;
+  --accent-line: #BDE6F0;
+  --hero-bg: #071A2F;
+  --hero-ink: #F2FAFD;
+  --hero-muted: #9FB6C8;
+  --paper: #F6F9FA;
+}
+.peer-hero.dark { background: var(--hero-bg); color: var(--hero-ink); }
+.peer-hero.dark::before {
+  background:
+    radial-gradient(800px 420px at 80% 0%, rgba(20, 184, 166, .22), transparent 70%),
+    radial-gradient(600px 320px at 0% 100%, rgba(11, 110, 138, .35), transparent 70%);
+}
+.peer-hero.dark .lead, .peer-hero.dark .hero-trust { color: var(--hero-muted); }
+.peer-hero.dark .eyebrow { color: #5EEAD4; }
+.peer-hero.dark .eyebrow::before { background: #5EEAD4; }
+.peer-hero.dark h1 em { font-style: normal; background: linear-gradient(90deg, #5EEAD4, #38BDF8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.peer-hero.dark .btn:not(.btn-primary) { --btn-bg: rgba(255,255,255,.06); --btn-ink: #fff; --btn-line: rgba(255,255,255,.18); }
+.peer-hero.dark .hero-trust span::before { background: rgba(94, 234, 212, .16); color: #5EEAD4; }
+.peer-hero.dark .record-card { box-shadow: 0 30px 80px -20px rgba(0,0,0,.55); border-color: rgba(255,255,255,.08); color: var(--ink); }
+.signal { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: var(--r-md); background: linear-gradient(90deg, #ECF8FB, #EFFCF9); border: 1px solid var(--accent-line); }
+.signal-bars { display: flex; gap: 3px; align-items: flex-end; height: 22px; }
+.signal-bars i { width: 5px; border-radius: 2px; background: var(--accent-2); display: block; }
+.signal-bars i:nth-child(1) { height: 30%; } .signal-bars i:nth-child(2) { height: 55%; } .signal-bars i:nth-child(3) { height: 80%; } .signal-bars i:nth-child(4) { height: 100%; opacity: .35; }
+.signal strong { font-size: var(--fs-sm); display: block; }
+.signal span { font-size: var(--fs-xs); color: var(--muted); }
+.choice-card:has(input:checked) .date-tile { background: var(--accent-strong); }

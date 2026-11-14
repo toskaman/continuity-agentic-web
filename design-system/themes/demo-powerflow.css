@@ -1,0 +1,24 @@
+/* PowerFlow Energy — contemporary energy, trust. Deep green + mint + navy. */
+:root {
+  --accent: #0E6B4D;
+  --accent-2: #34D399;
+  --accent-strong: #0A4F39;
+  --accent-soft: #ECF7F2;
+  --accent-line: #B9E3D1;
+  --hero-bg: #0A1A1F;
+  --paper: #F6F8F6;
+}
+.peer-hero h1 em { font-style: normal; color: var(--accent); }
+.meter-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.meter-tile { padding: 14px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); }
+.meter-tile dt { font-size: var(--fs-xs); color: var(--muted); }
+.meter-tile dd { margin: 6px 0 0; font-weight: 650; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+.led { width: 9px; height: 9px; border-radius: 50%; background: #98A2B3; box-shadow: 0 0 0 3px rgba(152,162,179,.18); flex: none; }
+.led.on { background: #12B76A; box-shadow: 0 0 0 3px rgba(18,183,106,.18); }
+.led.wait { background: #F79009; box-shadow: 0 0 0 3px rgba(247,144,9,.18); }
+.no-data { display: flex; gap: 14px; align-items: center; padding: 18px; border-radius: var(--r-md); border: 1px dashed var(--line-strong); background: repeating-linear-gradient(135deg, transparent 0 10px, rgba(16,24,40,.018) 10px 20px); }
+.no-data svg { flex: none; }
+.no-data strong { display: block; font-size: var(--fs-sm); }
+.no-data span { font-size: var(--fs-xs); color: var(--muted); }
+.choice-card:has(input:checked) { box-shadow: 0 0 0 4px rgba(14, 107, 77, .12); }
+@media (max-width: 600px) { .meter-grid { grid-template-columns: 1fr 1fr; } }

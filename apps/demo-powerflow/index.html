@@ -3,104 +3,190 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="PowerFlow Energy — Independent Open Agentic remote smart-meter grid energization scheduling portal.">
-  <title>PowerFlow Energy — Smart-Meter Grid Operations</title>
+  <meta name="description" content="PowerFlow Energy — manage your smart-meter activation date with clarity. Remote energization, zero date-change fee. An independent Open Agentic Web peer (demonstration).">
+  <meta name="theme-color" content="#0E6B4D">
+  <title>PowerFlow Energy — Powering your home, intelligently</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="script.js"></script>
   <script type="module" src="site.js"></script>
   <script type="module" src="peer-sync.js"></script>
+  <script type="module" src="ui.js"></script>
 </head>
 <body>
+  <a class="skip-link" href="#activation">Skip to activation</a>
   <header class="site-header">
     <div class="container header-bar">
-      <div class="brand-lockup">
-        <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
-          <rect width="34" height="34" rx="8" fill="#B45309"/>
-          <path d="M19 7L10 19h7l-2 8 9-12h-7z" fill="#FEF3C7"/>
+      <a class="brand-lockup" href="#top" aria-label="PowerFlow Energy home">
+        <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+          <rect width="36" height="36" rx="10" fill="#0E6B4D"/>
+          <path d="M20 7.5 11 20h7l-2 8.5 9-12.5h-7z" fill="#A7F3D0"/>
         </svg>
-        <div>
+        <span>
           <span class="brand-name">PowerFlow Energy</span>
-          <span class="brand-domain">REMOTE SMART-METER GRID ENERGIZATION</span>
-        </div>
-      </div>
+          <span class="brand-domain">Smart-meter activation</span>
+        </span>
+      </a>
+      <nav class="site-nav" aria-label="Sections">
+        <a href="#dashboard">Dashboard</a>
+        <a href="#activation">Activation</a>
+        <a href="#status">History</a>
+        <a href="#assistant">Assistant</a>
+      </nav>
       <div class="header-meta">
-        <span class="pill-badge">OPEN AGENTIC PEER · DEMO</span>
-        <a id="coordinator-link" href="http://127.0.0.1:8080/" class="coord-link">CONTINUITY Coordinator ↗</a>
+        <span class="pill-badge">Demo provider</span>
+        <a id="coordinator-link" href="http://127.0.0.1:8080/" class="coord-link"><span class="coord-dot" aria-hidden="true"></span>Open CONTINUITY ↗</a>
       </div>
     </div>
   </header>
 
-  <main class="container main-layout">
-    <section class="hero-strip">
-      <div>
-        <span class="eyebrow">METER POINT PRM-7510299481</span>
-        <h1>Remote Residential Grid Energization</h1>
-        <p class="subtitle">Inspect scheduled smart-meter contactor activation windows or shift energization dates with zero modification fees.</p>
-      </div>
-      <div class="artifact-links">
-        <a href="./agent-manifest.json" target="_blank" rel="noopener">agent-manifest.json</a>
-        <a href="./powerflow_grid.network.json" target="_blank" rel="noopener">powerflow_grid.network.json</a>
-        <a href="./.well-known/agent-card.json" target="_blank" rel="noopener">agent-card.json</a>
+  <main id="top">
+    <section class="peer-hero">
+      <div class="container peer-hero-grid">
+        <div class="reveal">
+          <span class="eyebrow">PowerFlow · Meter point PRM-7510299481</span>
+          <h1>Powering your home, <em>intelligently.</em></h1>
+          <p class="lead">Manage your energy connection with clarity and confidence. Your meter is switched on remotely — no visit, and changing the date is free.</p>
+          <div class="btn-row">
+            <a href="#activation" class="btn btn-primary btn-lg">Manage activation date <span class="arrow" aria-hidden="true">→</span></a>
+            <a href="#assistant" class="btn btn-lg">Ask the assistant</a>
+          </div>
+          <div class="hero-trust">
+            <span>Remote activation, no visit</span>
+            <span>€0 to change the date</span>
+            <span>Explicit confirmation required</span>
+          </div>
+        </div>
+        <section id="dashboard" class="reveal" aria-labelledby="grid-heading">
+          <h2 id="grid-heading" class="sr-only">Your meter activation</h2>
+          <div id="grid-panel" class="state-box" aria-live="polite"></div>
+        </section>
       </div>
     </section>
 
-    <div class="two-col-cards">
-      <section class="card" aria-labelledby="grid-heading">
-        <div class="card-head">
-          <h2 id="grid-heading">Scheduled Meter Activation</h2>
-          <span class="status-chip">CONFIRMED · TELE-OP</span>
-        </div>
-        <div id="grid-panel" class="state-box"></div>
-        <dl class="spec-grid">
-          <div><dt>Meter Delivery Point</dt><dd>PRM-7510299481 · 9 kVA Mono</dd></div>
-          <div><dt>Activation Mode</dt><dd>Remote tele-contactor (No visit req)</dd></div>
-          <div><dt>Early Energization</dt><dd>Valid if move-in occurs later in week</dd></div>
-          <div><dt>Activation / Mod Fee</dt><dd>€30.00 base · €0.00 date shift</dd></div>
-        </dl>
-        <p id="policy-note" class="policy-note">Remote smart-meter energization fee: €30.00. Zero date-modification fee (€0.00). Earlier activation dates remain technically valid if the tenant moves in later that week. No solar panel installation, gas boiler servicing, or tariff plan switching on this site.</p>
-      </section>
-
-      <section class="card" aria-labelledby="shift-heading">
-        <div class="card-head">
-          <h2 id="shift-heading">Modify Energization Window</h2>
-          <span class="mono-tag">€0.00 SHIFT FEE</span>
-        </div>
-        <div class="controls-stack">
-          <label for="grid-select" class="field-label">Select target grid energization date</label>
-          <select id="grid-select">
-            <option value="2026-11-20">Fri, Nov 20, 2026 — 08:00–12:00 (€30.00, €0 modification fee)</option>
-            <option value="2026-11-19">Thu, Nov 19, 2026 — 08:00–12:00 (€30.00, €0 modification fee)</option>
-          </select>
-          <div class="btn-row">
-            <button id="stage-btn" type="button" class="secondary-btn">Stage Date Selection</button>
-            <button id="shift-btn" type="button" class="primary-btn">Confirm Energization Date</button>
+    <section class="section-tight">
+      <div class="container">
+        <div class="journey reveal">
+          <div class="journey-head">
+            <h2>Activation, step by step</h2>
+            <span class="muted">Nothing switches until you confirm.</span>
           </div>
+          <ol class="stepper" id="journey-steps">
+            <li data-step="verify" data-state="done"><span class="st-title">Check your details</span><span class="st-desc">Meter and contract on file.</span></li>
+            <li data-step="prepare" data-state="current"><span class="st-title">Prepare activation</span><span class="st-desc">Pick a date.</span></li>
+            <li data-step="review" data-state="todo"><span class="st-title">Review what changes</span><span class="st-desc">Date only, same fee.</span></li>
+            <li data-step="validate" data-state="todo"><span class="st-title">Confirm explicitly</span><span class="st-desc">One clear action.</span></li>
+            <li data-step="result" data-state="todo"><span class="st-title">Result</span><span class="st-desc">New date on file.</span></li>
+          </ol>
         </div>
-        <p id="action-feedback" role="status" class="feedback"></p>
-      </section>
-    </div>
-
-    <section id="assistant" class="assistant card" aria-labelledby="assistant-heading">
-      <div class="card-head">
-        <div>
-          <span class="eyebrow">BROWSER-EXECUTED AGENT NETWORK</span>
-          <h2 id="assistant-heading">Ask PowerFlow Energy</h2>
-        </div>
-        <span class="mono-tag">powerflow_grid</span>
       </div>
-      <p class="sub-copy">Check smart-meter activation rules or modify energization schedule PFW-9921.</p>
-      <p class="assistant-note">Your messages and this page's data go to the LLM provider you choose in the settings below. You confirm anything that cannot be undone before it happens.</p>
-      <p id="assistant-status" role="status" class="status-line">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
-      <div id="agent-app">
-        <div data-ns-slot="header"></div>
-        <div class="assistant-panels">
-          <div data-ns-slot="chat"></div>
-          <div data-ns-slot="agents"></div>
-        </div>
-        <div data-ns-slot="settings"></div>
+    </section>
+
+    <section class="section-tight" id="activation">
+      <div class="container work-grid">
+        <section class="card card-lg reveal" aria-labelledby="shift-heading">
+          <div class="card-head">
+            <div>
+              <h2 id="shift-heading">Choose your activation date</h2>
+              <p class="card-sub">The activation fee stays €30.00. Moving the date costs nothing.</p>
+            </div>
+            <span class="badge badge-ok">€0.00 change fee</span>
+          </div>
+          <div class="controls-stack">
+            <div id="grid-choices"></div>
+            <div class="native-select">
+              <label for="grid-select" class="field-label">Target grid energization date</label>
+              <select id="grid-select">
+                <option value="2026-11-20">Fri, Nov 20, 2026 — 08:00–12:00 (€30.00, €0 modification fee)</option>
+                <option value="2026-11-19">Thu, Nov 19, 2026 — 08:00–12:00 (€30.00, €0 modification fee)</option>
+              </select>
+            </div>
+            <div class="action-bar">
+              <p class="hint">Staging lets you review the date. Your current activation stays as is.</p>
+              <div class="btn-row">
+                <button id="stage-btn" type="button" class="secondary-btn">Stage this date</button>
+                <button id="shift-btn" type="button" class="primary-btn">Confirm activation date</button>
+              </div>
+            </div>
+          </div>
+          <p id="action-feedback" role="status" class="feedback"></p>
+        </section>
+
+        <aside class="stack reveal" id="status" aria-labelledby="status-heading">
+          <section class="card">
+            <div class="card-head"><h2 id="status-heading">Operations history</h2><span class="badge badge-ok" id="status-badge">Scheduled</span></div>
+            <ul class="log-list" id="activity-log"><li class="log-empty">No operations yet in this session.</li></ul>
+          </section>
+          <section class="card" aria-labelledby="usage-heading">
+            <div class="card-head"><h2 id="usage-heading">Consumption</h2></div>
+            <div class="no-data">
+              <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="10" fill="#fff" stroke="#D5DBE3"/><path d="M10 27V21M16 27V15M22 27V18M28 27V12" stroke="#B9E3D1" stroke-width="3" stroke-linecap="round"/></svg>
+              <div><strong>No readings yet</strong><span>Consumption appears after the meter is energized. This demo site has no meter data, so none is shown.</span></div>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section-tight">
+      <div class="container details-grid">
+        <section class="card reveal" aria-labelledby="contract-heading">
+          <div class="card-head"><h2 id="contract-heading">Contract &amp; meter</h2></div>
+          <dl class="spec-grid">
+            <div><dt>Delivery point</dt><dd>PRM-7510299481 · 9 kVA single-phase</dd></div>
+            <div><dt>Activation mode</dt><dd>Remote switch-on, no visit</dd></div>
+            <div><dt>Early activation</dt><dd>Valid if you move in later that week</dd></div>
+            <div><dt>Fees</dt><dd>€30.00 activation · €0.00 date change</dd></div>
+          </dl>
+          <p id="policy-note" class="policy-note demo-disclosure">Remote smart-meter energization fee: €30.00. Zero date-modification fee (€0.00). Earlier activation dates remain technically valid if the tenant moves in later that week. No solar panel installation, gas boiler servicing, or tariff plan switching on this site.</p>
+        </section>
+        <section class="card dev-card reveal" aria-labelledby="dev-heading">
+          <h3 id="dev-heading">For agents &amp; developers</h3>
+          <p>PowerFlow is an independent Open Agentic Web site. Its grid network and capabilities are published on its own origin.</p>
+          <div class="artifact-links">
+            <a href="./agent-manifest.json" target="_blank" rel="noopener">agent-manifest.json</a>
+            <a href="./powerflow_grid.network.json" target="_blank" rel="noopener">powerflow_grid.network.json</a>
+            <a href="./.well-known/agent-card.json" target="_blank" rel="noopener">agent-card.json</a>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="section-tight">
+      <div class="container">
+        <section id="assistant" class="assistant assistant-shell reveal" aria-labelledby="assistant-heading">
+          <div class="assistant-intro">
+            <div>
+              <span class="eyebrow">PowerFlow assistant</span>
+              <h2 id="assistant-heading">Ask PowerFlow Energy</h2>
+              <p class="sub-copy">Check activation dates, stage one, or move activation PFW-9921 — using your own AI provider key.</p>
+            </div>
+            <span class="mono-tag">powerflow_grid</span>
+          </div>
+          <p class="assistant-note">Your messages and this page's data go to the LLM provider you choose in the settings below. You confirm anything that cannot be undone before it happens.</p>
+          <p id="assistant-status" role="status" class="status-line">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
+          <div id="agent-app">
+            <div data-ns-slot="header"></div>
+            <div class="assistant-panels">
+              <div data-ns-slot="chat"></div>
+              <div data-ns-slot="agents"></div>
+            </div>
+            <div data-ns-slot="settings"></div>
+          </div>
+        </section>
       </div>
     </section>
   </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <strong>PowerFlow Energy</strong>
+        <p class="policy-note">Independent demonstration electricity provider built for the Cognizant Open Agentic Web Challenge. Meter, contract and dates are demonstration data.</p>
+      </div>
+      <p class="policy-note">Part of the CONTINUITY ecosystem · served from its own origin.</p>
+    </div>
+  </footer>
 </body>
 </html>

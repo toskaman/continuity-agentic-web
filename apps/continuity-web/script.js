@@ -1480,7 +1480,7 @@ export class ContinuityCoordinatorPage {
 
     if (!this.compiledProposal) {
       summaryBox.innerHTML =
-        "No active change proposal yet. Click <strong>1. Analyze Impact &amp; Prepare Minimal-Change Plan</strong> above.";
+        "No active change proposal yet. Write your request above and choose <strong>Analyze &amp; prepare plans</strong>.";
       plansContainer.innerHTML = "";
       opsContainer.innerHTML =
         '<p class="muted-empty">Existing reservations remain locked in CONFIRMED state until replacements are prepared and explicitly approved.</p>';
