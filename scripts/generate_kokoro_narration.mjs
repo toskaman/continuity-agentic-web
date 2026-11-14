@@ -74,8 +74,8 @@ const juryScenes = [
   },
   {
     id: "s7",
-    tts: "Our built-in Chaos Lab passes all fifteen distributed fault scenarios, from post-commit timeouts to forged receipts, backed by twelve open-source Apache two modules and Project NANDA Agent Cards.",
-    caption: "Chaos Lab: 15/15 distributed fault scenarios passed · 12 Apache-2.0 open-source modules.",
+    tts: "Our built-in Chaos Lab passes all fifteen distributed fault scenarios, from post-commit timeouts to forged receipts, backed by seventeen open-source Apache two modules and Project NANDA Agent Cards.",
+    caption: "Chaos Lab: 15/15 distributed fault scenarios passed · 17 Apache-2.0 open-source modules.",
   },
   {
     id: "s8",

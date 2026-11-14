@@ -82,27 +82,27 @@
     {
       "id": "s7",
       "sceneStart": 92.64,
-      "sceneDur": 15.83,
-      "sceneEnd": 108.47,
+      "sceneDur": 16.26,
+      "sceneEnd": 108.9,
       "voStart": 92.99,
-      "voDur": 14.635,
-      "voEnd": 107.63,
-      "tts": "Our built-in Chaos Lab passes all fifteen distributed fault scenarios, from post-commit timeouts to forged receipts, backed by twelve open-source Apache two modules and Project NANDA Agent Cards.",
-      "caption": "Chaos Lab: 15/15 distributed fault scenarios passed · 12 Apache-2.0 open-source modules.",
+      "voDur": 15.061,
+      "voEnd": 108.05,
+      "tts": "Our built-in Chaos Lab passes all fifteen distributed fault scenarios, from post-commit timeouts to forged receipts, backed by seventeen open-source Apache two modules and Project NANDA Agent Cards.",
+      "caption": "Chaos Lab: 15/15 distributed fault scenarios passed · 17 Apache-2.0 open-source modules.",
       "wav": "Z:\\continuity-titan-omega\\jury-film\\assets\\kokoro\\s7.wav"
     },
     {
       "id": "s8",
-      "sceneStart": 108.47,
+      "sceneStart": 108.9,
       "sceneDur": 7.47,
-      "sceneEnd": 115.94,
-      "voStart": 108.82,
+      "sceneEnd": 116.37,
+      "voStart": 109.25,
       "voDur": 6.272,
-      "voEnd": 115.09,
+      "voEnd": 115.52,
       "tts": "Continuity. One change. Every commitment re-aligned, across the Open Agentic Web.",
       "caption": "CONTINUITY — One change. Every commitment re-aligned.",
       "wav": "Z:\\continuity-titan-omega\\jury-film\\assets\\kokoro\\s8.wav"
     }
   ],
-  "totalDurationSec": 115.94
+  "totalDurationSec": 116.37
 }

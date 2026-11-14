@@ -447,7 +447,7 @@ const html = `<!doctype html>
         <img class="plate" src="assets/footage/plate_08_runtime_otari.png" alt="Open Agentic Web browser runtime and Mozilla Otari BYOK">
         <div id="s7-focus-rt" class="focus-frame-blue" style="left: ${bounds.plate08.nsHeader.x - 8}px; top: ${bounds.plate08.nsHeader.y - 8}px; width: ${bounds.plate08.nsHeader.w + 16}px; height: ${bounds.plate08.nsHeader.h + 16}px;"></div>
       </div>
-      <div class="caption-bar">Mozilla Otari BYOK Router + 12 Reusable Apache-2.0 Packages + NANDA A2A Cards.</div>
+      <div class="caption-bar">Mozilla Otari BYOK Router + 17 Reusable Apache-2.0 Packages + NANDA A2A Cards.</div>
     </div>
 
     <!-- =======================================================================

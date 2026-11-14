@@ -198,7 +198,7 @@ try {
 
   // PLATE 4: Scrolled Workspace View showing Full SVG Graph + Unified Change Package + Hold IDs
   await cdp.send("Runtime.evaluate", {
-    expression: `window.scrollTo(0, 410); "scrolled"`,
+    expression: `window.scrollTo(0, 760); "scrolled"`,
   });
   await new Promise((r) => setTimeout(r, 250));
   await snap("plate_04_prepared_graph_and_holds.png");
@@ -228,7 +228,7 @@ try {
     expression: `(async () => {
       document.querySelector("dialog.assistant-review button")?.click();
       await new Promise(r => setTimeout(r, 380));
-      window.scrollTo(0, 440);
+      window.scrollTo(0, 720);
     })()`,
     awaitPromise: true,
   });

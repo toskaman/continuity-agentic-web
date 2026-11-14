@@ -653,6 +653,29 @@ html[data-theme="light"] .hold-countdown-strip {
   gap: 8px;
   flex-wrap: wrap;
 }
+.top-demo-btn {
+  padding: 7px 13px;
+  font-size: 0.82rem;
+}
+.converter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.code-box {
+  width: 100%;
+  margin-top: 6px;
+  background: var(--bg-subtle);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: 0.8rem/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  resize: vertical;
+}
+@media (max-width: 900px) {
+  .converter-grid { grid-template-columns: 1fr; }
+}
 .audit-url-input {
   background: var(--bg-subtle);
   color: var(--ink);

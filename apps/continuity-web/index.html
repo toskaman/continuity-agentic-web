@@ -34,6 +34,7 @@
       </div>
 
       <nav class="top-actions" aria-label="Workspace controls">
+        <button id="guided-demo-btn" type="button" class="cta-btn top-demo-btn" title="Run interactive guided Ripple Recovery -> Pareto -> Bound Approval walkthrough">▶ Guided Demo</button>
         <button id="theme-toggle-btn" type="button" class="ghost-btn">Light / Dark Theme</button>
         <button id="inject-ripple-btn" type="button" class="ghost-btn" title="Inject primary Friday crew refusal so CONTINUITY recovers via overflow partner">Inject Ripple Failure</button>
         <button id="reset-mission-btn" type="button" class="ghost-btn">Reset Demo Mission</button>
@@ -240,6 +241,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           <button role="tab" id="tab-btn-mandate" aria-selected="false" aria-controls="tab-panel-mandate" class="tab-btn">Mandate &amp; Nash Arbiter</button>
           <button role="tab" id="tab-btn-chaos" aria-selected="false" aria-controls="tab-panel-chaos" class="tab-btn">Chaos Lab (15 Scenarios)</button>
           <button role="tab" id="tab-btn-auditor" aria-selected="false" aria-controls="tab-panel-auditor" class="tab-btn">Spec &amp; NANDA Auditor (5 Sites)</button>
+          <button role="tab" id="tab-btn-converter" aria-selected="false" aria-controls="tab-panel-converter" class="tab-btn">ADK → HOCON Converter</button>
         </div>
       </div>
 
@@ -364,11 +366,37 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           </table>
         </div>
       </div>
+
+      <div id="tab-panel-converter" role="tabpanel" aria-labelledby="tab-btn-converter" class="tab-panel" hidden>
+        <div class="chaos-header">
+          <div>
+            <strong>Community Tool — Google ADK / OpenAI Agents → Portable Neuro SAN HOCON Converter (<code>@continuity/adk-hocon-converter</code>)</strong>
+            <p class="panel-sub">Translates hierarchical Google ADK (<code>LlmAgent</code> / <code>sub_agents</code>) or OpenAI Agents SDK JSON graphs into resolved Open Agentic Web <code>.network.json</code> + <code>agent-manifest.json</code> bundles, scrubs leaked credentials, rejects cycles, and verifies semantic equivalence.</p>
+          </div>
+          <div class="auditor-controls">
+            <button id="adk-load-sample-btn" type="button" class="ghost-btn">Load Sample Google ADK</button>
+            <button id="adk-convert-btn" type="button" class="cta-btn">Convert &amp; Verify Equivalence</button>
+            <button id="adk-dl-network-btn" type="button" class="mini-btn" hidden>↓ .network.json</button>
+            <button id="adk-dl-manifest-btn" type="button" class="mini-btn" hidden>↓ agent-manifest.json</button>
+          </div>
+        </div>
+        <div id="adk-equivalence-summary" class="chaos-summary" role="status">Paste a Google ADK or OpenAI Agents JSON definition below and click "Convert &amp; Verify Equivalence".</div>
+        <div class="converter-grid">
+          <div>
+            <label for="adk-source-textarea" class="input-label">Source Framework Graph (JSON)</label>
+            <textarea id="adk-source-textarea" class="code-box" rows="10"></textarea>
+          </div>
+          <div>
+            <label for="adk-output-textarea" class="input-label">Emitted Portable <code>.network.json</code> + <code>agent-manifest.json</code></label>
+            <textarea id="adk-output-textarea" class="code-box" rows="10" readonly></textarea>
+          </div>
+        </div>
+      </div>
     </section>
 
     <footer class="protocol-footer">
       <div class="protocol-links">
-        <span>Machine-Readable Artifacts &amp; 16 Open-Source Modules:</span>
+        <span>Machine-Readable Artifacts &amp; 17 Open-Source Modules:</span>
         <a href="./agent-manifest.json" target="_blank" rel="noopener">agent-manifest.json</a>
         <a href="./continuity_coordinator.network.json" target="_blank" rel="noopener">continuity_coordinator.network.json</a>
         <a href="./links.json" target="_blank" rel="noopener">links.json</a>

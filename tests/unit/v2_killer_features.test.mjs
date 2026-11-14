@@ -21,6 +21,10 @@ import {
   SealedBidArbiter,
 } from "../../packages/mandate-arbiter/index.js";
 import { compileMissionChange, createSignatureMoveMission } from "../../packages/mission-core/index.js";
+import {
+  convertAgentFrameworkToHoconBundle,
+  SAMPLE_GOOGLE_ADK_CONFIG,
+} from "../../packages/adk-hocon-converter/index.js";
 import { exposeActionsToWebMcp } from "../../packages/webmcp-adapter/index.js";
 import { App } from "../../apps/continuity-web/script.js";
 import { startAllEcosystemServers } from "../../scripts/serve_ecosystem.mjs";
@@ -277,4 +281,40 @@ test("V2.7 — OperationLedger SHA-256 cryptographic hash chain verifies intact 
   const verifyBad = OperationLedger.verifyChainIntegrity(tampered);
   assert.equal(verifyBad.valid, false);
   assert.equal(verifyBad.brokenAtSeq, 2);
+});
+
+test("V2.8 — Google ADK -> Open Agentic Web HOCON Converter preserves 3-agent hierarchy, scrubs leaked keys, and rejects cycles", async () => {
+  const conv = await convertAgentFrameworkToHoconBundle(SAMPLE_GOOGLE_ADK_CONFIG);
+  assert.equal(conv.ok, true);
+  assert.equal(conv.equivalenceReport.sourceFramework, "Google ADK");
+  assert.equal(conv.equivalenceReport.emittedAgentsCount, 3);
+  assert.equal(conv.manifestJson.networks[0].front_man, "campus_relocation_concierge");
+  assert.equal(conv.manifestJson.llm_router.mock, false);
+  assert.equal(conv.manifestJson.allowed_peers.length, 2);
+
+  // Credential scrubbing check
+  const withSecret = await convertAgentFrameworkToHoconBundle({
+    agent_class: "LlmAgent",
+    name: "leaky_agent",
+    instruction: "Never expose sk-1234567890abcdefghijklmnop in prompts.",
+  });
+  assert.equal(withSecret.equivalenceReport.credentialsRedactedCount, 1);
+  assert.equal(withSecret.networkJson.tools[0].instructions.includes("sk-12345"), false);
+
+  // Delegation cycle rejection check
+  await assert.rejects(
+    () =>
+      convertAgentFrameworkToHoconBundle({
+        agent_class: "LlmAgent",
+        name: "root_bot",
+        sub_agents: [
+          {
+            agent_class: "LlmAgent",
+            name: "child_bot",
+            sub_agents: [{ agent_class: "LlmAgent", name: "root_bot" }],
+          },
+        ],
+      }),
+    /cycle rejected/i,
+  );
 });

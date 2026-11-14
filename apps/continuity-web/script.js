@@ -48,6 +48,10 @@ import {
   runAdversarialBypassAudit,
   SealedBidArbiter,
 } from "./vendor/mandate-arbiter/index.js";
+import {
+  convertAgentFrameworkToHoconBundle,
+  SAMPLE_GOOGLE_ADK_CONFIG,
+} from "./vendor/adk-hocon-converter/index.js";
 
 const RELOCATION_PRESET_COORDS = {
   cmt_moveco_van: { x: 40, y: 155 },
@@ -119,6 +123,7 @@ export class ContinuityCoordinatorPage {
     this.activeMandate = null;
     this.arbiterReport = null;
     this.bypassAuditReport = null;
+    this.lastConvertedBundle = null;
     this.holdsPlacedAtMs = null;
     this._holdTimerHandle = null;
     this.providerHarnessPromise = null;
@@ -448,6 +453,7 @@ export class ContinuityCoordinatorPage {
     this.activeMandate = null;
     this.arbiterReport = null;
     this.bypassAuditReport = null;
+    this.lastConvertedBundle = null;
     this.holdsPlacedAtMs = null;
     this.providerHarnessPromise = null;
     this.version += 1;
@@ -892,6 +898,55 @@ export class ContinuityCoordinatorPage {
     this.bypassAuditReport = runAdversarialBypassAudit(this.activeMandate, this._lastArbiterInstance);
     this.renderMandateTable();
     return this.bypassAuditReport;
+  }
+
+  async runGuidedInteractiveDemo() {
+    await this.switchScenario("home_relocation");
+    await this.resetMission({ rippleFailureInjected: true });
+    await new Promise((r) => setTimeout(r, 380));
+    const text =
+      (typeof document !== "undefined" && document.querySelector("#mission-input")?.value)
+      || "Move my relocation from Tuesday to Friday under €700 without cancelling anything.";
+    const prep = await this.analyzeAndPrepareChange(text);
+    if (typeof document !== "undefined") {
+      document.querySelector(".workspace-two-col")?.scrollIntoView({ behavior: "smooth" });
+      await new Promise((r) => setTimeout(r, 750));
+      document.querySelector("#approve-commit-btn")?.click();
+    }
+    return prep;
+  }
+
+  async runAdkConversion(rawJsonText) {
+    const sumEl = typeof document !== "undefined" ? document.querySelector("#adk-equivalence-summary") : null;
+    const outEl = typeof document !== "undefined" ? document.querySelector("#adk-output-textarea") : null;
+    try {
+      const res = await convertAgentFrameworkToHoconBundle(rawJsonText);
+      this.lastConvertedBundle = res;
+      if (sumEl) {
+        const eq = res.equivalenceReport;
+        sumEl.textContent = `✓ Semantic Equivalence Verified (${eq.sourceFramework} → Neuro SAN HOCON): ${eq.emittedAgentsCount}/${eq.sourceAgentsCount} agents preserved · front_man="${eq.frontAgentPreserved}" · ${eq.allowedPeerOriginsCount} allowed peer origin(s) · ${eq.networkDigest}`;
+      }
+      if (outEl) {
+        outEl.value = JSON.stringify(
+          {
+            "agent-manifest.json": res.manifestJson,
+            [`${res.networkName}.network.json`]: res.networkJson,
+          },
+          null,
+          2,
+        );
+      }
+      if (typeof document !== "undefined") {
+        const b1 = document.querySelector("#adk-dl-network-btn");
+        const b2 = document.querySelector("#adk-dl-manifest-btn");
+        if (b1) b1.hidden = false;
+        if (b2) b2.hidden = false;
+      }
+      return res;
+    } catch (err) {
+      if (sumEl) sumEl.textContent = `✕ Conversion Rejected: ${err.message}`;
+      return { ok: false, error: err.message };
+    }
   }
 
   checkCommitPackage(args) {
@@ -1766,7 +1821,47 @@ export class ContinuityCoordinatorPage {
         if (targetId === "tab-panel-mandate" && !this.bypassAuditReport) {
           void this.executeBypassAudit();
         }
+        if (targetId === "tab-panel-converter" && !this.lastConvertedBundle) {
+          const srcTa = document.querySelector("#adk-source-textarea");
+          if (srcTa && !srcTa.value.trim()) srcTa.value = SAMPLE_GOOGLE_ADK_CONFIG;
+          if (srcTa) void this.runAdkConversion(srcTa.value);
+        }
       });
+    });
+
+    document.querySelector("#guided-demo-btn")?.addEventListener("click", () => {
+      void this.runGuidedInteractiveDemo();
+    });
+
+    document.querySelector("#adk-load-sample-btn")?.addEventListener("click", () => {
+      const srcTa = document.querySelector("#adk-source-textarea");
+      if (srcTa) {
+        srcTa.value = SAMPLE_GOOGLE_ADK_CONFIG;
+        void this.runAdkConversion(srcTa.value);
+      }
+    });
+
+    document.querySelector("#adk-convert-btn")?.addEventListener("click", () => {
+      const srcTa = document.querySelector("#adk-source-textarea");
+      if (srcTa) void this.runAdkConversion(srcTa.value);
+    });
+
+    document.querySelector("#adk-dl-network-btn")?.addEventListener("click", () => {
+      if (!this.lastConvertedBundle) return;
+      this.triggerBrowserDownload(
+        `${this.lastConvertedBundle.networkName}.network.json`,
+        "application/json;charset=utf-8",
+        `${JSON.stringify(this.lastConvertedBundle.networkJson, null, 2)}\n`,
+      );
+    });
+
+    document.querySelector("#adk-dl-manifest-btn")?.addEventListener("click", () => {
+      if (!this.lastConvertedBundle) return;
+      this.triggerBrowserDownload(
+        "agent-manifest.json",
+        "application/json;charset=utf-8",
+        `${JSON.stringify(this.lastConvertedBundle.manifestJson, null, 2)}\n`,
+      );
     });
 
     document.querySelector("#run-chaos-suite-btn")?.addEventListener("click", () => {
