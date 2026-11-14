@@ -57,7 +57,7 @@ node scripts/run_all_tests.mjs
 This single command executes:
 1. Official Cognizant `build_network.mjs --check` across all 5 websites (**0 errors, 0 warnings**).
 2. Official Cognizant `check_partner.mjs` across all 5 live origins (**CORS, manifests, networks, and `bridge/action-bridge.html` verified**).
-3. All **32 automated test suites** (unit, multi-domain intake & `.ics` round-trip, cross-origin browser bridge & signed receipt handoffs, WebMCP guardrails, live 7-point MVP 0.2 + NANDA conformance auditor, provider MCP contracts, cross-origin runtime composition & key isolation, adversarial security boundaries, and all **15 Chaos Lab scenarios**).
+3. All **34 automated test suites** (unit, mandate & Nash bargaining bypasses, SHA-256 hash-chained ledger tamper detection, multi-domain intake & `.ics` round-trip, cross-origin browser bridge & signed receipt handoffs, WebMCP guardrails, live 7-point MVP 0.2 + NANDA conformance auditor, provider MCP contracts, cross-origin runtime composition & key isolation, adversarial security boundaries, and all **15 Chaos Lab scenarios**).
 
 ### 3. Reproduce Before/After Benchmarks (`N = 60` Live Cross-Origin Runs)
 
@@ -77,7 +77,7 @@ continuity/
 │   ├── demo-permitflow/       # Peer B: Public curbside bay notice check & demo dossier drafts
 │   ├── demo-homeconnect/      # Peer C: Fiber ONT technician scheduling & 10-min holds
 │   └── demo-powerflow/        # Peer D: Remote smart-meter electricity energization
-├── packages/                  # 15 Reusable Open-Source Community Modules (Apache-2.0)
+├── packages/                  # 16 Reusable Open-Source Community Modules (Apache-2.0)
 │   ├── shared-schemas/        # Canonical JSON (JCS), SHA-256 Web Crypto, strict JSON Schema
 │   ├── mission-core/          # Mission compiler & hard-invariant guard
 │   ├── intake-compiler/       # Raw confirmation email + RFC 5545 .ics compiler & .ics/Audit exporter
@@ -85,10 +85,11 @@ continuity/
 │   ├── impact-engine/         # Bounded incremental dependency impact analyzer
 │   ├── capability-adapter/    # Peer semantic normalization & untrusted response validation
 │   ├── constraint-solver/     # Pareto-optimal Minimal-Change Optimizer & budget sensitivity sweep
+│   ├── mandate-arbiter/       # Policy-bound SHA-256 mandates & sealed-bid integer-cent Nash arbiter
 │   ├── cross-origin-bridge/   # Zero-server cross-origin postMessage RPC & signed Ed25519 handoff
 │   ├── webmcp-adapter/        # Dual Cognizant website_* + W3C navigator.modelContext WebMCP bridge
 │   ├── approval-engine/       # Canonical SHA-256 bound approvals & TOCTOU replay guard
-│   ├── outcome-reconciliation/# 14-state operation ledger & UNKNOWN timeout reconciler
+│   ├── outcome-reconciliation/# 14-state SHA-256 hash-chained ledger & UNKNOWN timeout reconciler
 │   ├── saga-engine/           # Prepare-first, commit-last Saga coordinator
 │   ├── proof-verifier/        # Ed25519 receipt verification & explicit trust classification
 │   ├── nanda-resolver/        # Project NANDA verifier, A2A v1.0 validator & live MVP 0.2 site auditor

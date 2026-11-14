@@ -171,6 +171,9 @@ html[data-theme="light"] .ghost-btn.ripple-active {
 }
 
 /* Cards */
+.hero-card, .panel-card, .workspace-two-col, #assistant {
+  scroll-margin-top: 84px;
+}
 .hero-card, .panel-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -619,6 +622,31 @@ html[data-theme="light"] .ghost-btn.ripple-active {
   accent-color: var(--brand);
   cursor: pointer;
 }
+#pareto-plot-svg {
+  width: 100%;
+  height: auto;
+  margin-top: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  display: block;
+}
+.hold-countdown-strip {
+  background: rgba(5, 150, 105, 0.14);
+  border: 1px solid #059669;
+  color: #a7f3d0;
+  border-radius: 7px;
+  padding: 8px 12px;
+  font-size: 0.81rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  font-variant-numeric: tabular-nums;
+}
+html[data-theme="light"] .hold-countdown-strip {
+  background: #ecfdf5;
+  color: #065f46;
+}
+.hold-countdown-strip[hidden] { display: none; }
 .auditor-controls {
   display: flex;
   align-items: center;

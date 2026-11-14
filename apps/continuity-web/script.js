@@ -41,6 +41,13 @@ import {
   SCENARIO_CATALOG,
 } from "./vendor/intake-compiler/index.js";
 import { auditOpenAgenticSite } from "./vendor/nanda-resolver/index.js";
+import { OperationLedger } from "./vendor/outcome-reconciliation/index.js";
+import {
+  ARBITER_MECHANISM_VERSION,
+  issuePolicyBoundMandate,
+  runAdversarialBypassAudit,
+  SealedBidArbiter,
+} from "./vendor/mandate-arbiter/index.js";
 
 const RELOCATION_PRESET_COORDS = {
   cmt_moveco_van: { x: 40, y: 155 },
@@ -109,6 +116,11 @@ export class ContinuityCoordinatorPage {
     this.providerAlerts = [];
     this.chaosReport = null;
     this.auditorResults = [];
+    this.activeMandate = null;
+    this.arbiterReport = null;
+    this.bypassAuditReport = null;
+    this.holdsPlacedAtMs = null;
+    this._holdTimerHandle = null;
     this.providerHarnessPromise = null;
   }
 
@@ -433,6 +445,10 @@ export class ContinuityCoordinatorPage {
     this.privacyDisclosures = [];
     this.providerAlerts = [];
     this.latestPeerHandoffTokens = {};
+    this.activeMandate = null;
+    this.arbiterReport = null;
+    this.bypassAuditReport = null;
+    this.holdsPlacedAtMs = null;
     this.providerHarnessPromise = null;
     this.version += 1;
 
@@ -496,6 +512,8 @@ export class ContinuityCoordinatorPage {
     }
 
     this.compiledProposal = compiled.proposal;
+    this.activeMandate = await issuePolicyBoundMandate(this.mission, this.compiledProposal);
+    await this._evaluateMandateArbiter();
     this.impactReport = analyzeMissionImpact(this.graph, this.compiledProposal);
     this.providerAlerts = [...compiled.securityWarnings];
     this.privacyDisclosures = [];
@@ -820,6 +838,7 @@ export class ContinuityCoordinatorPage {
 
     this.selectedPlanId = chosen.plan_id;
     this.preparedOps = prep.operations;
+    this.holdsPlacedAtMs = this.preparedOps.some((o) => o.hold_id) ? Date.now() : null;
     this.version += 1;
     this.render(`Selected ${chosen.label} (${this.preparedOps.length} prepared operations awaiting bound approval).`);
     return {
@@ -828,6 +847,51 @@ export class ContinuityCoordinatorPage {
       selectedPlanId: this.selectedPlanId,
       preparedOperationsCount: this.preparedOps.length,
     };
+  }
+
+  async _evaluateMandateArbiter() {
+    if (!this.activeMandate) return;
+    // Allowance available for the contested anchor slot after reserving remaining non-anchor baseline costs
+    const anchorNode = this.graph.nodes.get(this.activeMandate.subject_commitment_id);
+    const otherBaselineCents = Math.round(
+      (this.baselineTotalEur() - Number(anchorNode?.price_eur || 0)) * 100,
+    );
+    const sliceAllowanceCents = Math.max(5000, this.activeMandate.ceiling_cents - otherBaselineCents);
+
+    const arbiter = new SealedBidArbiter(this.activeMandate, sliceAllowanceCents);
+    await arbiter.commitSealedBid({
+      providerId: "moveco_overflow_partner",
+      providerName: "MoveCo Partner Overflow Fleet (Sealed Adapter)",
+      window: "09:30–14:30",
+      askCents: 43000,   // €430.00 catalogue ask
+      floorCents: 38000, // €380.00 private floor -> Nash midpoint floor((43000+38000)/2) = €405.00!
+      nonce: "mc_ovf_20261120",
+    });
+    await arbiter.commitSealedBid({
+      providerId: "alpine_heavy_freight",
+      providerName: "AlpineExpress White-Glove Van (Sealed Adapter)",
+      window: "10:00–15:00",
+      askCents: 54000,   // €540.00 catalogue ask
+      floorCents: 49500, // €495.00 private floor (> €466 slice allowance -> NO_AGREEMENT without leaking floor!)
+      nonce: "alp_fr_20261120",
+    });
+
+    this._lastArbiterInstance = arbiter;
+    this.arbiterReport = arbiter.resolveNashBargaining();
+  }
+
+  async executeBypassAudit() {
+    if (!this.activeMandate || !this._lastArbiterInstance) {
+      const fallbackCompiled = compileMissionChange(
+        "Move my schedule from Tuesday to Friday under €700.",
+        this.mission,
+      );
+      this.activeMandate = await issuePolicyBoundMandate(this.mission, fallbackCompiled.proposal);
+      await this._evaluateMandateArbiter();
+    }
+    this.bypassAuditReport = runAdversarialBypassAudit(this.activeMandate, this._lastArbiterInstance);
+    this.renderMandateTable();
+    return this.bypassAuditReport;
   }
 
   checkCommitPackage(args) {
@@ -889,6 +953,7 @@ export class ContinuityCoordinatorPage {
 
     this.lastSagaExecution = execResult;
     this.preparedOps = execResult.operations;
+    this.holdsPlacedAtMs = null;
     if (execResult.status === "ALL_COMMITTED_AND_VERIFIED") {
       this.mission.anchor_date = this.compiledProposal.requested_change.new_value;
     }
@@ -1054,6 +1119,7 @@ export class ContinuityCoordinatorPage {
       exportBar.hidden = !this.compiledProposal;
     }
 
+    this.renderHoldCountdown();
     this.renderWhatIfSlider();
     this.renderKpis(plan);
     this.renderGraphSvg();
@@ -1062,6 +1128,24 @@ export class ContinuityCoordinatorPage {
     this.renderCommitmentsTable();
     this.renderPrivacyTable();
     this.renderAuditTimeline();
+    this.renderMandateTable();
+  }
+
+  renderHoldCountdown() {
+    const el = document.querySelector("#hold-countdown-strip");
+    if (!el) return;
+    const heldOps = this.preparedOps.filter((o) => o.hold_id && o.state === "AWAITING_APPROVAL");
+    if (!heldOps.length || !this.holdsPlacedAtMs || this.lastSagaExecution) {
+      el.hidden = true;
+      return;
+    }
+    const elapsedSec = Math.max(0, Math.floor((Date.now() - this.holdsPlacedAtMs) / 1000));
+    const remainingSec = Math.max(0, 600 - elapsedSec); // Strictest 10-min hold TTL across peers
+    const mm = String(Math.floor(remainingSec / 60)).padStart(2, "0");
+    const ss = String(remainingSec % 60).padStart(2, "0");
+    const holdIds = heldOps.map((o) => o.hold_id).join(", ");
+    el.hidden = false;
+    el.textContent = `🔒 ${heldOps.length} Non-Destructive Replacement Hold(s) Active (${holdIds}) · Lock TTL ${mm}:${ss} remaining · Original bookings untouched`;
   }
 
   renderWhatIfSlider() {
@@ -1090,6 +1174,82 @@ export class ContinuityCoordinatorPage {
       minFeas !== null && minFeas !== undefined
         ? `Min feasible threshold: €${minFeas.toFixed(2)}`
         : "Exceeds available offers";
+
+    this.renderParetoPlot(curCap);
+  }
+
+  renderParetoPlot(curCapEur) {
+    const svg = document.querySelector("#pareto-plot-svg");
+    if (!svg) return;
+    const plans = this.solverResult?.plans || [];
+    const baseEur = this.baselineTotalEur();
+    const minYVal = Math.min(baseEur, ...plans.map((p) => p.metrics.totalMissionCostEur)) - 18;
+    const maxYVal = Math.max(curCapEur + 18, ...plans.map((p) => p.metrics.totalMissionCostEur)) + 18;
+    const spanY = Math.max(45, maxYVal - minYVal);
+
+    const chgValues = plans.map((p) => p.metrics.changedCount);
+    const minChg = chgValues.length ? Math.min(...chgValues) : 1;
+    const maxChg = chgValues.length ? Math.max(...chgValues, minChg + 1) : 4;
+    const mapX = (changedCount) =>
+      88 + ((changedCount - minChg) / Math.max(1, maxChg - minChg)) * 195;
+    const mapY = (costEur) => 106 - ((costEur - minYVal) / spanY) * 78;
+
+    const capY = Math.max(18, Math.min(108, mapY(curCapEur)));
+    const parts = [
+      `<line x1="52" y1="108" x2="444" y2="108" stroke="#334669" stroke-width="1" />`,
+      `<line x1="52" y1="14" x2="52" y2="108" stroke="#334669" stroke-width="1" />`,
+      `<text x="248" y="126" text-anchor="middle" fill="#cbd5e1" font-size="9.5" font-family="system-ui, sans-serif">Disrupted Commitments (Left = Fewer Changes · Lower = Cheaper)</text>`,
+      `<line x1="52" y1="${capY.toFixed(1)}" x2="444" y2="${capY.toFixed(1)}" stroke="#f87171" stroke-width="1.4" stroke-dasharray="4 3" />`,
+      `<text x="440" y="${Math.max(13, capY - 4).toFixed(1)}" text-anchor="end" fill="#fca5a5" font-size="9.5" font-weight="700" font-family="system-ui, sans-serif">Hard Cap €${curCapEur}</text>`,
+    ];
+
+    const paretoPts = plans
+      .filter((p) => p.paretoOptimal)
+      .slice()
+      .sort((a, b) => a.metrics.changedCount - b.metrics.changedCount || a.metrics.totalMissionCostEur - b.metrics.totalMissionCostEur);
+
+    if (paretoPts.length >= 2) {
+      const poly = paretoPts
+        .map((p) => `${mapX(p.metrics.changedCount).toFixed(1)},${mapY(p.metrics.totalMissionCostEur).toFixed(1)}`)
+        .join(" ");
+      parts.push(`<polyline points="${poly}" fill="none" stroke="#10b981" stroke-width="2" />`);
+    }
+
+    const seenByChg = new Map();
+    plans.forEach((p, idx) => {
+      const chg = p.metrics.changedCount;
+      const slotInBucket = seenByChg.get(chg) || 0;
+      seenByChg.set(chg, slotInBucket + 1);
+
+      const cx = mapX(chg);
+      const cy = mapY(p.metrics.totalMissionCostEur);
+      const labelDy = slotInBucket % 2 === 0 ? 15 : -9;
+      const isSel = p.plan_id === this.selectedPlanId;
+      const fill = p.paretoOptimal ? "#10b981" : "#60a5fa";
+      const shortTag = p.plan_id.startsWith("PLAN_A_")
+        ? "Plan A"
+        : p.plan_id.startsWith("PLAN_B_")
+          ? "Plan B"
+          : p.plan_id.startsWith("PLAN_C_")
+            ? "Plan C"
+            : `Alt`;
+      parts.push(
+        `<g style="cursor:pointer" data-pareto-plan="${this.escapeXml(p.plan_id)}">
+          <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${isSel ? 6.5 : 5}" fill="${fill}" stroke="#ffffff" stroke-width="${isSel ? 2.2 : 1.2}" />
+          <text x="${(cx + 8).toFixed(1)}" y="${(cy + labelDy).toFixed(1)}" fill="#f8fafc" font-size="9.5" font-weight="700" font-family="system-ui, sans-serif">${this.escapeXml(`${shortTag}: €${p.metrics.totalMissionCostEur.toFixed(0)} (${chg} chg)`)}</text>
+        </g>`,
+      );
+    });
+
+    svg.innerHTML = parts.join("\n");
+    svg.querySelectorAll("[data-pareto-plan]").forEach((g) => {
+      g.addEventListener("click", () => {
+        const pid = g.getAttribute("data-pareto-plan");
+        if (pid && pid !== this.selectedPlanId && !this.lastSagaExecution) {
+          void this.prepareSelectedPlan(pid);
+        }
+      });
+    });
   }
 
   renderKpis(plan) {
@@ -1341,18 +1501,73 @@ export class ContinuityCoordinatorPage {
 
   renderAuditTimeline() {
     const list = document.querySelector("#audit-timeline-list");
+    const chainBanner = document.querySelector("#chain-integrity-banner");
     if (!list) return;
     const history = this.saga?.ledger?.getHistory() || [];
     if (!history.length) {
+      if (chainBanner) {
+        chainBanner.textContent = "SHA-256 Tamper-Evident Event Chain Ready (Genesis 00000000…).";
+      }
       list.innerHTML = `<li>Mission initialized — ${this.mission.commitments.length} confirmed commitments active (€${this.baselineTotalEur().toFixed(2)} baseline).</li>`;
       return;
+    }
+    const chainCheck = OperationLedger.verifyChainIntegrity(history);
+    if (chainBanner) {
+      chainBanner.textContent = chainCheck.valid
+        ? `✓ SHA-256 Hash Chain Verified (${chainCheck.verifiedEntries}/${history.length} events intact · Head ${chainCheck.headHash.slice(0, 16)}…)`
+        : `✕ Hash Chain Tampering Detected at seq #${chainCheck.brokenAtSeq}: ${chainCheck.reason}`;
     }
     list.innerHTML = history
       .map(
         (h) =>
-          `<li><code>#${h.seq}</code> <strong>${this.escapeXml(h.operation_id)}</strong>: ${this.escapeXml(h.from_state || "INIT")} → <strong>${this.escapeXml(h.to_state)}</strong> — ${this.escapeXml(h.reason)}</li>`,
+          `<li><code>#${h.seq}</code> <strong>${this.escapeXml(h.operation_id)}</strong>: ${this.escapeXml(h.from_state || "INIT")} → <strong>${this.escapeXml(h.to_state)}</strong> — ${this.escapeXml(h.reason)} <small><code>[sha256:${this.escapeXml((h.entry_hash || "").slice(0, 12))}]</code></small></li>`,
       )
       .join("");
+  }
+
+  renderMandateTable() {
+    const summary = document.querySelector("#mandate-summary-box");
+    const tbody = document.querySelector("#mandate-tbody");
+    if (!summary || !tbody) return;
+
+    if (!this.activeMandate && !this.bypassAuditReport) {
+      tbody.innerHTML =
+        '<tr><td colspan="4">No mandate issued yet. Run Analyze &amp; Prepare above or click "Try 4 Adversarial Bypasses".</td></tr>';
+      return;
+    }
+
+    if (this.activeMandate) {
+      summary.innerHTML = `<strong>Issued Immutable Policy Mandate:</strong> <code>${this.escapeXml(this.activeMandate.mandate_id)}</code> · Ceiling: <strong>€${(this.activeMandate.ceiling_cents / 100).toFixed(2)}</strong> (withheld from all peer requests) · Digest: <code>sha256:${this.escapeXml(this.activeMandate.mandate_sha256.slice(0, 20))}…</code> · Mechanism: <code>${ARBITER_MECHANISM_VERSION}</code>`;
+    }
+
+    const rows = [];
+    for (const o of this.arbiterReport?.outcomes || []) {
+      rows.push(`
+        <tr>
+          <td><strong>${this.escapeXml(o.provider_name)}</strong><br><small>Sealed Bid Resolution</small></td>
+          <td><code>sha256:${this.escapeXml(o.commitment_hash.slice(0, 18))}…</code><br><small>Private floor hidden</small></td>
+          <td>Catalogue Ask: €${o.catalogue_ask_eur.toFixed(2)}<br>${
+            o.status === "AGREEMENT_REACHED"
+              ? `<strong>Nash Compromise: €${o.compromise_eur.toFixed(2)}</strong> (−€${o.savings_vs_ask_eur.toFixed(2)})`
+              : "Exceeds private slice allowance"
+          }</td>
+          <td><strong>${o.status === "AGREEMENT_REACHED" ? "✓ AGREEMENT_REACHED" : "⊘ NO_AGREEMENT (Zero Floor Leak)"}</strong></td>
+        </tr>
+      `);
+    }
+
+    for (const b of this.bypassAuditReport?.results || []) {
+      rows.push(`
+        <tr>
+          <td><strong>[${this.escapeXml(b.id)}] ${this.escapeXml(b.attack)}</strong></td>
+          <td><code>Policy &amp; Arbiter Guard</code></td>
+          <td>${this.escapeXml(b.detail)}</td>
+          <td><strong>✓ ${this.escapeXml(b.decision)}</strong></td>
+        </tr>
+      `);
+    }
+
+    tbody.innerHTML = rows.join("");
   }
 
   renderChaosTable() {
@@ -1548,12 +1763,27 @@ export class ContinuityCoordinatorPage {
         if (targetId === "tab-panel-auditor" && !this.auditorResults.length) {
           void this.runConformanceAudit("all");
         }
+        if (targetId === "tab-panel-mandate" && !this.bypassAuditReport) {
+          void this.executeBypassAudit();
+        }
       });
     });
 
     document.querySelector("#run-chaos-suite-btn")?.addEventListener("click", () => {
       void this.executeChaosSuite();
     });
+
+    document.querySelector("#run-bypass-audit-btn")?.addEventListener("click", () => {
+      void this.executeBypassAudit();
+    });
+
+    if (typeof window !== "undefined" && !this._holdTimerHandle) {
+      this._holdTimerHandle = window.setInterval(() => {
+        if (this.holdsPlacedAtMs && !this.lastSagaExecution) {
+          this.renderHoldCountdown();
+        }
+      }, 1000);
+    }
 
     document.querySelector("#audit-ecosystem-btn")?.addEventListener("click", () => {
       void this.runConformanceAudit("all");

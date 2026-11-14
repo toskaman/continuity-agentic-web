@@ -50,31 +50,31 @@ const archSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 820" 
 
   <!-- Deterministic Safety Kernel Box -->
   <rect x="70" y="390" width="770" height="350" rx="12" fill="#0f172a" stroke="#10b981" stroke-width="1.8"/>
-  <text x="95" y="424" fill="#34d399" font-size="16" font-weight="700" font-family="Inter, Segoe UI, sans-serif">2. Deterministic Safety &amp; Reconciliation Kernel (12 Open-Source @continuity/* Modules)</text>
+  <text x="95" y="424" fill="#34d399" font-size="16" font-weight="700" font-family="Inter, Segoe UI, sans-serif">2. Deterministic Safety &amp; Reconciliation Kernel (16 Open-Source @continuity/* Modules)</text>
 
   <rect x="95" y="445" width="350" height="82" rx="8" fill="#131c2e" stroke="#334155"/>
-  <text x="112" y="472" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/mission-core &amp; mission-graph</text>
-  <text x="112" y="495" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">Locks hard budget (&lt;= €700) &amp; no-auto-cancel;</text>
-  <text x="112" y="513" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">3-color DFS cycle guard; observed vs assumed facts.</text>
+  <text x="112" y="472" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/intake-compiler &amp; mission-graph</text>
+  <text x="112" y="495" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">Compiles .ics / emails / NL; locks hard budget cap;</text>
+  <text x="112" y="513" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">3-color DFS cycle guard &amp; topological DAG layout.</text>
 
   <rect x="465" y="445" width="350" height="82" rx="8" fill="#131c2e" stroke="#334155"/>
-  <text x="482" y="472" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/impact-engine &amp; constraint-solver</text>
-  <text x="482" y="495" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">Bounded BFS excludes unaffected bookings (0 calls);</text>
-  <text x="482" y="513" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">solves Plan A (Min Change), Plan B (Cost), Plan C.</text>
+  <text x="482" y="472" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/constraint-solver &amp; mandate-arbiter</text>
+  <text x="482" y="495" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">Bounded BFS skips unaffected bookings; 4D Pareto front;</text>
+  <text x="482" y="513" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">SHA-256 mandates &amp; sealed-bid integer-cent Nash arbiter.</text>
 
   <rect x="95" y="545" width="350" height="82" rx="8" fill="#131c2e" stroke="#334155"/>
-  <text x="112" y="572" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/approval-engine &amp; saga-engine</text>
-  <text x="112" y="595" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">Prepare-First / Hold-Before-Commit; RFC-8785 JCS +</text>
-  <text x="112" y="613" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">SHA-256 bound approvals (€0.01 drift invalidates).</text>
+  <text x="112" y="572" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/cross-origin-bridge &amp; webmcp</text>
+  <text x="112" y="595" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">Zero-server postMessage RPC + WebCrypto Ed25519 +</text>
+  <text x="112" y="613" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">W3C navigator.modelContext dual-protocol bridge.</text>
 
   <rect x="465" y="545" width="350" height="82" rx="8" fill="#131c2e" stroke="#334155"/>
   <text x="482" y="572" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/outcome-reconciliation &amp; proof</text>
-  <text x="482" y="595" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">14-state ledger; UNKNOWN timeout idempotency check;</text>
+  <text x="482" y="595" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">14-state SHA-256 hash-chained ledger; UNKNOWN check;</text>
   <text x="482" y="613" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">Ed25519 provider receipt signature verification.</text>
 
   <rect x="95" y="645" width="720" height="72" rx="8" fill="#1b263b" stroke="#f59e0b"/>
-  <text x="115" y="673" fill="#fbbf24" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/nanda-resolver + @continuity/chaos-lab (15 Fault Scenarios)</text>
-  <text x="115" y="697" fill="#cbd5e1" font-size="12.5" font-family="Inter, Segoe UI, sans-serif">Validates A2A v1.0 Agent Cards &amp; NANDA authority/sequence bindings · Chaos Lab proves 15/15 failure recoveries live.</text>
+  <text x="115" y="673" fill="#fbbf24" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/nanda-resolver (7/7 Live Spec Auditor) + @continuity/chaos-lab (15 Scenarios)</text>
+  <text x="115" y="697" fill="#cbd5e1" font-size="12.5" font-family="Inter, Segoe UI, sans-serif">Audits MVP 0.2 &amp; NANDA A2A v1.0 Agent Cards live · Chaos Lab proves 15/15 distributed fault recoveries.</text>
 
   <!-- Right Column: Otari Router -->
   <rect x="935" y="115" width="420" height="145" rx="14" fill="#1e1b4b" stroke="#818cf8" stroke-width="2"/>
@@ -227,6 +227,15 @@ try {
   await new Promise((r) => setTimeout(r, 350));
   await snapPng("02_ripple_recovery_prepared_plan.png");
 
+  // Screenshot 2B: Interactive SVG Pareto Plot & Live Hold Safety Countdown
+  await cdp.send("Runtime.evaluate", {
+    expression: `document.querySelector(".workspace-two-col")?.scrollIntoView({ behavior: "instant" })`,
+  });
+  await new Promise((r) => setTimeout(r, 250));
+  await snapPng("08_pareto_frontier_and_hold_countdown.png");
+  await cdp.send("Runtime.evaluate", { expression: `window.scrollTo(0, 0)` });
+  await new Promise((r) => setTimeout(r, 150));
+
   // Screenshot 3: Bound Cryptographic Approval Confirmation Modal
   await cdp.send("Runtime.evaluate", {
     expression: `document.querySelector("#approve-commit-btn").click(); "opened"`,
@@ -257,6 +266,18 @@ try {
   });
   await new Promise((r) => setTimeout(r, 250));
   await snapPng("05_chaos_lab_15_passed.png");
+
+  // Screenshot 5B: Mandate Authority, Sealed-Bid Nash Arbiter & 4 Adversarial Bypasses Denied
+  await cdp.send("Runtime.evaluate", {
+    expression: `(async () => {
+      document.querySelector("#tab-btn-mandate").click();
+      await new Promise(r => setTimeout(r, 350));
+      document.querySelector(".tabs-section")?.scrollIntoView({ behavior: "instant" });
+    })()`,
+    awaitPromise: true,
+  });
+  await new Promise((r) => setTimeout(r, 250));
+  await snapPng("09_mandate_arbiter_and_bypasses_denied.png");
 
   // Screenshot 6: Open Agentic Web Browser Runtime & Mozilla Otari BYOK Configuration Panel
   await cdp.send("Runtime.evaluate", {

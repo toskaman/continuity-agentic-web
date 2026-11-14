@@ -13,6 +13,14 @@ import {
 } from "../../packages/intake-compiler/index.js";
 import { MissionGraph } from "../../packages/mission-graph/index.js";
 import { auditOpenAgenticSite } from "../../packages/nanda-resolver/index.js";
+import { OperationLedger } from "../../packages/outcome-reconciliation/index.js";
+import {
+  buildSanitizedPeerBoundaryRequest,
+  issuePolicyBoundMandate,
+  runAdversarialBypassAudit,
+  SealedBidArbiter,
+} from "../../packages/mandate-arbiter/index.js";
+import { compileMissionChange, createSignatureMoveMission } from "../../packages/mission-core/index.js";
 import { exposeActionsToWebMcp } from "../../packages/webmcp-adapter/index.js";
 import { App } from "../../apps/continuity-web/script.js";
 import { startAllEcosystemServers } from "../../scripts/serve_ecosystem.mjs";
@@ -196,4 +204,77 @@ test("V2.5 — Live Open Agentic Web MVP 0.2 & Project NANDA Auditor passes 6/6 
   } finally {
     await eco.stopAll();
   }
+});
+
+test("V2.6 — Mandate Arbiter enforces immutable SHA-256 mandates, integer-cent Nash bargaining, zero floor leaks, and denies all 4 bypasses", async () => {
+  const mission = createSignatureMoveMission();
+  const { proposal } = compileMissionChange("Move relocation from Tuesday to Friday below €700.", mission);
+  const mandate = await issuePolicyBoundMandate(mission, proposal);
+
+  assert.equal(mandate.ceiling_cents, 70000);
+  assert.equal(mandate.mandate_sha256.length, 64);
+
+  // Outbound boundary request strips budget & free text
+  const outbound = buildSanitizedPeerBoundaryRequest({
+    booking_ref: "MC-8841",
+    target_date: "2026-11-20",
+    maximum_budget_eur: 700,
+    sly_data: { secret: "123" },
+  });
+  assert.deepEqual(Object.keys(outbound), ["booking_ref", "target_date"]);
+
+  const arbiter = new SealedBidArbiter(mandate, 46600); // €466.00 slice allowance
+  const bid1 = await arbiter.commitSealedBid({
+    providerId: "moveco_overflow",
+    providerName: "MoveCo Overflow",
+    askCents: 43000,
+    floorCents: 38000,
+  });
+  assert.equal(bid1.ok, true);
+  assert.equal("floorCents" in bid1, false);
+
+  const bid2 = await arbiter.commitSealedBid({
+    providerId: "expensive_carrier",
+    providerName: "Expensive Carrier",
+    askCents: 54000,
+    floorCents: 49500, // > 46600 slice allowance -> must return NO_AGREEMENT without leaking 49500!
+  });
+  assert.equal(bid2.ok, true);
+
+  const resolved = arbiter.resolveNashBargaining();
+  const win = resolved.outcomes.find((o) => o.provider_id === "moveco_overflow");
+  const noDeal = resolved.outcomes.find((o) => o.provider_id === "expensive_carrier");
+
+  // floor((min(46600, 43000) + 38000) / 2) = floor(81000 / 2) = 40500 cents (€405.00)
+  assert.equal(win.status, "AGREEMENT_REACHED");
+  assert.equal(win.compromise_cents, 40500);
+  assert.equal(win.compromise_eur, 405);
+  assert.equal("floorCents" in win, false);
+
+  assert.equal(noDeal.status, "NO_AGREEMENT");
+  assert.equal(noDeal.compromise_cents, null);
+  assert.equal(JSON.stringify(noDeal).includes("495"), false);
+
+  const bypassReport = runAdversarialBypassAudit(mandate, arbiter);
+  assert.equal(bypassReport.allDenied, true);
+  assert.equal(bypassReport.results.length, 4);
+});
+
+test("V2.7 — OperationLedger SHA-256 cryptographic hash chain verifies intact Saga history and detects 1-byte tampering", () => {
+  const ledger = new OperationLedger();
+  ledger.createOperation({ operation_id: "op_chain_1", commitment_id: "cmt_1" });
+  ledger.transition("op_chain_1", "PROPOSED", "Solver proposed Friday");
+  ledger.transition("op_chain_1", "PREPARED", "15-min slot hold locked");
+
+  const intact = ledger.getHistory();
+  const verifyOk = OperationLedger.verifyChainIntegrity(intact);
+  assert.equal(verifyOk.valid, true);
+  assert.equal(verifyOk.verifiedEntries, 3);
+
+  // Tamper 1 character in seq #2 reason
+  const tampered = JSON.parse(JSON.stringify(intact));
+  tampered[1].reason = "Solver proposed Saturday";
+  const verifyBad = OperationLedger.verifyChainIntegrity(tampered);
+  assert.equal(verifyBad.valid, false);
+  assert.equal(verifyBad.brokenAtSeq, 2);
 });

@@ -51,7 +51,7 @@
             <span class="mono-ref">MISSION ID <code id="mission-id-badge">move_paris_lyon_001</code></span>
           </div>
           <h1 id="hero-heading">Safe Multi-Provider Change Coordination</h1>
-          <p class="hero-lead">Describe one schedule change — or import your own `.ics` calendar / confirmation emails. CONTINUITY computes bounded graph impact across independent Open Agentic Websites, places temporary replacement holds before touching working reservations, computes Pareto-optimal minimal-change plans, and verifies Ed25519 receipts.</p>
+          <p class="hero-lead">Describe one schedule change — or import your own <code>.ics</code> calendar / confirmation emails. CONTINUITY computes bounded graph impact across independent Open Agentic Websites, places temporary replacement holds before touching working reservations, computes Pareto-optimal minimal-change plans, and verifies Ed25519 receipts.</p>
         </div>
 
         <aside class="peer-directory-card" aria-label="Independent peer websites">
@@ -207,13 +207,17 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           No active change proposal yet. Run <strong>1. Analyze Impact &amp; Prepare Minimal-Change Plan</strong> above or ask the Open Agentic Web assistant below.
         </div>
 
-        <!-- Counterfactual What-If Budget Slider (Progressive Disclosure once analyzed) -->
+        <!-- Live Hold Safety Countdown Strip -->
+        <div id="hold-countdown-strip" class="hold-countdown-strip" hidden role="status"></div>
+
+        <!-- Counterfactual What-If Budget Slider + Interactive SVG Pareto Plot -->
         <div id="whatif-budget-box" class="whatif-box" hidden>
           <div class="whatif-top">
             <label for="whatif-budget-slider" class="whatif-label">What-If Hard Budget Cap: <strong id="whatif-budget-val">€700</strong></label>
             <span id="whatif-min-badge" class="mono-ref"></span>
           </div>
           <input id="whatif-budget-slider" type="range" min="620" max="760" step="5" value="700">
+          <svg id="pareto-plot-svg" viewBox="0 0 460 132" role="img" aria-label="Pareto trade-off frontier: disrupted commitments versus total mission cost"></svg>
         </div>
 
         <div id="plans-selector" class="plans-list" role="region" aria-label="Feasible minimal-change plans"></div>
@@ -232,7 +236,8 @@ Do not cancel anything or approve additional fees without my confirmation.</text
         <div role="tablist" aria-label="Inspection panels" class="tablist">
           <button role="tab" id="tab-btn-commitments" aria-selected="true" aria-controls="tab-panel-commitments" class="tab-btn active">All Commitments</button>
           <button role="tab" id="tab-btn-privacy" aria-selected="false" aria-controls="tab-panel-privacy" class="tab-btn">Privacy &amp; Data Minimization</button>
-          <button role="tab" id="tab-btn-timeline" aria-selected="false" aria-controls="tab-panel-timeline" class="tab-btn">Immutable Saga Audit Log</button>
+          <button role="tab" id="tab-btn-timeline" aria-selected="false" aria-controls="tab-panel-timeline" class="tab-btn">Hash-Chained Saga Log</button>
+          <button role="tab" id="tab-btn-mandate" aria-selected="false" aria-controls="tab-panel-mandate" class="tab-btn">Mandate &amp; Nash Arbiter</button>
           <button role="tab" id="tab-btn-chaos" aria-selected="false" aria-controls="tab-panel-chaos" class="tab-btn">Chaos Lab (15 Scenarios)</button>
           <button role="tab" id="tab-btn-auditor" aria-selected="false" aria-controls="tab-panel-auditor" class="tab-btn">Spec &amp; NANDA Auditor (5 Sites)</button>
         </div>
@@ -275,9 +280,34 @@ Do not cancel anything or approve additional fees without my confirmation.</text
       </div>
 
       <div id="tab-panel-timeline" role="tabpanel" aria-labelledby="tab-btn-timeline" class="tab-panel" hidden>
+        <p id="chain-integrity-banner" class="chaos-summary">SHA-256 Tamper-Evident Event Chain Ready (Genesis 0000…).</p>
         <ol id="audit-timeline-list" class="timeline-list">
           <li>Mission initialized with 6 demonstration commitments (baseline €624.00).</li>
         </ol>
+      </div>
+
+      <div id="tab-panel-mandate" role="tabpanel" aria-labelledby="tab-btn-mandate" class="tab-panel" hidden>
+        <div class="chaos-header">
+          <div>
+            <strong>Policy-Bound Mandate Authority &amp; Sealed-Bid Nash Overflow Arbiter (<code>@continuity/mandate-arbiter</code>)</strong>
+            <p class="panel-sub">Issues frozen SHA-256 mandates before peer discovery, withholds buyer ceilings from providers, and resolves overflow backup bids via integer-cent equal-weight linear Nash bargaining (<code>floor((U + S) / 2)</code>; see Myerson–Satterthwaite 1983 caveat).</p>
+          </div>
+          <button id="run-bypass-audit-btn" type="button" class="cta-btn">Try 4 Adversarial Bypasses</button>
+        </div>
+        <div id="mandate-summary-box" class="narrative-summary">Run <strong>1. Analyze Impact &amp; Prepare Minimal-Change Plan</strong> above (or click <strong>Try 4 Adversarial Bypasses</strong>) to inspect the active SHA-256 Mandate, sealed commitment hashes, and Nash bargaining outcomes.</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Provider / Attack Vector</th>
+                <th>Commitment Hash / Boundary</th>
+                <th>Catalogue Ask vs Nash Outcome</th>
+                <th>Enforcement Result</th>
+              </tr>
+            </thead>
+            <tbody id="mandate-tbody"></tbody>
+          </table>
+        </div>
       </div>
 
       <div id="tab-panel-chaos" role="tabpanel" aria-labelledby="tab-btn-chaos" class="tab-panel" hidden>
@@ -338,7 +368,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
 
     <footer class="protocol-footer">
       <div class="protocol-links">
-        <span>Machine-Readable Artifacts &amp; 15 Open-Source Modules:</span>
+        <span>Machine-Readable Artifacts &amp; 16 Open-Source Modules:</span>
         <a href="./agent-manifest.json" target="_blank" rel="noopener">agent-manifest.json</a>
         <a href="./continuity_coordinator.network.json" target="_blank" rel="noopener">continuity_coordinator.network.json</a>
         <a href="./links.json" target="_blank" rel="noopener">links.json</a>

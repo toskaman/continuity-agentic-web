@@ -12,7 +12,9 @@
  *    flagged `NEEDS_USER` rather than falsely reported as mission success.
  */
 
-import { canonicalizeJson, sanitizeJson, sha256Hex } from "../shared-schemas/index.js";
+import { canonicalizeJson, sanitizeJson, sha256Hex, sha256PureHex } from "../shared-schemas/index.js";
+
+const GENESIS_CHAIN_HASH = "0".repeat(64);
 
 export const OP_STATES = Object.freeze({
   DRAFT: "DRAFT",
@@ -135,15 +137,66 @@ export class OperationLedger {
   }
 
   _recordEvent(operationId, fromState, toState, reason, timestamp, evidenceSummary) {
-    this.history.push({
+    const prevHash =
+      this.history.length > 0
+        ? this.history[this.history.length - 1].entry_hash
+        : GENESIS_CHAIN_HASH;
+    const eventCore = {
       seq: this.history.length + 1,
+      prev_hash: prevHash,
       operation_id: operationId,
       from_state: fromState,
       to_state: toState,
       reason: String(reason),
       ...(evidenceSummary ? { evidence_summary: evidenceSummary } : {}),
       timestamp,
+    };
+    const entryHash = sha256PureHex(canonicalizeJson(eventCore));
+    this.history.push({
+      ...eventCore,
+      entry_hash: entryHash,
     });
+  }
+
+  /**
+   * Verify cryptographic tamper-evidence across an exported Saga event log.
+   * Rejects modified reasons, reordered sequence numbers, or broken `prev_hash` links.
+   *
+   * @param {Array<Record<string, any>>} history
+   */
+  static verifyChainIntegrity(history) {
+    if (!Array.isArray(history)) {
+      return { valid: false, verifiedEntries: 0, brokenAtSeq: 0, reason: "History is not an array." };
+    }
+    let expectedPrev = GENESIS_CHAIN_HASH;
+    for (let i = 0; i < history.length; i++) {
+      const item = history[i];
+      if (!item || item.seq !== i + 1 || item.prev_hash !== expectedPrev) {
+        return {
+          valid: false,
+          verifiedEntries: i,
+          brokenAtSeq: i + 1,
+          reason: `Chain linkage broken at seq #${i + 1}.`,
+        };
+      }
+      const { entry_hash, ...core } = item;
+      const recomputed = sha256PureHex(canonicalizeJson(core));
+      if (entry_hash !== recomputed) {
+        return {
+          valid: false,
+          verifiedEntries: i,
+          brokenAtSeq: i + 1,
+          reason: `SHA-256 entry_hash mismatch at seq #${i + 1} (tampering detected).`,
+        };
+      }
+      expectedPrev = entry_hash;
+    }
+    return {
+      valid: true,
+      verifiedEntries: history.length,
+      headHash: expectedPrev,
+      brokenAtSeq: null,
+    };
   }
 
   getOperation(operationId) {
