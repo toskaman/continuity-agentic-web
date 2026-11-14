@@ -115,6 +115,8 @@ When deploying any `apps/*` bundle to a public HTTPS host (Netlify, Cloudflare P
 
 ## Documentation Index
 
+- [TITAN OMEGA v3.0 Domination Audit & Report](docs/competition/TITAN_V3_DOMINATION_REPORT.md)
+- [24-Month Global Hackathon Winner Intelligence (2024–2026)](docs/research/GLOBAL_HACKATHON_WINNER_INTELLIGENCE_2024_2026.md)
 - [Official Competition Compliance Audit](docs/competition/COMPLIANCE_AUDIT.md)
 - [Technical Architecture & Topology](docs/architecture/ARCHITECTURE.md)
 - [Initial Reconnaissance & Spec Analysis](docs/architecture/INITIAL_RECONNAISSANCE.md)
@@ -122,8 +124,10 @@ When deploying any `apps/*` bundle to a public HTTPS host (Netlify, Cloudflare P
 - [Threat Model, Security & Privacy](docs/security/THREAT_MODEL.md)
 - [Chaos Lab Catalog (15 Scenarios)](docs/CHAOS_TEST_CATALOG.md)
 - [Measured Before/After Benchmarks](docs/benchmarks/BEFORE_AFTER.md)
+- [Chromium Performance Trace & V8 Heap Audit](docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md)
 - [Three-Judge Red-Team Review](docs/competition/RED_TEAM_JUDGE_REVIEW.md)
-- [Two-Minute Video Storyboard](docs/demo/VIDEO_STORYBOARD.md)
+- [Complete Pitch Suite & Tough Judge Q&A](docs/submission/PITCH_AND_JUDGE_QA_DECK.md)
+- [Video Production Bible & QC Report](docs/video-production/VIDEO_QC_AND_REVIEW_REPORT.md)
 - [Devpost Submission Draft](docs/submission/DEVPOST_SUBMISSION.md)
 
 ---

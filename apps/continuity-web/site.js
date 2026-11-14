@@ -46,7 +46,8 @@ export class ContinuityPeerReplayLlm {
       instr
         .split(/\r?\n/)
         .map((l) => l.trim())
-        .find((l) => /€|hold|48|notice|meter|fiber/i.test(l)) || "";
+        .filter((l) => !/^(You are the assistant|- Call website_|Facts come only|Reading tool)/i.test(l))
+        .find((l) => /€|15-min|10-min|48|municipal|meter|off-peak/i.test(l)) || "";
     const text = `${desc}${firstPolicySentence ? ` Policy: ${firstPolicySentence}` : ""}`.trim();
     onContentDelta?.(text);
     this.trace?.end(span, { finishReason: "stop", contentChars: text.length, mock: true });
