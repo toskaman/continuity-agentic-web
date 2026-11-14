@@ -834,7 +834,8 @@ body > dialog button { margin-right: 8px; }
 @media (max-width: 600px) { .outcome-panel { right: 16px; bottom: 16px; } }
 
 /* Before / after proof strip */
-.hero-hint { display: inline-block; margin-left: 12px; font-size: var(--fs-xs); color: var(--hero-muted); }
+.hero-hint { display: block; margin-top: 10px; font-size: var(--fs-xs); color: var(--hero-muted); }
+.hero-status .mode-pill { min-width: 0; max-width: 100%; }
 .proof-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.25fr); gap: var(--s-4); align-items: stretch; }
 .proof-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s-5); display: grid; gap: 10px; align-content: start; justify-items: start; box-shadow: var(--shadow-1); }
 .proof-before { background: var(--surface-2); box-shadow: none; }
@@ -848,4 +849,4 @@ body > dialog button { margin-right: 8px; }
 .proof-facts strong { color: var(--ink); font-variant-numeric: tabular-nums; }
 .proof-arrow { align-self: center; font-size: 1.6rem; color: var(--muted); }
 a.badge { text-decoration: none; }
-@media (max-width: 860px) { .proof-grid { grid-template-columns: 1fr; } .proof-arrow { justify-self: center; transform: rotate(90deg); } .hero-hint { display: block; margin: 10px 0 0; } }
+@media (max-width: 860px) { .proof-grid { grid-template-columns: 1fr; } .proof-arrow { justify-self: center; transform: rotate(90deg); } }
