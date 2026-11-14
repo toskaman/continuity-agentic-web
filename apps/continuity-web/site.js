@@ -86,19 +86,29 @@ export class ContinuityScriptedReplayLlm {
     };
 
     // 1. Inside `peer_network_specialist`: call each allowed partner network in sequence (triggers real Consent Cards!)
-    if (avail.has("moveco_dispatch")) {
-      for (const peerTool of ["moveco_dispatch", "permitflow_advisor", "homeconnect_scheduler", "powerflow_grid"]) {
-        if (avail.has(peerTool) && !calledNames.has(peerTool)) {
+    // Handles both root-origin names (`moveco_dispatch`) and subpath-prefixed names (`moveco_agentic_peer_moveco_dispatch`)!
+    const peerToolNames = Array.from(avail).filter((n) =>
+      /(moveco_dispatch|permitflow_advisor|homeconnect_scheduler|powerflow_grid)$/.test(n),
+    );
+    if (peerToolNames.length > 0) {
+      for (const peerTool of peerToolNames) {
+        if (!calledNames.has(peerTool)) {
           return emitTool(peerTool, {
-            inquiry: "What relocation services and temporary slot hold policies do you offer?",
+            request: "What relocation services and temporary slot hold policies do you offer?",
           });
         }
       }
-      const summaries = ["moveco_dispatch", "permitflow_advisor", "homeconnect_scheduler", "powerflow_grid"]
+      const summaries = peerToolNames
         .filter((p) => calledNames.has(p))
         .map((p) => {
           const m = [...toolMsgs].reverse().find((x) => x.name === p);
-          return `- **${p}**: ${String(m?.content || "").slice(0, 220)}`;
+          let txt = String(m?.content || "");
+          try {
+            const j = JSON.parse(txt);
+            if (j?.text) txt = j.text;
+          } catch {}
+          const cleanName = p.replace(/^.*?(moveco_dispatch|permitflow_advisor|homeconnect_scheduler|powerflow_grid)$/, "$1");
+          return `- **${cleanName}**: ${txt.slice(0, 220)}`;
         });
       return emitText(`Partner network consultation complete:\n${summaries.join("\n")}`);
     }
@@ -114,7 +124,11 @@ export class ContinuityScriptedReplayLlm {
         });
       }
       const st = parseToolPayload("website_get_mission_state") || {};
-      const peerReply = [...toolMsgs].reverse().find((m) => m.name === "peer_network_specialist")?.content || "";
+      let peerReply = [...toolMsgs].reverse().find((m) => m.name === "peer_network_specialist")?.content || "";
+      try {
+        const parsedPeer = JSON.parse(peerReply);
+        if (parsedPeer?.text) peerReply = parsedPeer.text;
+      } catch {}
       const links = st.partnerLinks || {};
       return emitText(
         `### Independent Open Agentic Peer Capabilities *(Scripted Replay)*\n\n${peerReply}\n\n**Direct Peer Portals:**\n- [MoveCo Express](${links.moveco || "#"})\n- [PermitFlow Civic Prep](${links.permitflow || "#"})\n- [HomeConnect Fiber](${links.homeconnect || "#"})\n- [PowerFlow Energy](${links.powerflow || "#"})`,
@@ -129,25 +143,27 @@ export class ContinuityScriptedReplayLlm {
       const auditRes = parseToolPayload("website_audit_open_agentic_site") || {};
       if (avail.has("render_cruse") && !calledNames.has("render_cruse") && Array.isArray(auditRes.results)) {
         return emitTool("render_cruse", {
-          version: 1,
-          components: [
-            {
-              id: "nanda_audit_table",
-              kind: "table",
-              title: "Open Agentic Web MVP 0.2 & NANDA Conformance",
-              columns: ["Site", "Network", "Score", "Manifest Digest"],
-              rows: auditRes.results.map((r) => [
-                r.siteBaseUrl,
-                r.networkName || "n/a",
-                r.score,
-                r.manifestDigest || "n/a",
-              ]),
-            },
-          ],
+          presentation: {
+            version: 1,
+            components: [
+              {
+                id: "nanda_audit_table",
+                kind: "table",
+                title: "Open Agentic Web MVP 0.2 & NANDA Conformance",
+                columns: ["Site", "Network", "Score", "Manifest Digest"],
+                rows: auditRes.results.map((r) => [
+                  r.siteBaseUrl,
+                  r.networkName || "n/a",
+                  r.score,
+                  r.manifestDigest || "n/a",
+                ]),
+              },
+            ],
+          },
         });
       }
       return emitText(
-        ` **[Scripted Replay]** Audited **${auditRes.sitesAudited || 5}** Open Agentic Websites: **${auditRes.ok ? "ALL PASSED (7/7 checks each)" : "Issues detected"}**.`,
+        `**[Scripted Replay]** Audited **${auditRes.sitesAudited || 5}** Open Agentic Websites: **${auditRes.ok ? "ALL PASSED (7/7 checks each)" : "Issues detected"}**.`,
       );
     }
 
@@ -187,24 +203,26 @@ export class ContinuityScriptedReplayLlm {
       if (prep.ok && avail.has("render_cruse") && !calledNames.has("render_cruse")) {
         const best = prep.plans?.[0]?.metrics || {};
         return emitTool("render_cruse", {
-          version: 1,
-          components: [
-            {
-              id: "cost_cap_chart",
-              kind: "chart",
-              chartType: "bar",
-              title: "Mission Cost vs Hard Budget Cap (EUR)",
-              unit: "EUR",
-              labels: (prep.plans || []).map((p) => p.plan_id.replace(/_/g, " ")),
-              series: [
-                {
-                  name: "Projected Total (EUR)",
-                  values: (prep.plans || []).map((p) => p.metrics.totalMissionCostEur),
-                },
-              ],
-              summary: `Recommended ${prep.recommendedPlanId}: €${best.totalMissionCostEur} (<= €${best.maxBudgetEur} cap).`,
-            },
-          ],
+          presentation: {
+            version: 1,
+            components: [
+              {
+                id: "cost_cap_chart",
+                kind: "chart",
+                chartType: "bar",
+                title: "Mission Cost vs Hard Budget Cap (EUR)",
+                unit: "EUR",
+                labels: (prep.plans || []).map((p) => p.plan_id.replace(/_/g, " ")),
+                series: [
+                  {
+                    name: "Projected Total (EUR)",
+                    values: (prep.plans || []).map((p) => p.metrics.totalMissionCostEur),
+                  },
+                ],
+                summary: `Recommended ${prep.recommendedPlanId}: €${best.totalMissionCostEur} (<= €${best.maxBudgetEur} cap).`,
+              },
+            ],
+          },
         });
       }
       if (!prep.ok) {
