@@ -21,6 +21,45 @@ if (typeof navigator !== "undefined") {
   });
 }
 
+export class ContinuityPeerReplayLlm {
+  constructor(peerNetwork, trace) {
+    this.peerNetwork = peerNetwork;
+    this.trace = trace;
+    this.mock = true;
+    this.baseUrl = "browser://mock";
+  }
+
+  async chat({ origin, parentSpan, onContentDelta }) {
+    const span = this.trace?.start("model_call", {
+      parent: parentSpan,
+      origin,
+      model: "continuity-peer-replay",
+      mock: true,
+      routerHost: "browser-peer-replay",
+      toolNames: [],
+    });
+    const frontName = this.peerNetwork?.findFrontMan?.() || "peer_front";
+    const spec = this.peerNetwork?.getAgentSpec?.(frontName);
+    const desc = spec?.function?.description || this.peerNetwork?.config?.metadata?.description || "";
+    const instr = String(spec?.instructions || "");
+    const firstPolicySentence =
+      instr
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .find((l) => /€|hold|48|notice|meter|fiber/i.test(l)) || "";
+    const text = `${desc}${firstPolicySentence ? ` Policy: ${firstPolicySentence}` : ""}`.trim();
+    onContentDelta?.(text);
+    this.trace?.end(span, { finishReason: "stop", contentChars: text.length, mock: true });
+    return {
+      content: text,
+      toolCalls: [],
+      finishReason: "stop",
+      usage: null,
+      model: "continuity-peer-replay",
+    };
+  }
+}
+
 export class ContinuityScriptedReplayLlm {
   constructor(trace) {
     this.trace = trace;
@@ -131,7 +170,7 @@ export class ContinuityScriptedReplayLlm {
       } catch {}
       const links = st.partnerLinks || {};
       return emitText(
-        `### Independent Open Agentic Peer Capabilities *(Scripted Replay)*\n\n${peerReply}\n\n**Direct Peer Portals:**\n- [MoveCo Express](${links.moveco || "#"})\n- [PermitFlow Civic Prep](${links.permitflow || "#"})\n- [HomeConnect Fiber](${links.homeconnect || "#"})\n- [PowerFlow Energy](${links.powerflow || "#"})`,
+        `## Independent Open Agentic Peer Capabilities *(Scripted Replay)*\n\n${peerReply}\n\n**Direct Peer Portals:**\n- [MoveCo Express](${links.moveco || "#"})\n- [PermitFlow Civic Prep](${links.permitflow || "#"})\n- [HomeConnect Fiber](${links.homeconnect || "#"})\n- [PowerFlow Energy](${links.powerflow || "#"})`,
       );
     }
 
@@ -188,7 +227,7 @@ export class ContinuityScriptedReplayLlm {
       const cRes = parseToolPayload("website_commit_prepared_change_package") || {};
       if (cRes.ok) {
         return emitText(
-          `### Mission Re-Aligned & Verified *(Scripted Replay)*\n- **Saga Status:** \`${cRes.sagaStatus}\`\n- **Committed with Ed25519 Receipts:** **${cRes.committedCount}** operations\n- **Preserved Untouched:** **${cRes.preservedCount}** commitments`,
+          `## Mission Re-Aligned & Verified *(Scripted Replay)*\n- **Saga Status:** \`${cRes.sagaStatus}\`\n- **Committed with Ed25519 Receipts:** **${cRes.committedCount}** operations\n- **Preserved Untouched:** **${cRes.preservedCount}** commitments`,
         );
       }
       return emitText(`**[Scripted Replay]** Commit did not run: ${cRes.reason || "Cancelled by visitor."}`);
@@ -230,7 +269,7 @@ export class ContinuityScriptedReplayLlm {
       }
       const topPlan = prep.plans?.[0];
       return emitText(
-        `### Minimal-Change Plan Prepared *(Scripted Replay)*\n- **Target Date:** \`${prep.targetDate}\`\n- **Recommended:** **${topPlan?.label}** (€${topPlan?.metrics?.totalMissionCostEur?.toFixed(2)} <= €${topPlan?.metrics?.maxBudgetEur?.toFixed(2)})\n- **Prepared Holds:** **${prep.preparedOperationsCount}** · **Preserved Untouched:** **${prep.unaffectedCommitmentsCount}**\n\nExisting reservations remain untouched until you confirm commit.`,
+        `## Minimal-Change Plan Prepared *(Scripted Replay)*\n- **Target Date:** \`${prep.targetDate}\`\n- **Recommended:** **${topPlan?.label}** (€${topPlan?.metrics?.totalMissionCostEur?.toFixed(2)} <= €${topPlan?.metrics?.maxBudgetEur?.toFixed(2)})\n- **Prepared Holds:** **${prep.preparedOperationsCount}** · **Preserved Untouched:** **${prep.unaffectedCommitmentsCount}**\n\nExisting reservations remain untouched until you confirm commit.`,
       );
     }
 
@@ -241,7 +280,7 @@ export class ContinuityScriptedReplayLlm {
     const st = parseToolPayload("website_get_mission_state") || {};
     const nodes = st.graph?.nodes || [];
     return emitText(
-      `### Active Mission State *(Scripted Replay)*\n- **Mission:** ${st.mission?.title || "n/a"} (\`${st.mission?.mission_id}\`)\n- **Anchor Date:** \`${st.mission?.anchor_date}\` · **Hard Budget Cap:** €${st.mission?.invariants?.maximum_budget_eur}\n- **Commitments (${nodes.length}):** ${nodes.map((n) => `${n.title} (${n.scheduled_date}, €${n.price_eur})`).join("; ")}`,
+      `## Active Mission State *(Scripted Replay)*\n- **Mission:** ${st.mission?.title || "n/a"} (\`${st.mission?.mission_id}\`)\n- **Anchor Date:** \`${st.mission?.anchor_date}\` · **Hard Budget Cap:** €${st.mission?.invariants?.maximum_budget_eur}\n- **Commitments (${nodes.length}):** ${nodes.map((n) => `${n.title} (${n.scheduled_date}, €${n.price_eur})`).join("; ")}`,
     );
   }
 }
@@ -435,10 +474,18 @@ export class AssistantMount {
     if (!AssistantMount.originalTopLlm) {
       AssistantMount.originalTopLlm = engine.top.llm;
       AssistantMount.originalUserRouter = { ...engine.userRouter };
+      AssistantMount.originalResolveRemote = engine.resolveRemote.bind(engine);
     }
     engine.mockLLM = true;
     engine.userRouter = { baseUrl: "browser://mock", mock: true };
     engine.top.llm = new ContinuityScriptedReplayLlm(engine.trace);
+    engine.resolveRemote = async (...args) => {
+      const session = await AssistantMount.originalResolveRemote(...args);
+      if (session && engine.mockLLM) {
+        session.llm = new ContinuityPeerReplayLlm(session.network, engine.trace);
+      }
+      return session;
+    };
 
     const badge = document.querySelector("#agent-app .ns-llmbadge");
     if (badge) {
@@ -461,6 +508,9 @@ export class AssistantMount {
     if (AssistantMount.originalTopLlm) {
       engine.top.llm = AssistantMount.originalTopLlm;
       engine.userRouter = { ...AssistantMount.originalUserRouter };
+      if (AssistantMount.originalResolveRemote) {
+        engine.resolveRemote = AssistantMount.originalResolveRemote;
+      }
       engine.mockLLM = false;
     }
     const routerInput = document.querySelector("#ns-router");

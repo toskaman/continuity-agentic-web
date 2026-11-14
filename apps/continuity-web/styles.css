@@ -792,6 +792,8 @@ html[data-theme="light"] .hold-countdown-strip {
 #agent-app .ns-consent { background: #fffbeb; color: #0f172a; }
 #agent-app .ns-msgs:has(.ns-consent-actions) > .ns-turn-status { display: none; }
 #agent-app .ns-msg { overflow-wrap: break-word; }
+#agent-app .ns-msg a { display: inline-block; padding: 4px 2px; min-height: 24px; }
+#agent-app .ns-llmbadge.mock { color: #78350f; background: #fef3c7; border: 1px solid #d97706; }
 #agent-app .ns-consent-actions { flex-wrap: wrap; }
 #agent-app .ns-consent-actions button { white-space: nowrap; }
 
