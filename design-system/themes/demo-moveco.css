@@ -1,14 +1,15 @@
 /* MoveCo Express — human, practical, warm. Deep blue + warm orange. */
 :root {
   --accent: #2043C4;
-  --accent-2: #F0661A;
+  --accent-2: #F0661A;       /* decorative: borders, route line */
+  --accent-2-ink: #C94A0E;   /* text and filled tiles: 4.7:1 on white */
   --accent-strong: #172F8C;
   --accent-soft: #EEF2FD;
   --accent-line: #C7D3F7;
   --hero-bg: #0D1838;
   --paper: #F9F8F5;
 }
-.peer-hero h1 em { font-style: normal; color: var(--accent-2); }
+.peer-hero h1 em { font-style: normal; color: var(--accent-2-ink); }
 .route { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 14px 16px; border-radius: var(--r-md); background: #FFF7F0; border: 1px solid #FBD9BF; }
 .route-stop { font-size: var(--fs-sm); font-weight: 640; }
 .route-stop small { display: block; font-weight: 500; }
@@ -16,7 +17,7 @@
 .route-line::after { content: "🚚"; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -55%); font-size: 18px; filter: saturate(.9); }
 .route-stop:last-child { text-align: right; }
 .choice-card:has(input:checked) { border-color: var(--accent-2); box-shadow: 0 0 0 4px rgba(240, 102, 26, .12); }
-.choice-card:has(input:checked) .date-tile { background: var(--accent-2); border-color: var(--accent-2); }
+.choice-card:has(input:checked) .date-tile { background: var(--accent-2-ink); border-color: var(--accent-2-ink); }
 .choice-card:has(input:checked)::after { border-color: var(--accent-2); }
 .record-when .date-tile { background: var(--accent); }
-.stepper li[data-state="current"]::before { background: var(--accent-2); border-color: var(--accent-2); }
+.stepper li[data-state="current"]::before { background: var(--accent-2-ink); border-color: var(--accent-2-ink); }

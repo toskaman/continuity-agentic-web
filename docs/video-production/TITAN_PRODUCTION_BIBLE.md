@@ -1,5 +1,8 @@
 # TITAN CINEMA OMEGA — JURY COVERAGE MATRIX, EVIDENCE LEDGER, VISUAL BIBLE & DEMO RUNBOOK
 
+> **Superseded (Nov 14, 2026).** This material documents the earlier, pre-redesign interface and a synthetic (Kokoro TTS) narration, which the Official Rules do not allow for the submitted video. Use [`docs/submission/VIDEO_RECORDING_SCRIPT.md`](../submission/VIDEO_RECORDING_SCRIPT.md) for the entrant-narrated video.
+
+
 **Project:** CONTINUITY — Safe Multi-Provider Change Coordinator for the Open Agentic Web
 **Competition:** Cognizant Open Agentic Web Challenge (`https://cognizant-agenticweb.devpost.com/rules`)
 **Official Video Limit:** Strictly **< 120.00 seconds** (2 minutes). Target Master Duration: **104–112 seconds**.

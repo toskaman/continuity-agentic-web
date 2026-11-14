@@ -25,6 +25,7 @@ import { startAllEcosystemServers } from "./serve_ecosystem.mjs";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const SAMPLES = 30;
+const WARMUP = 3; // excluded from statistics (JIT warm-up)
 
 const eco = await startAllEcosystemServers({
   continuity: 28080,
@@ -62,8 +63,10 @@ async function runSingleLiveTrial(injectRipple) {
   }
 
   let httpRequests = 0;
+  const toolCalls = [];
   const callPeer = async (origin, tool, args) => {
     httpRequests += 1;
+    toolCalls.push(tool);
     const res = await fetch(`${origin}/api/call`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -160,6 +163,7 @@ async function runSingleLiveTrial(injectRipple) {
   });
 
   const totalEndToEndMs = performance.now() - tStart;
+  const baselineTotalEur = mission.commitments.reduce((sum, c) => sum + Number(c.price_eur || 0), 0);
 
   return {
     injectRipple,
@@ -175,23 +179,36 @@ async function runSingleLiveTrial(injectRipple) {
     preservedCommitments: chosenPlan.metrics.unchangedCount,
     totalCostEur: chosenPlan.metrics.totalMissionCostEur,
     committedVerifiedCount: exec.committedOperationIds.length,
+    verifiedReceipts: (exec.operations || []).filter(
+      (o) => o.state === "COMMITTED" && o.proof_verification?.level === "VERIFIED_ED25519_DEMO_PROVIDER_SIGNATURE",
+    ).length,
+    cancelToolCalls: toolCalls.filter((t) => /cancel/i.test(t)).length,
+    baselineTotalEur,
     sagaStatus: exec.status,
   };
 }
 
+const fmtDelta = (x) => `${x >= 0 ? "+" : "−"}€${Math.abs(x).toFixed(2)}`;
+
 function summarize(samples) {
-  const avg = (arr) => Number((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(3));
-  const p95 = (arr) => {
+  const r3 = (x) => Number(x.toFixed(3));
+  const stats = (arr) => {
     const s = [...arr].sort((a, b) => a - b);
-    return Number(s[Math.min(s.length - 1, Math.floor(s.length * 0.95))].toFixed(3));
+    const q = (p) => s[Math.min(s.length - 1, Math.ceil(s.length * p) - 1)];
+    return { median: r3(q(0.5)), p95: r3(q(0.95)), max: r3(s[s.length - 1]), mean: r3(s.reduce((a, b) => a + b, 0) / s.length) };
   };
   return {
     sampleSize: samples.length,
-    compileMs: { mean: avg(samples.map((s) => s.compileMs)), p95: p95(samples.map((s) => s.compileMs)) },
-    impactMs: { mean: avg(samples.map((s) => s.impactMs)), p95: p95(samples.map((s) => s.impactMs)) },
-    quoteLatencyMs: { mean: avg(samples.map((s) => s.quoteLatencyMs)), p95: p95(samples.map((s) => s.quoteLatencyMs)) },
-    solveMs: { mean: avg(samples.map((s) => s.solveMs)), p95: p95(samples.map((s) => s.solveMs)) },
-    totalEndToEndMs: { mean: avg(samples.map((s) => s.totalEndToEndMs)), p95: p95(samples.map((s) => s.totalEndToEndMs)) },
+    compileMs: stats(samples.map((s) => s.compileMs)),
+    impactMs: stats(samples.map((s) => s.impactMs)),
+    quoteLatencyMs: stats(samples.map((s) => s.quoteLatencyMs)),
+    solveMs: stats(samples.map((s) => s.solveMs)),
+    totalEndToEndMs: stats(samples.map((s) => s.totalEndToEndMs)),
+    baselineTotalEur: samples[0].baselineTotalEur,
+    verifiedReceiptsPerRun: Math.min(...samples.map((s) => s.verifiedReceipts)),
+    committedPerRun: Math.min(...samples.map((s) => s.committedVerifiedCount)),
+    cancelToolCallsTotal: samples.reduce((a, s) => a + s.cancelToolCalls, 0),
+    resultsIdenticalAcrossRuns: samples.every((s) => s.totalCostEur === samples[0].totalCostEur && s.changedCommitments === samples[0].changedCommitments),
     httpRequestsPerRun: samples[0].httpRequests,
     providersContacted: samples[0].providersContacted,
     unnecessaryProvidersAvoided: samples[0].unnecessaryProvidersAvoided,
@@ -207,6 +224,10 @@ function summarize(samples) {
 try {
   const normalRuns = [];
   const rippleRuns = [];
+  for (let i = 0; i < WARMUP; i++) {
+    await runSingleLiveTrial(false);
+    await runSingleLiveTrial(true);
+  }
   for (let i = 0; i < SAMPLES; i++) {
     normalRuns.push(await runSingleLiveTrial(false));
     rippleRuns.push(await runSingleLiveTrial(true));
@@ -222,7 +243,7 @@ try {
       networkTopology: "5 independent local HTTP origins (127.0.0.1 & localhost ports 28080..28084)",
     },
     manualStructuralBaseline: {
-      classification: "Structural workflow step count (no fabricated human stopwatch time)",
+      classification: "ESTIMATE — documented task model (3 actions per provider site), not a measured human study",
       totalCommitmentsInMission: 6,
       manualUserInteractionsWithoutContinuity: 18,
       breakdown: "6 site logins/lookups + 6 availability checks + 6 manual reschedule/hold/verify actions (high risk of premature cancellation or touching unaffected bookings)",
@@ -239,47 +260,53 @@ try {
 
   const md = `# Reproducible Benchmarks — Before vs. After CONTINUITY
 
-**Date Measured:** ${benchmarkData.measuredAtIso}
-**Hardware / Runtime:** Node.js \`${benchmarkData.environment.nodeVersion}\` on \`${benchmarkData.environment.platform}\` (${benchmarkData.environment.cpuModel}, ${benchmarkData.environment.cpuCores} logical cores)
-**Sample Size:** \`N = ${SAMPLES}\` live cross-origin runs for Normal Relocation Shift + \`N = ${SAMPLES}\` live cross-origin runs for Ripple Failure Recovery (\`60\` total full Saga executions).
-**Raw Machine-Readable Data:** [\`docs/benchmarks/benchmark_results.json\`](./benchmark_results.json)
+**Date measured:** ${benchmarkData.measuredAtIso}
+**Hardware / runtime:** Node.js \`${benchmarkData.environment.nodeVersion}\` on \`${benchmarkData.environment.platform}\` (${benchmarkData.environment.cpuModel.trim()}, ${benchmarkData.environment.cpuCores} logical cores)
+**Sample size:** \`N = ${SAMPLES}\` live cross-origin runs per scenario (Normal shift and Ripple failure recovery), after \`${WARMUP}\` excluded warm-up runs each — \`${SAMPLES * 2}\` measured end-to-end sagas.
+**Raw data:** [\`docs/benchmarks/benchmark_results.json\`](./benchmark_results.json) · **Reproduce:** \`node scripts/run_benchmarks.mjs\`
+
+Every number in sections 1 and 2 is computed by the script in this run, except the row explicitly marked **Estimate**.
 
 ---
 
-## 1. Structural Workflow Comparison (Same 6-Commitment Mission)
+## 1. Workflow comparison (same 6-commitment mission)
 
-| Metric | BEFORE (Manual Human Coordination) | AFTER — CONTINUITY (Normal Shift) | AFTER — CONTINUITY (Ripple Failure Recovery) | Evidence Classification |
+| Metric | BEFORE — manual coordination | AFTER — CONTINUITY, normal shift | AFTER — CONTINUITY, ripple recovery | Evidence |
 | --- | --- | --- | --- | --- |
-| **User Natural-Language Prompts + Bound Approvals** | **18 manual actions** across 6 separate sites (lookup + check + rebook per site) | **2 user interactions** (1 request + 1 bound package approval) | **2 user interactions** (1 request + 1 bound package approval) | Deterministic Structural Count |
-| **Providers Contacted** | Up to **6** (humans routinely re-check unaffected storage/delivery) | **${n.providersContacted}** (2 unaffected commitments excluded by Impact Engine) | **${r.providersContacted}** (2 unaffected commitments excluded by Impact Engine) | **Measured** |
-| **Commitments Modified** | Varies (often 4–6) | **${n.changedCommitments}** (PowerFlow Tuesday also preserved by Minimal-Change Solver) | **${r.changedCommitments}** (MoveCo recovered via overflow crew; 3 preserved) | **Measured** |
-| **Commitments Preserved Untouched** | Risk of premature cancellation | **${n.preservedCommitments} / 6 (50%)** | **${r.preservedCommitments} / 6 (50%)** | **Measured** |
-| **Final Verified Mission Cost (Cap €700.00)** | Uncoordinated fee risk | **€${n.totalCostEur.toFixed(2)}** (+€25.00 net vs €624 baseline) | **€${r.totalCostEur.toFixed(2)}** (+€35.00 net vs €624 baseline) | **Measured** |
-| **Premature Cancellations Before Replacement Hold** | Common human failure mode | **0** | **0** | **Measured & Verified** |
-| **Ed25519 Verified Provider Receipts** | None | **3 / 3 (100%)** | **3 / 3 (100%)** | **Measured & Verified** |
+| User actions | **~18** (3 per provider site × 6 sites: look up, check availability, rebook) | **2 decisions** (1 request + 1 approval; 3 clicks in the UI incl. the confirmation dialog) | **2 decisions** | Before: **Estimate** (task model, no human study). After: structural count |
+| Providers contacted | up to 6 | **${n.providersContacted}** (${n.unnecessaryProvidersAvoided} out-of-scope bookings never contacted) | **${r.providersContacted}** (${r.unnecessaryProvidersAvoided} never contacted) | Measured |
+| Commitments changed / kept | not optimized | **${n.changedCommitments} changed · ${n.preservedCommitments} kept** | **${r.changedCommitments} changed · ${r.preservedCommitments} kept** | Measured |
+| Mission total (cap €700.00) | no global budget check | **€${n.totalCostEur.toFixed(2)}** (${fmtDelta(n.totalCostEur - n.baselineTotalEur)} vs €${n.baselineTotalEur.toFixed(2)} baseline) | **€${r.totalCostEur.toFixed(2)}** (${fmtDelta(r.totalCostEur - r.baselineTotalEur)} vs baseline) | Measured |
+| Cancel calls sent to any provider | risk of cancelling before a replacement exists | **${n.cancelToolCallsTotal}** in ${SAMPLES} runs | **${r.cancelToolCallsTotal}** in ${SAMPLES} runs | Measured (tool-call log) |
+| Commits with a verified Ed25519 receipt | none | **${n.verifiedReceiptsPerRun} / ${n.committedPerRun}** per run (worst run) | **${r.verifiedReceiptsPerRun} / ${r.committedPerRun}** per run (worst run) | Measured |
+| Same result on every run | — | **${n.resultsIdenticalAcrossRuns ? "Yes" : "No"}** | **${r.resultsIdenticalAcrossRuns ? "Yes" : "No"}** | Measured |
+| Verified saga completion | — | **${n.allSucceededRatePct}%** | **${r.allSucceededRatePct}%** | Measured |
 
 ---
 
-## 2. Measured Engine & Cross-Origin Execution Timings (\`N = ${SAMPLES}\` per scenario)
+## 2. Engine timings (ms, loopback, \`N = ${SAMPLES}\` per scenario)
 
-*Note: Timings below measure deterministic Mission Compiler, Impact Graph Traversal, Live Cross-Origin Peer HTTP/MCP Quote Retrieval, Minimal-Change Optimization, Slot Hold Preparation, Approval Hashing, Commit, and Ed25519 Signature Verification across 5 independent local HTTP servers. Optional BYOK LLM chat streaming latency depends on the user's selected external provider (e.g., Mozilla Otari \`alibaba/qwen-3.5-35b-a3b\`) and is intentionally separated from deterministic engine latency.*
+| Phase | Normal median | Normal p95 | Normal max | Ripple median | Ripple p95 | Ripple max |
+| --- | --- | --- | --- | --- | --- | --- |
+${[
+    ["Mission compiler & hard-invariant check", "compileMs"],
+    ["Bounded impact analysis (6 nodes)", "impactMs"],
+    ["Quote collection from 4 provider origins", "quoteLatencyMs"],
+    ["Minimal-change solver (Pareto)", "solveMs"],
+    ["**Full run: compile → quotes → hold → approve → commit → verify receipts**", "totalEndToEndMs"],
+  ]
+    .map(([label, k]) => `| ${label} | ${n[k].median} | ${n[k].p95} | ${n[k].max} | ${r[k].median} | ${r[k].p95} | ${r[k].max} |`)
+    .join("\n")}
 
-| Phase | Normal Shift Mean (ms) | Normal Shift P95 (ms) | Ripple Recovery Mean (ms) | Ripple Recovery P95 (ms) |
-| --- | --- | --- | --- | --- |
-| **Mission Compiler & Hard-Invariant Validation** | ${n.compileMs.mean} ms | ${n.compileMs.p95} ms | ${r.compileMs.mean} ms | ${r.compileMs.p95} ms |
-| **Bounded Incremental Impact Analysis (6 nodes, 6 edges)** | ${n.impactMs.mean} ms | ${n.impactMs.p95} ms | ${r.impactMs.mean} ms | ${r.impactMs.p95} ms |
-| **Cross-Origin Peer Quote Collection (4 origins)** | ${n.quoteLatencyMs.mean} ms | ${n.quoteLatencyMs.p95} ms | ${r.quoteLatencyMs.mean} ms | ${r.quoteLatencyMs.p95} ms |
-| **Minimal-Change Constraint Solver** | ${n.solveMs.mean} ms | ${n.solveMs.p95} ms | ${r.solveMs.mean} ms | ${r.solveMs.p95} ms |
-| **Full Prepare -> Bound Approval -> Commit -> Ed25519 Reconcile** | **${n.totalEndToEndMs.mean} ms** | **${n.totalEndToEndMs.p95} ms** | **${r.totalEndToEndMs.mean} ms** | **${r.totalEndToEndMs.p95} ms** |
-| **Verified Saga Completion Rate** | **${n.allSucceededRatePct}%** | — | **${r.allSucceededRatePct}%** | — |
+Means are kept in the JSON for completeness; medians and p95 are reported here because single garbage-collection pauses dominate means at sub-millisecond scale.
 
 ---
 
-## 3. Limitations & Honesty Disclosure
+## 3. Limitations
 
-1. **Simulated Demonstration Providers:** MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber, and PowerFlow Energy are independent demonstration services running on separate origins with real HTTP/CORS/MCP/Ed25519 protocol boundaries, not commercial moving or utility companies.
-2. **Loopback vs. WAN Latency:** Cross-origin round trips above were measured across loopback sockets; public internet HTTPS hops add typical WAN RTT (~20–120 ms per origin) plus user-selected LLM inference time when invoked via natural-language chat.
-3. **Reproduce Command:** Run \`node scripts/run_benchmarks.mjs\` to regenerate \`benchmark_results.json\` and this report on any machine with Node.js >= 22.
+1. **Demonstration providers.** MoveCo, PermitFlow, HomeConnect and PowerFlow are independent demonstration services on separate origins with real HTTP, CORS, MCP and Ed25519 boundaries — not commercial companies.
+2. **Loopback latency.** Measured on local sockets. Over the public internet each provider hop adds WAN round-trip time (typically tens of milliseconds), plus model inference time when the optional chat assistant is used.
+3. **Manual baseline is an estimate.** The "~18 actions" figure is a task model, not a timed user study. Human completion time is deliberately not claimed.
 `;
 
   await writeFile(path.join(ROOT, "docs", "benchmarks", "BEFORE_AFTER.md"), md, "utf8");

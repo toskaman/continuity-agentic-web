@@ -8,7 +8,7 @@ Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agentic
 
 ## Try it in 60 seconds (no API key needed)
 
-1. Open **https://toskaman.github.io/continuity-agentic-web/** and click **Run the 2-minute demo** (top right).
+1. Open **https://toskaman.github.io/continuity-agentic-web/** and click **Run the live demo** (top right).
 2. CONTINUITY injects a real provider failure (MoveCo's Friday crew is full), recovers through an overflow partner, compares plans and holds replacements — your original bookings stay untouched.
 3. The approval dialog lists every operation, price and provider. Click **Approve & commit**: three providers commit, three bookings stay untouched (two are never even contacted), and each commit returns an Ed25519-signed receipt.
 4. Click a provider in the network map (e.g. **MoveCo Express**): its own site, on another origin, verifies the signed receipt and shows the new date.

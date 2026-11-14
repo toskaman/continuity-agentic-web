@@ -1169,8 +1169,8 @@ export class ContinuityCoordinatorPage {
     const rippleBtn = document.querySelector("#inject-ripple-btn");
     if (rippleBtn) {
       rippleBtn.textContent = this.rippleFailureInjected
-        ? "Ripple Failure: ARMED (Primary Full)"
-        : "Inject Ripple Failure";
+        ? "Provider failure on — click to turn off"
+        : "Simulate a provider failure";
       rippleBtn.classList.toggle("ripple-active", this.rippleFailureInjected);
     }
 

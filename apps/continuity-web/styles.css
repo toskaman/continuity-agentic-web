@@ -814,3 +814,21 @@ body > dialog button { margin-right: 8px; }
 /* Merged-strategy explanation (e.g. Plan A is also the lowest-cost plan) */
 .plans-note { margin: 0 0 var(--s-4); font-size: var(--fs-sm); color: var(--ink-2); padding: 12px 16px; border-radius: var(--r-md); background: var(--info-bg); border: 1px solid var(--info-line); }
 .plans-note::before { content: "ℹ "; color: var(--info); font-weight: 700; }
+
+/* Completion panel (after a commit) */
+.outcome-panel {
+  position: fixed; right: 24px; bottom: 24px; z-index: 60; width: min(440px, calc(100vw - 32px));
+  display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: start;
+  padding: 18px 18px 18px 20px; border-radius: var(--r-lg); background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); box-shadow: 0 30px 60px -20px rgba(16, 24, 40, .35); animation: ds-pop .35s var(--ease);
+}
+.outcome-panel.is-ok { border-color: var(--ok-line); }
+.outcome-panel.is-warn { border-color: var(--warn-line); }
+.outcome-icon { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; color: #fff; background: var(--ok); }
+.is-warn .outcome-icon { background: var(--warn); }
+.outcome-body { display: grid; gap: 6px; }
+.outcome-body span { font-size: var(--fs-sm); color: var(--ink-2); }
+.outcome-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.outcome-close { border: 0; background: transparent; font-size: 22px; line-height: 1; color: var(--muted); cursor: pointer; width: 32px; height: 32px; border-radius: 8px; }
+.outcome-close:hover { background: var(--surface-2); color: var(--ink); }
+@media (max-width: 600px) { .outcome-panel { right: 16px; bottom: 16px; } }

@@ -1,5 +1,8 @@
 # Two-Minute YouTube Demonstration Storyboard & Voiceover Script
 
+> **Superseded (Nov 14, 2026).** This material documents the earlier, pre-redesign interface and a synthetic (Kokoro TTS) narration, which the Official Rules do not allow for the submitted video. Use [`docs/submission/VIDEO_RECORDING_SCRIPT.md`](../submission/VIDEO_RECORDING_SCRIPT.md) for the entrant-narrated video.
+
+
 **Target Duration:** `01:48` (108 seconds — safely below the strict 2:00 maximum in Official Rules §4)
 **Mandatory Rule Reminder:** Official Rules §4 require footage of the Project running in a web browser **and the Entrant explaining the Project in their own voice (not AI-generated)**, with no third-party copyrighted music or unauthorized trademarks.
 

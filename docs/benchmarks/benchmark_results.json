@@ -1,5 +1,5 @@
 {
-  "measuredAtIso": "2026-11-14T02:29:40.975Z",
+  "measuredAtIso": "2026-11-14T15:56:03.688Z",
   "environment": {
     "nodeVersion": "v26.13.1",
     "platform": "win32 x64",
@@ -8,7 +8,7 @@
     "networkTopology": "5 independent local HTTP origins (127.0.0.1 & localhost ports 28080..28084)"
   },
   "manualStructuralBaseline": {
-    "classification": "Structural workflow step count (no fabricated human stopwatch time)",
+    "classification": "ESTIMATE — documented task model (3 actions per provider site), not a measured human study",
     "totalCommitmentsInMission": 6,
     "manualUserInteractionsWithoutContinuity": 18,
     "breakdown": "6 site logins/lookups + 6 availability checks + 6 manual reschedule/hold/verify actions (high risk of premature cancellation or touching unaffected bookings)"
@@ -16,25 +16,40 @@
   "continuityMeasuredNormalScenario": {
     "sampleSize": 30,
     "compileMs": {
-      "mean": 0.087,
-      "p95": 0.078
+      "median": 0.083,
+      "p95": 0.105,
+      "max": 0.191,
+      "mean": 0.085
     },
     "impactMs": {
-      "mean": 0.075,
-      "p95": 0.107
+      "median": 0.096,
+      "p95": 0.154,
+      "max": 0.367,
+      "mean": 0.109
     },
     "quoteLatencyMs": {
-      "mean": 1.645,
-      "p95": 2.601
+      "median": 2.072,
+      "p95": 3.984,
+      "max": 4.427,
+      "mean": 2.318
     },
     "solveMs": {
-      "mean": 0.305,
-      "p95": 0.15
+      "median": 0.141,
+      "p95": 0.208,
+      "max": 0.224,
+      "mean": 0.146
     },
     "totalEndToEndMs": {
-      "mean": 8.46,
-      "p95": 13.527
+      "median": 11.238,
+      "p95": 18.462,
+      "max": 20.31,
+      "mean": 12.317
     },
+    "baselineTotalEur": 624,
+    "verifiedReceiptsPerRun": 3,
+    "committedPerRun": 3,
+    "cancelToolCallsTotal": 0,
+    "resultsIdenticalAcrossRuns": true,
     "httpRequestsPerRun": 13,
     "providersContacted": 4,
     "unnecessaryProvidersAvoided": 2,
@@ -46,25 +61,40 @@
   "continuityMeasuredRippleRecoveryScenario": {
     "sampleSize": 30,
     "compileMs": {
-      "mean": 0.05,
-      "p95": 0.085
+      "median": 0.078,
+      "p95": 0.107,
+      "max": 0.133,
+      "mean": 0.081
     },
     "impactMs": {
-      "mean": 0.063,
-      "p95": 0.09
+      "median": 0.1,
+      "p95": 0.15,
+      "max": 0.19,
+      "mean": 0.104
     },
     "quoteLatencyMs": {
-      "mean": 2,
-      "p95": 3.546
+      "median": 2.339,
+      "p95": 4.104,
+      "max": 4.307,
+      "mean": 2.436
     },
     "solveMs": {
-      "mean": 0.084,
-      "p95": 0.115
+      "median": 0.15,
+      "p95": 0.226,
+      "max": 0.239,
+      "mean": 0.161
     },
     "totalEndToEndMs": {
-      "mean": 7.99,
-      "p95": 11.57
+      "median": 11.399,
+      "p95": 15.666,
+      "max": 17.113,
+      "mean": 12.42
     },
+    "baselineTotalEur": 624,
+    "verifiedReceiptsPerRun": 3,
+    "committedPerRun": 3,
+    "cancelToolCallsTotal": 0,
+    "resultsIdenticalAcrossRuns": true,
     "httpRequestsPerRun": 13,
     "providersContacted": 4,
     "unnecessaryProvidersAvoided": 2,

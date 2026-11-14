@@ -67,10 +67,60 @@ function missionStage(page) {
   };
 }
 
+let lastOutcome = null;
+
+/** Completion panel: shown once when a commit finishes (verified or halted), dismissible. */
+function showOutcome(page) {
+  const status = page.lastSagaExecution?.status;
+  if (!status || status === lastOutcome) return;
+  lastOutcome = status;
+  document.querySelector("#outcome-panel")?.remove();
+  const plan = page.getSelectedPlan?.();
+  const ok = status === "ALL_COMMITTED_AND_VERIFIED";
+  const committedPeer = PEERS.find((pid) => (page.preparedOps || []).some((op) => op.state === "COMMITTED" && peerOfOp(page, op) === pid));
+  const peerLink = committedPeer ? document.querySelector(`#peer-link-${committedPeer}`) : null;
+  const panel = document.createElement("aside");
+  panel.id = "outcome-panel";
+  panel.className = `outcome-panel ${ok ? "is-ok" : "is-warn"}`;
+  panel.setAttribute("role", "status");
+  panel.innerHTML = ok
+    ? `<div class="outcome-icon" aria-hidden="true">✓</div>
+       <div class="outcome-body">
+         <strong>Mission re-aligned and verified</strong>
+         <span>${e(plan?.metrics?.changedCount ?? "")} bookings moved · ${e(plan?.metrics?.unchangedCount ?? "")} left untouched · total €${e(Number(plan?.metrics?.totalMissionCostEur || 0).toFixed(2))} · every commit has a signed receipt.</span>
+         <div class="outcome-actions">
+           ${peerLink ? `<a class="btn btn-primary btn-sm" href="${e(peerLink.getAttribute("href"))}" target="_blank" rel="noopener">See it on ${e(peerLink.querySelector(".eco-name")?.textContent || "the provider")} ↗</a>` : ""}
+           <button type="button" class="btn btn-sm" data-outcome="ics">Download updated calendar</button>
+           <button type="button" class="btn btn-sm btn-ghost" data-outcome="reset">Run it again</button>
+         </div>
+       </div>
+       <button type="button" class="outcome-close" aria-label="Close">×</button>`
+    : `<div class="outcome-icon" aria-hidden="true">!</div>
+       <div class="outcome-body">
+         <strong>Stopped safely</strong>
+         <span>${e(page.lastSagaExecution?.partialFailureReason || "Some operations could not be confirmed.")} Nothing else was changed; details are in the Trust center.</span>
+         <div class="outcome-actions"><a class="btn btn-sm" href="#trust" data-open-tab="tab-btn-timeline">Open the saga log</a></div>
+       </div>
+       <button type="button" class="outcome-close" aria-label="Close">×</button>`;
+  document.body.append(panel);
+  panel.querySelector(".outcome-close")?.addEventListener("click", () => panel.remove());
+  panel.querySelector('[data-outcome="ics"]')?.addEventListener("click", () => document.querySelector("#export-ics-btn")?.click());
+  panel.querySelector('[data-outcome="reset"]')?.addEventListener("click", () => {
+    panel.remove();
+    document.querySelector("#reset-mission-btn")?.click();
+    document.querySelector("#top")?.scrollIntoView({ behavior: "smooth" });
+  });
+}
+
 function update() {
   const page = App.page;
   const stages = missionStage(page);
   setTimeline(document.querySelector("#mission-steps"), stages);
+  if (page.lastSagaExecution) showOutcome(page);
+  else {
+    lastOutcome = null;
+    document.querySelector("#outcome-panel")?.remove();
+  }
 
   const core = document.querySelector("#eco-core-state");
   if (core) {

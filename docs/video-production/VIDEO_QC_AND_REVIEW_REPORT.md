@@ -1,5 +1,8 @@
 # TITAN CINEMA OMEGA — FINAL QUALITY CONTROL, SYNCHRONIZATION AUDIT & 7-PERSONA REVIEW
 
+> **Superseded (Nov 14, 2026).** This material documents the earlier, pre-redesign interface and a synthetic (Kokoro TTS) narration, which the Official Rules do not allow for the submitted video. Use [`docs/submission/VIDEO_RECORDING_SCRIPT.md`](../submission/VIDEO_RECORDING_SCRIPT.md) for the entrant-narrated video.
+
+
 **Master Deliverable 1 (Jury Film):** `docs/video-production/deliverables/CONTINUITY_JURY_MASTER_OMEGA.mp4` (`Z:\continuity-titan-omega\CONTINUITY_JURY_MASTER_OMEGA.mp4`)
 **Master Deliverable 2 (Brag Full Teaser):** `docs/video-production/deliverables/CONTINUITY_BRAG_FULL_22S.mp4` (`Z:\continuity-titan-omega\brag-output\brag.mp4`)
 **Subtitles:** `docs/video-production/CONTINUITY_JURY_MASTER_OMEGA.en.srt`

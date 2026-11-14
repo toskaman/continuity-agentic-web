@@ -32,53 +32,40 @@
 
 ## 2. Full Project Description (Copy-Ready Markdown)
 
-**In one sentence:** When one date in your life changes, CONTINUITY asks every affected provider's own agentic website what is possible, holds replacements before releasing anything, and lets you approve one verified plan instead of calling six companies.
+### In one sentence
+When one date in your life changes, CONTINUITY asks every affected provider's own agentic website what is possible, holds replacements before releasing anything, and lets you approve one verified plan instead of calling six companies.
 
-**Try it in 60 seconds, no API key:** open the public URL and click **Run the 2-minute demo** → a real provider failure is recovered → approve → three providers commit with signed receipts, three bookings stay untouched (two are never even contacted) → click a provider to see it verify the receipt on its own origin.
+### Try it in 60 seconds — no API key
+Open https://toskaman.github.io/continuity-agentic-web/ and click **Run the live demo**. A provider failure is injected and recovered, plans are compared, replacements are held, and an approval dialog opens. Approve: three providers commit with signed receipts and three bookings stay untouched. Click **MoveCo Express** in the network map — MoveCo's own site, on another origin, verifies the receipt and shows the new date.
 
-**Built during the submission period:** first commit Nov 13, 2026 (period opened Nov 11, 2026, 8:00 pm PT).
+### The problem
+Agent demos usually plan something new. Real life breaks *after* things are booked. Moving house from Tuesday to Friday touches a moving crew, a parking permit, a fiber installation, an electricity activation, storage and a furniture delivery — six companies, six websites, and a real risk of cancelling a working booking before a replacement exists, or paying fees nobody needed to pay.
 
-### The Problem: Greenfield Planning Is Easy — Day-Two Changes Break Everything
-Most AI agent demos plan something from scratch: order a pizza, pick a hotel, or draft an itinerary. Real life breaks **after** commitments are already confirmed. Moving a home relocation from Tuesday to Friday triggers a ripple effect across independent organizations — moving vans, curbside loading-bay permit preparation, fiber optic installation technicians, smart-meter electricity activation, buffer storage, and furniture delivery. Today, humans manually call six websites, repeat details, pay avoidable cancellation penalties, or accidentally cancel a working booking before a replacement is secured.
+### What CONTINUITY does
+1. **Understands the change.** You write it in plain English (or import confirmation emails or an `.ics` calendar). It becomes hard rules: budget cap, keep existing bookings until replaced, never cancel without asking.
+2. **Finds only what is affected.** A dependency graph of your bookings shows which ones really move. Bookings outside the change are never contacted.
+3. **Asks each provider's own agentic website.** Each provider publishes its own `agent-manifest.json` and agent network. CONTINUITY shows a consent card before contacting one, and sends it only the booking reference and target date.
+4. **Compares plans.** A deterministic optimizer ranks plans by changes, cost and speed (Plan A minimum changes, B lowest cost, C fastest — merged when one plan wins several), with a what-if budget slider.
+5. **Holds first, commits last.** Replacements are held while your original bookings stay active. You approve once; the approval is bound to the exact operations and prices (a €0.01 change invalidates it).
+6. **Verifies.** Every commit returns an Ed25519-signed receipt. Each provider site verifies it on its own origin. You can export the updated calendar and a signed audit file.
 
-### The CONTINUITY Transformation
-**CONTINUITY** is a decentralized Open Agentic Change Coordinator conforming to the **Worldwide Agentic Web MVP Specification (Profile 0.2)**. A visitor describes one schedule change in plain English:
+### How it uses the Open Agentic Web
+Five independent websites on two origins — CONTINUITY (`toskaman.github.io`) and four providers (`gpaschercher-sudo.github.io`): MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber and PowerFlow Energy. Each has its own UI, `agent-manifest.json`, resolved `.network.json`, browser `runtime/`, action bridge and A2A agent card. Provider networks run in the visitor's browser on the visitor's own model router (default: Mozilla Otari), so providers never see the visitor's API key. All five sites pass the official `build_network.mjs --check` and `check_partner.mjs` validators. Site actions are also exposed through WebMCP (`navigator.modelContext`).
 
-> *"My move was originally scheduled for Tuesday, but I need to move everything to Friday. Update every affected service. Keep my current reservations until replacements are secured. Maintain my total budget below €700. Do not cancel anything or approve additional fees without my confirmation."*
+### Why you can trust it
+- The language model interprets and explains; it cannot raise the budget, enable cancellations or commit anything. Those rules are enforced in code.
+- Network timeouts after a commit become `UNKNOWN` and are reconciled, not blindly retried.
+- **Chaos Lab:** 15 failure scenarios (forged receipts, price drift after approval, timeouts, partial failures…) run in your browser.
+- **Measured:** 60 benchmark runs, 100% verified completion, 0 cancel calls, 3/3 signed receipts per run; full run 11 ms median on loopback (`docs/benchmarks/BEFORE_AFTER.md`). 38 automated tests pass in CI.
 
-CONTINUITY compiles hard constraints, analyzes bounded graph impact, interacts with independent Open Agentic Websites, holds replacement slots **before** touching existing reservations, computes deterministic minimal-change plans, binds user approvals cryptographically, executes with idempotency keys, and verifies Ed25519 provider receipts.
+### Shared with the community (Apache-2.0)
+17 zero-dependency modules, including: a cross-origin browser bridge with signed receipt handoff for static sites; an Open Agentic Web MVP 0.2 + Project NANDA conformance auditor (7 checks, usable on any site from the Trust Center); a Google ADK / OpenAI Agents → Neuro SAN HOCON converter; an email/`.ics` intake compiler; and a WebMCP adapter with confirmation gates on irreversible tools.
 
-### How Independent Open Agentic Websites Collaborate
-We built and connected **five genuinely independent Open Agentic Websites**, each with its own origin, UI, `agent-manifest.json`, resolved Neuro SAN HOCON `.network.json`, `links.json`, `bridge/action-bridge.html`, Cognizant browser `runtime/`, and CORS-enabled MCP (`2025-06-18`) capability contract:
-1. **CONTINUITY** (Primary Coordinator — `continuity_coordinator`)
-2. **MoveCo Express** (Demonstration Moving Crew & 15-Min Slot Holds — `moveco_dispatch`)
-3. **PermitFlow Civic Prep** (Demonstration Curbside Bay Notice Check & Dossier Drafts — `permitflow_advisor`; explicitly never claims access to municipal government databases)
-4. **HomeConnect Fiber** (Demonstration Fiber ONT Technician Scheduling — `homeconnect_scheduler`)
-5. **PowerFlow Energy** (Demonstration Smart-Meter Grid Energization — `powerflow_grid`)
+### What is real and what is a demo
+The protocols are real: separate origins, CORS, MCP, signed receipts, consent, approvals. The four providers are demonstration services built for this challenge. No real bookings, payments or municipal permits are touched; PermitFlow only prepares draft applications.
 
-When CONTINUITY consults a partner network, the visitor's browser displays an explicit **Consent Card** *before* any HTTP contact occurs, fetches the peer's declarative `.network.json`, and executes it locally inside the caller's browser on the visitor's chosen **Mozilla Otari** router — **never** exposing the visitor's API key or private `sly_data` to peer origins.
-
-### Deterministic Safety Around Probabilistic Agents
-LLMs interpret natural language and summarize options, but **cannot** override user safety policies:
-- **Hard Invariant Guard (`@continuity/mission-core`):** Prompt injection or model hallucination cannot raise `maximum_budget_eur`, enable `unauthorized_cancellation`, or commit pre-approval writes.
-- **Bounded Incremental Impact (`@continuity/impact-engine`):** Excludes unaffected commitments (`CityVault Storage` covering Nov 15–29 and `NordicLoom Saturday Delivery`), avoiding unnecessary network calls and fees.
-- **Minimal-Change Optimizer (`@continuity/constraint-solver`):** Reproducibly ranks `Plan A (Minimum Changes)`, `Plan B (Lowest Cost)`, and `Plan C (Fastest Alignment)` — keeping `PowerFlow`'s valid Tuesday activation untouched so only `3 of 6` commitments change (`€649.00` normal / `€659.00` ripple recovery, both `<= €700.00`).
-- **SHA-256 Approval Binding (`@continuity/approval-engine`):** Canonicalizes origin, capability, arguments, date, price, fees, and expiry; if a fee drifts by `€0.01`, the approval invalidates automatically.
-- **14-State Saga & Unknown-Outcome Reconciliation (`@continuity/outcome-reconciliation`, `@continuity/saga-engine`):** Network timeouts after dispatch transition to `UNKNOWN -> RECONCILING` via idempotency keys rather than blindly retrying writes. Partial mid-saga failures halt cleanly without triggering unauthorized paid compensations.
-- **Chaos Lab (`@continuity/chaos-lab`):** Interactive browser & CLI testbench verifying **15 deterministic distributed failure scenarios** (`15/15` passing).
-
-### Reusable Open-Source Contributions Shared With the Community
-Under Apache-2.0, we built and share **17 zero-dependency ES modules** (`packages/*`) that any Open Agentic Web builder can drop into static browser sites or Node services:
-1. **`@continuity/cross-origin-bridge`:** Solves static-hosting cross-site actions (MVP Spec §7) via origin-allowlisted `postMessage` capability bridges, origin-isolated WebCrypto Ed25519 signing, and signed `#continuity_receipt` top-level tab handoff tokens across storage-partitioned domains (`toskaman.github.io` ↔ `gpaschercher-sudo.github.io`).
-2. **`@continuity/mandate-arbiter`:** Implements MVP Spec §7 *"Transactions negotiation and arbitration"* in the browser — issuing frozen SHA-256 policy-bound mandates, withholding buyer ceilings from providers, resolving overflow bids via integer-cent equal-weight linear Nash bargaining (`floor((U + S) / 2)` with Myerson–Satterthwaite disclosure), and rejecting `€0.01` price overrides or unapproved settlements.
-3. **`@continuity/adk-hocon-converter`:** Implements MVP Spec §2.2 & §7 *"Framework converters"* — translating Google ADK (`LlmAgent` / `sub_agents`) or OpenAI Agents SDK JSON hierarchies into resolved, cycle-checked, credential-scrubbed `.network.json` + `agent-manifest.json` bundles with semantic equivalence verification.
-4. **`@continuity/intake-compiler`:** Compiles pasted unstructured confirmation emails or standard RFC 5545 `.ics` calendars into typed dependency graphs in `<2 ms`, ships 3 multi-domain scenarios (Home Relocation, Outpatient Surgery & Care, Enterprise Expo Freight), and exports updated `.ics` calendars + SHA-256/Ed25519 audit bundles.
-5. **`@continuity/webmcp-adapter`:** Dual-publishes any site's `site-actions.js` catalog to both Cognizant's Neuro SAN `website_*` runtime and W3C/Browser `navigator.modelContext` (WebMCP) with mandatory human confirmation gates on `irreversible` tools.
-6. **`@continuity/nanda-resolver`:** Implements Project NANDA `draft-raskar-agentic-web-federated-resolution-02` sequence/authority verification, A2A v1.0 Agent Card validation, and a live 7-point **Open Agentic Web MVP 0.2 Conformance Auditor** (`auditOpenAgenticSite`) embedded directly in CONTINUITY's UI for community builders.
-7. **Core Deterministic Safety & Pareto Suite (11 modules):** `@continuity/shared-schemas`, `@continuity/mission-core`, `@continuity/mission-graph` (topological DAG layout + cycle guard), `@continuity/impact-engine`, `@continuity/constraint-solver` (4-objective Pareto frontier + interactive SVG plot + counterfactual budget sweep), `@continuity/capability-adapter`, `@continuity/approval-engine`, `@continuity/outcome-reconciliation` (14-state SHA-256 hash-chained tamper-evident ledger), `@continuity/saga-engine`, `@continuity/proof-verifier`, and `@continuity/chaos-lab` (`15/15` fault scenarios).
-
-### Honest Scope & Simulation Disclosure
-All four provider peers are controlled, independent demonstration services built to prove real cross-origin HTTP, CORS, Neuro SAN browser composition, MCP `2025-06-18`, idempotency, and Ed25519 receipt verification. No real commercial bookings, credit-card charges, or municipal government permits are modified.
+### Built during the challenge
+First commit November 13, 2026, after the submission period opened (November 11, 2026, 8:00 pm PT).
 
 ---
 

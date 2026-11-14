@@ -1,43 +1,45 @@
 # Reproducible Benchmarks — Before vs. After CONTINUITY
 
-**Date Measured:** 2026-11-14T02:29:40.975Z
-**Hardware / Runtime:** Node.js `v26.13.1` on `win32 x64` (AMD Ryzen 7 5700X 8-Core Processor             , 16 logical cores)
-**Sample Size:** `N = 30` live cross-origin runs for Normal Relocation Shift + `N = 30` live cross-origin runs for Ripple Failure Recovery (`60` total full Saga executions).
-**Raw Machine-Readable Data:** [`docs/benchmarks/benchmark_results.json`](./benchmark_results.json)
+**Date measured:** 2026-11-14T15:56:03.688Z
+**Hardware / runtime:** Node.js `v26.13.1` on `win32 x64` (AMD Ryzen 7 5700X 8-Core Processor, 16 logical cores)
+**Sample size:** `N = 30` live cross-origin runs per scenario (Normal shift and Ripple failure recovery), after `3` excluded warm-up runs each — `60` measured end-to-end sagas.
+**Raw data:** [`docs/benchmarks/benchmark_results.json`](./benchmark_results.json) · **Reproduce:** `node scripts/run_benchmarks.mjs`
+
+Every number in sections 1 and 2 is computed by the script in this run, except the row explicitly marked **Estimate**.
 
 ---
 
-## 1. Structural Workflow Comparison (Same 6-Commitment Mission)
+## 1. Workflow comparison (same 6-commitment mission)
 
-| Metric | BEFORE (Manual Human Coordination) | AFTER — CONTINUITY (Normal Shift) | AFTER — CONTINUITY (Ripple Failure Recovery) | Evidence Classification |
+| Metric | BEFORE — manual coordination | AFTER — CONTINUITY, normal shift | AFTER — CONTINUITY, ripple recovery | Evidence |
 | --- | --- | --- | --- | --- |
-| **User Natural-Language Prompts + Bound Approvals** | **18 manual actions** across 6 separate sites (lookup + check + rebook per site) | **2 user interactions** (1 request + 1 bound package approval) | **2 user interactions** (1 request + 1 bound package approval) | Deterministic Structural Count |
-| **Providers Contacted** | Up to **6** (humans routinely re-check unaffected storage/delivery) | **4** (2 unaffected commitments excluded by Impact Engine) | **4** (2 unaffected commitments excluded by Impact Engine) | **Measured** |
-| **Commitments Modified** | Varies (often 4–6) | **3** (PowerFlow Tuesday also preserved by Minimal-Change Solver) | **3** (MoveCo recovered via overflow crew; 3 preserved) | **Measured** |
-| **Commitments Preserved Untouched** | Risk of premature cancellation | **3 / 6 (50%)** | **3 / 6 (50%)** | **Measured** |
-| **Final Verified Mission Cost (Cap €700.00)** | Uncoordinated fee risk | **€649.00** (+€25.00 net vs €624 baseline) | **€659.00** (+€35.00 net vs €624 baseline) | **Measured** |
-| **Premature Cancellations Before Replacement Hold** | Common human failure mode | **0** | **0** | **Measured & Verified** |
-| **Ed25519 Verified Provider Receipts** | None | **3 / 3 (100%)** | **3 / 3 (100%)** | **Measured & Verified** |
+| User actions | **~18** (3 per provider site × 6 sites: look up, check availability, rebook) | **2 decisions** (1 request + 1 approval; 3 clicks in the UI incl. the confirmation dialog) | **2 decisions** | Before: **Estimate** (task model, no human study). After: structural count |
+| Providers contacted | up to 6 | **4** (2 out-of-scope bookings never contacted) | **4** (2 never contacted) | Measured |
+| Commitments changed / kept | not optimized | **3 changed · 3 kept** | **3 changed · 3 kept** | Measured |
+| Mission total (cap €700.00) | no global budget check | **€649.00** (+€25.00 vs €624.00 baseline) | **€659.00** (+€35.00 vs baseline) | Measured |
+| Cancel calls sent to any provider | risk of cancelling before a replacement exists | **0** in 30 runs | **0** in 30 runs | Measured (tool-call log) |
+| Commits with a verified Ed25519 receipt | none | **3 / 3** per run (worst run) | **3 / 3** per run (worst run) | Measured |
+| Same result on every run | — | **Yes** | **Yes** | Measured |
+| Verified saga completion | — | **100%** | **100%** | Measured |
 
 ---
 
-## 2. Measured Engine & Cross-Origin Execution Timings (`N = 30` per scenario)
+## 2. Engine timings (ms, loopback, `N = 30` per scenario)
 
-*Note: Timings below measure deterministic Mission Compiler, Impact Graph Traversal, Live Cross-Origin Peer HTTP/MCP Quote Retrieval, Minimal-Change Optimization, Slot Hold Preparation, Approval Hashing, Commit, and Ed25519 Signature Verification across 5 independent local HTTP servers. Optional BYOK LLM chat streaming latency depends on the user's selected external provider (e.g., Mozilla Otari `alibaba/qwen-3.5-35b-a3b`) and is intentionally separated from deterministic engine latency.*
+| Phase | Normal median | Normal p95 | Normal max | Ripple median | Ripple p95 | Ripple max |
+| --- | --- | --- | --- | --- | --- | --- |
+| Mission compiler & hard-invariant check | 0.083 | 0.105 | 0.191 | 0.078 | 0.107 | 0.133 |
+| Bounded impact analysis (6 nodes) | 0.096 | 0.154 | 0.367 | 0.1 | 0.15 | 0.19 |
+| Quote collection from 4 provider origins | 2.072 | 3.984 | 4.427 | 2.339 | 4.104 | 4.307 |
+| Minimal-change solver (Pareto) | 0.141 | 0.208 | 0.224 | 0.15 | 0.226 | 0.239 |
+| **Full run: compile → quotes → hold → approve → commit → verify receipts** | 11.238 | 18.462 | 20.31 | 11.399 | 15.666 | 17.113 |
 
-| Phase | Normal Shift Mean (ms) | Normal Shift P95 (ms) | Ripple Recovery Mean (ms) | Ripple Recovery P95 (ms) |
-| --- | --- | --- | --- | --- |
-| **Mission Compiler & Hard-Invariant Validation** | 0.087 ms | 0.078 ms | 0.05 ms | 0.085 ms |
-| **Bounded Incremental Impact Analysis (6 nodes, 6 edges)** | 0.075 ms | 0.107 ms | 0.063 ms | 0.09 ms |
-| **Cross-Origin Peer Quote Collection (4 origins)** | 1.645 ms | 2.601 ms | 2 ms | 3.546 ms |
-| **Minimal-Change Constraint Solver** | 0.305 ms | 0.15 ms | 0.084 ms | 0.115 ms |
-| **Full Prepare -> Bound Approval -> Commit -> Ed25519 Reconcile** | **8.46 ms** | **13.527 ms** | **7.99 ms** | **11.57 ms** |
-| **Verified Saga Completion Rate** | **100%** | — | **100%** | — |
+Means are kept in the JSON for completeness; medians and p95 are reported here because single garbage-collection pauses dominate means at sub-millisecond scale.
 
 ---
 
-## 3. Limitations & Honesty Disclosure
+## 3. Limitations
 
-1. **Simulated Demonstration Providers:** MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber, and PowerFlow Energy are independent demonstration services running on separate origins with real HTTP/CORS/MCP/Ed25519 protocol boundaries, not commercial moving or utility companies.
-2. **Loopback vs. WAN Latency:** Cross-origin round trips above were measured across loopback sockets; public internet HTTPS hops add typical WAN RTT (~20–120 ms per origin) plus user-selected LLM inference time when invoked via natural-language chat.
-3. **Reproduce Command:** Run `node scripts/run_benchmarks.mjs` to regenerate `benchmark_results.json` and this report on any machine with Node.js >= 22.
+1. **Demonstration providers.** MoveCo, PermitFlow, HomeConnect and PowerFlow are independent demonstration services on separate origins with real HTTP, CORS, MCP and Ed25519 boundaries — not commercial companies.
+2. **Loopback latency.** Measured on local sockets. Over the public internet each provider hop adds WAN round-trip time (typically tens of milliseconds), plus model inference time when the optional chat assistant is used.
+3. **Manual baseline is an estimate.** The "~18 actions" figure is a task model, not a timed user study. Human completion time is deliberately not claimed.

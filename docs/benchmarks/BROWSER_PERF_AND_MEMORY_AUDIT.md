@@ -41,6 +41,8 @@ To verify that repeated multi-origin planning, Pareto optimization, WebCrypto Ed
 
 ## 3. Lighthouse Accessibility, Best Practices & SEO Across All 5 Live HTTPS Sites
 
+> Measured on the pre-redesign UI (Nov 14, 2026). The interface was redesigned afterwards; re-run `npx lighthouse <url> --preset=desktop` on each live site before quoting these scores.
+
 | Live Public HTTPS Site | Accessibility | Best Practices | SEO | Console Errors |
 |---|---:|---:|---:|---:|
 | `https://toskaman.github.io/continuity-agentic-web/` *(Idle & Active Chat + CRUSE)* | **100** | **100** | **100** | **0** |
