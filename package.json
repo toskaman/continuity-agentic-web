@@ -20,6 +20,7 @@
     "test:chaos": "node --test \"tests/chaos/*.test.mjs\"",
     "test:sites": "node --test \"apps/*/tests/*.test.mjs\"",
     "test": "node scripts/run_all_tests.mjs",
-    "benchmark": "node scripts/run_benchmarks.mjs"
+    "benchmark": "node scripts/run_benchmarks.mjs",
+    "audit:submission": "node packages/nanda-resolver/cli.mjs"
   }
 }

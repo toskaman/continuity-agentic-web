@@ -107,8 +107,15 @@ function computeObjectiveScore(metrics, weights) {
  *   solverDurationMs: number
  * }}
  */
-export function solveMinimalChangePlans({ graph, proposal, impact, normalizedOffers }) {
+export function solveMinimalChangePlans({
+  graph,
+  proposal,
+  impact,
+  normalizedOffers,
+  pinnedCommitmentIds = [],
+}) {
   const t0 = performance.now();
+  const pinnedSet = new Set(pinnedCommitmentIds);
   const targetAnchorDate = proposal.requested_change.new_value;
   const maxBudgetEur = proposal.invariants.maximum_budget_eur;
   const allowUnauthorizedCancel = proposal.invariants.unauthorized_cancellation === true;
@@ -121,6 +128,10 @@ export function solveMinimalChangePlans({ graph, proposal, impact, normalizedOff
   /** @type {Map<string, Array<Record<string, any>>>} */
   const optionsByNode = new Map();
   for (const node of allNodes) {
+    if (pinnedSet.has(node.id)) {
+      optionsByNode.set(node.id, [makeKeepOption(node)]);
+      continue;
+    }
     const decision = impact.nodeDecisions[node.id];
     if (!decision || decision.status === "UNCHANGED") {
       optionsByNode.set(node.id, [makeKeepOption(node)]);

@@ -1,5 +1,12 @@
 import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
+import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
+const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 import {
   createPeerBrowserDomainEngine,
   verifySignedReceiptHandoff,
@@ -317,4 +324,50 @@ test("V2.8 — Google ADK -> Open Agentic Web HOCON Converter preserves 3-agent 
       }),
     /cycle rejected/i,
   );
+});
+
+test("V2.9 — Direct Graph Node Pinning allows compatible locks and refuses conflicting SAME_DAY_REQUIRED locks", async () => {
+  await App.page.resetMission({ resetToDefaultScenario: true });
+  await App.page.analyzeAndPrepareChange("Move relocation from Tuesday to Friday under €700.");
+
+  // Pinning PowerFlow Tuesday (compatible prerequisite) keeps plan feasible
+  const okPin = await App.page.togglePinCommitment("cmt_powerflow_grid");
+  assert.equal(okPin.ok, true);
+
+  // Pinning PermitFlow Curbside Bay to Tuesday while Van moves to Friday violates SAME_DAY_REQUIRED -> cleanly rejected!
+  const conflictPin = await App.page.togglePinCommitment("cmt_permitflow_bay");
+  assert.equal(conflictPin.ok, false);
+  assert.match(conflictPin.reason, /Curbside loading bay permit/i);
+
+  // Unpinning restores feasibility immediately
+  const unpin = await App.page.togglePinCommitment("cmt_permitflow_bay");
+  assert.equal(unpin.ok, true);
+
+  await App.page.resetMission({ resetToDefaultScenario: true });
+});
+
+test("V2.10 — Standalone Open Agentic Web & NANDA Submission CLI (continuity-audit) validates live origins with exit code 0", async () => {
+  const eco = await startAllEcosystemServers({
+    continuity: 0,
+    moveco: 0,
+    permitflow: 0,
+    homeconnect: 0,
+    powerflow: 0,
+  });
+  try {
+    const cliPath = path.join(REPO_ROOT, "packages", "nanda-resolver", "cli.mjs");
+    const { stdout } = await execFileAsync(process.execPath, [
+      cliPath,
+      "--json",
+      eco.coordinator.origin(),
+      eco.peers.moveco.origin(),
+    ]);
+    const parsed = JSON.parse(stdout);
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.sitesAudited, 2);
+    assert.equal(parsed.reports[0].passedCount, 7);
+    assert.equal(parsed.reports[0].corsAllowOrigin, "*");
+  } finally {
+    await eco.stopAll();
+  }
 });

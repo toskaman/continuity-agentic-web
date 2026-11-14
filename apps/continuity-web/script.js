@@ -103,6 +103,7 @@ export class ContinuityCoordinatorPage {
     this.rippleFailureInjected = false;
     this.zoomScale = 1;
     this.selectedNodeId = "cmt_moveco_van";
+    this.pinnedNodeIds = new Set();
 
     this.mission = createSignatureMoveMission({ origins: this.peerOrigins });
     this.graph = MissionGraph.fromMission(this.mission);
@@ -455,6 +456,7 @@ export class ContinuityCoordinatorPage {
     this.bypassAuditReport = null;
     this.lastConvertedBundle = null;
     this.holdsPlacedAtMs = null;
+    this.pinnedNodeIds = new Set();
     this.providerHarnessPromise = null;
     this.version += 1;
 
@@ -589,12 +591,30 @@ export class ContinuityCoordinatorPage {
     return await this._solveAndPrepareFromCachedOffers(harness);
   }
 
+  async togglePinCommitment(nodeId) {
+    if (!nodeId || nodeId === this.mission.anchor_commitment_id || this.lastSagaExecution) {
+      return { ok: false, reason: "Cannot pin primary change anchor or post-commit node." };
+    }
+    if (this.pinnedNodeIds.has(nodeId)) {
+      this.pinnedNodeIds.delete(nodeId);
+    } else {
+      this.pinnedNodeIds.add(nodeId);
+    }
+    if (this.compiledProposal && this.impactReport) {
+      const harness = await this.ensureProviderClients();
+      return await this._solveAndPrepareFromCachedOffers(harness);
+    }
+    this.render(`Updated date lock on ${nodeId} (${this.pinnedNodeIds.size} pinned).`);
+    return { ok: true, pinned: this.pinnedNodeIds.has(nodeId) };
+  }
+
   async _solveAndPrepareFromCachedOffers({ clients, verifier }) {
     this.solverResult = solveMinimalChangePlans({
       graph: this.graph,
       proposal: this.compiledProposal,
       impact: this.impactReport,
       normalizedOffers: this.cachedNormalizedOffers,
+      pinnedCommitmentIds: Array.from(this.pinnedNodeIds),
     });
 
     if (!this.solverResult.feasible) {
@@ -1382,13 +1402,16 @@ export class ContinuityCoordinatorPage {
       const isSelected = node.id === this.selectedNodeId;
       const strokeW = isSelected ? 2.8 : 1.6;
 
+      const isPinned = this.pinnedNodeIds.has(node.id);
+      const priceLabel = `${isPinned ? "📌 " : ""}€${Number(node.price_eur).toFixed(0)}`;
+
       parts.push(
         `<g class="graph-node-group" tabindex="0" data-node-id="${this.escapeXml(node.id)}">
           <title>${this.escapeXml(`${node.title}: ${meta.label}, scheduled ${node.scheduled_date}, €${node.price_eur}`)}</title>
           <rect x="${pos.x}" y="${pos.y}" width="225" height="90" rx="10" fill="${pal.fill}" stroke="${pal.stroke}" stroke-width="${strokeW}" />
           <rect x="${pos.x + 10}" y="${pos.y + 9}" width="114" height="18" rx="5" fill="${pal.badgeBg}" />
           <text x="${pos.x + 16}" y="${pos.y + 22}" fill="#ffffff" font-size="10" font-weight="700" font-family="system-ui, sans-serif">${this.escapeXml(`${meta.icon} ${meta.badge}`)}</text>
-          <text x="${pos.x + 214}" y="${pos.y + 22}" text-anchor="end" fill="${pal.text}" font-size="10.5" font-weight="700" font-family="system-ui, sans-serif">€${Number(node.price_eur).toFixed(0)}</text>
+          <text x="${pos.x + 214}" y="${pos.y + 22}" text-anchor="end" fill="${pal.text}" font-size="10.5" font-weight="700" font-family="system-ui, sans-serif">${this.escapeXml(priceLabel)}</text>
           <text x="${pos.x + 12}" y="${pos.y + 44}" fill="${pal.text}" font-size="12" font-weight="700" font-family="system-ui, sans-serif">${this.escapeXml(node.title.slice(0, 28))}</text>
           <text x="${pos.x + 12}" y="${pos.y + 62}" fill="#cbd5e1" font-size="10.5" font-family="system-ui, sans-serif">${this.escapeXml(node.provider_name.slice(0, 30))}</text>
           <text x="${pos.x + 12}" y="${pos.y + 79}" fill="#93c5fd" font-size="10.5" font-weight="600" font-family="system-ui, sans-serif">${this.escapeXml(`${node.booking_ref} · ${formatDateWithWeekday(node.scheduled_date)}`)}</text>
@@ -1422,12 +1445,31 @@ export class ContinuityCoordinatorPage {
     if (!node) return;
     const meta = GRAPH_VISUAL_STATES[node.visual_state] || GRAPH_VISUAL_STATES.UNCHANGED;
     const impactInfo = this.impactReport?.nodeDecisions?.[node.id];
+    const canPin = node.id !== this.mission.anchor_commitment_id && !this.lastSagaExecution;
+    const isPinned = this.pinnedNodeIds.has(node.id);
+    const matchingOp = this.preparedOps.find((o) => o.commitment_id === node.id);
+    const receiptDetails = matchingOp?.receipt_envelope
+      ? `<details style="margin-top:8px;"><summary style="cursor:pointer;font-weight:700;">Inspect Signed Ed25519 Receipt JSON</summary><pre style="margin:6px 0 0;padding:8px;border-radius:6px;background:var(--bg-card);overflow:auto;font-size:0.76rem;">${this.escapeXml(JSON.stringify(matchingOp.receipt_envelope, null, 2))}</pre></details>`
+      : "";
+
     box.innerHTML = `
-      <div><strong>${this.escapeXml(node.title)}</strong> — <span>[${this.escapeXml(`${meta.icon} ${meta.label}`)}]</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div><strong>${this.escapeXml(node.title)}</strong> — <span>[${this.escapeXml(`${meta.icon} ${meta.label}`)}]</span></div>
+        ${
+          canPin
+            ? `<button id="inspector-pin-btn" type="button" class="mini-btn">${isPinned ? "📌 Pinned Untouched (Click to Unlock)" : "📌 Pin Date Untouched"}</button>`
+            : ""
+        }
+      </div>
       <div>Provider: <code>${this.escapeXml(node.provider_name)}</code> (${this.escapeXml(node.provider_origin)}) · Ref: <code>${this.escapeXml(node.booking_ref)}</code></div>
       <div>Scheduled: <strong>${this.escapeXml(formatDateWithWeekday(node.scheduled_date))}</strong> (${this.escapeXml(node.window)}) · Price: <strong>€${Number(node.price_eur).toFixed(2)}</strong> · Cancel Penalty: €${Number(node.cancellation_fee_eur).toFixed(2)}</div>
       <div>Evidence Trust: <code>${this.escapeXml(node.observed?.evidence_trust || "DEMO_FIXTURE_INITIAL")}</code>${impactInfo ? ` · Impact Rationale: ${this.escapeXml(impactInfo.reasons.join(" "))}` : ""}</div>
+      ${receiptDetails}
     `;
+
+    box.querySelector("#inspector-pin-btn")?.addEventListener("click", () => {
+      void this.togglePinCommitment(node.id);
+    });
   }
 
   renderChangePackage(plan) {
@@ -1683,6 +1725,19 @@ export class ContinuityCoordinatorPage {
   async bindDom() {
     if (typeof document === "undefined") return;
     await this.probeLivePeerOrigins();
+
+    // Safe deep-link scenario/ripple presets (never reads key, router, or model)
+    if (typeof location !== "undefined" && location.search) {
+      const sp = new URLSearchParams(location.search);
+      const reqScenario = sp.get("scenario");
+      if (reqScenario && ["home_relocation", "outpatient_surgery", "product_launch_expo"].includes(reqScenario)) {
+        await this.switchScenario(reqScenario);
+      }
+      if (sp.get("ripple") === "1" || sp.get("ripple") === "true") {
+        await this.resetMission({ rippleFailureInjected: true });
+      }
+    }
+
     this.render();
 
     document.querySelector("#theme-toggle-btn")?.addEventListener("click", () => {
