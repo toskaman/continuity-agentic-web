@@ -67,6 +67,62 @@ function missionStage(page) {
   };
 }
 
+/* ---------- Live provider wall: the providers' own pages, framed from their own origin ---------- */
+const wall = { loaded: false, justCommitted: false };
+
+function wallTarget(page, pid) {
+  const base = String(page.peerOrigins?.[pid] || "").replace(/\/+$/, "");
+  const href = document.querySelector(`#peer-link-${pid}`)?.getAttribute("href") || "";
+  const token = href.match(/#continuity_receipt=([A-Za-z0-9_-]+)/)?.[1] || "";
+  return { base, token, url: `${base}/embed.html${token ? `#continuity_receipt=${token}` : ""}` };
+}
+
+function makeFrame(pid, url) {
+  const f = document.createElement("iframe");
+  f.title = `${pid} — live page served from its own origin`;
+  f.setAttribute("sandbox", "allow-scripts allow-same-origin");
+  f.setAttribute("referrerpolicy", "no-referrer");
+  f.dataset.want = url;
+  f.src = url;
+  return f;
+}
+
+function syncWall(page, states) {
+  if (!document.querySelector("#live-wall")) return;
+  if (!wall.loaded && !page.compiledProposal) return;
+  wall.loaded = true;
+  const loadBtn = document.querySelector("#live-wall-load");
+  if (loadBtn) loadBtn.hidden = true;
+  const delay = wall.justCommitted ? 1300 : 0;
+  wall.justCommitted = false;
+  for (const pid of PEERS) {
+    const slot = document.querySelector(`[data-live-frame="${pid}"]`);
+    if (!slot) continue;
+    const { base, token, url } = wallTarget(page, pid);
+    const urlEl = document.querySelector(`[data-live-url="${pid}"]`);
+    if (urlEl) urlEl.textContent = base.replace(/^https?:\/\//, "");
+    let frame = slot.querySelector("iframe");
+    if (!frame) {
+      slot.replaceChildren(makeFrame(pid, url));
+    } else if (frame.dataset.want !== url) {
+      const hadToken = frame.dataset.want.includes("#");
+      frame.dataset.want = url;
+      if (hadToken && !token) slot.replaceChildren(makeFrame(pid, url)); // mission reset: fresh page
+      else setTimeout(() => { if (frame.dataset.want === url) frame.src = url; }, delay); // hash only: no reload, the page verifies the receipt
+    }
+    const label = document.querySelector(`[data-live-state="${pid}"]`);
+    if (label) {
+      const st = states[pid].state;
+      label.textContent = token ? "Signed receipt delivered — verified by this page"
+        : st === "committed" ? "Committed"
+        : st === "prepared" ? "Replacement held — page unchanged until you approve"
+        : st === "contacted" ? (page.lastSagaExecution ? "Consulted — kept as is, nothing to change" : "Consulted")
+        : "Live — no change requested";
+      label.dataset.state = token ? "committed" : st;
+    }
+  }
+}
+
 let lastOutcome = null;
 
 /** Completion panel: shown once when a commit finishes (verified or halted), dismissible. */
@@ -103,6 +159,10 @@ function showOutcome(page) {
        </div>
        <button type="button" class="outcome-close" aria-label="Close">×</button>`;
   document.body.append(panel);
+  if (ok) {
+    wall.justCommitted = true;
+    document.querySelector("#live-wall")?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+  }
   panel.querySelector(".outcome-close")?.addEventListener("click", () => panel.remove());
   panel.querySelector('[data-outcome="ics"]')?.addEventListener("click", () => document.querySelector("#export-ics-btn")?.click());
   panel.querySelector('[data-outcome="reset"]')?.addEventListener("click", () => {
@@ -178,6 +238,7 @@ function update() {
       .map((p) => `${p.label.split(" — ")[0]} is also the best plan for: ${p.co_optimizes.slice(1).map((k) => (OBJECTIVE[k] || k).toLowerCase()).join(", ")} — so those strategies are merged into one card.`)
       .join(" ");
   }
+  syncWall(page, states);
 }
 
 // Hook into every real render.
@@ -238,6 +299,11 @@ if ("IntersectionObserver" in window && navLinks.length) {
     if (target) io.observe(target);
   });
 }
+
+document.querySelector("#live-wall-load")?.addEventListener("click", () => {
+  wall.loaded = true;
+  update();
+});
 
 // Demo button: show progress until the approval dialog (or an outcome) appears.
 const demoBtn = document.querySelector("#guided-demo-btn");

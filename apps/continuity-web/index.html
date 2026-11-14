@@ -371,6 +371,37 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           </div>
           <a href="./agent-manifest.json" target="_blank" rel="noopener" class="artifact-chip">agent-manifest.json</a>
         </div>
+        <div class="live-wall reveal" id="live-wall">
+          <div class="live-head">
+            <div>
+              <h3>Watch the providers react</h3>
+              <p>These are the providers' real pages, loaded from their own origin. When you approve a plan, each one receives its signed receipt, checks the signature itself and only then updates its booking.</p>
+            </div>
+            <button type="button" class="btn btn-on-dark btn-sm" id="live-wall-load">Load live provider pages</button>
+          </div>
+          <div class="live-grid">
+            <figure class="live-site" data-peer="moveco">
+              <figcaption><span class="live-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="live-url" data-live-url="moveco">MoveCo Express</span></figcaption>
+              <div class="live-frame" data-live-frame="moveco"><span class="live-placeholder">Loads when a mission starts</span></div>
+              <span class="live-state" data-live-state="moveco">Waiting</span>
+            </figure>
+            <figure class="live-site" data-peer="permitflow">
+              <figcaption><span class="live-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="live-url" data-live-url="permitflow">PermitFlow Civic</span></figcaption>
+              <div class="live-frame" data-live-frame="permitflow"><span class="live-placeholder">Loads when a mission starts</span></div>
+              <span class="live-state" data-live-state="permitflow">Waiting</span>
+            </figure>
+            <figure class="live-site" data-peer="homeconnect">
+              <figcaption><span class="live-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="live-url" data-live-url="homeconnect">HomeConnect Fiber</span></figcaption>
+              <div class="live-frame" data-live-frame="homeconnect"><span class="live-placeholder">Loads when a mission starts</span></div>
+              <span class="live-state" data-live-state="homeconnect">Waiting</span>
+            </figure>
+            <figure class="live-site" data-peer="powerflow">
+              <figcaption><span class="live-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="live-url" data-live-url="powerflow">PowerFlow Energy</span></figcaption>
+              <div class="live-frame" data-live-frame="powerflow"><span class="live-placeholder">Loads when a mission starts</span></div>
+              <span class="live-state" data-live-state="powerflow">Waiting</span>
+            </figure>
+          </div>
+        </div>
         <div class="agent-grid" id="agent-grid">
           <article class="agent-card reveal" data-peer="moveco">
             <div class="agent-top"><span class="eco-dot dot-moveco" aria-hidden="true"></span><div><h3>MoveCo Express</h3><p>Residential moving crews</p></div><span class="badge agent-status" data-agent-status="moveco">Not contacted</span></div>

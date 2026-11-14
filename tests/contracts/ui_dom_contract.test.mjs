@@ -50,6 +50,16 @@ test("all 5 sites keep the runtime mount, status line and deploy-script anchors"
   }
 });
 
+test("each provider ships a compact embed.html that runs its real scripts", async () => {
+  const panels = { "demo-moveco": "booking-panel", "demo-permitflow": "dossier-panel", "demo-homeconnect": "appt-panel", "demo-powerflow": "grid-panel" };
+  for (const [app, panel] of Object.entries(panels)) {
+    const html = await read(app, "embed.html");
+    assert.ok(html.includes(`id="${panel}"`), `${app}/embed.html: #${panel}`);
+    for (const src of ["script.js", "peer-sync.js", "ui.js"]) assert.ok(html.includes(`src="${src}"`), `${app}/embed.html loads ${src}`);
+    assert.ok(!html.includes("site.js"), `${app}/embed.html must not boot the agent runtime`);
+  }
+});
+
 test("generated stylesheets are in sync with the design system", () => {
   const res = spawnSync(process.execPath, [path.join(ROOT, "scripts", "write_peer_styles.mjs"), "--check"], { encoding: "utf8" });
   assert.equal(res.status, 0, res.stderr || res.stdout);

@@ -609,6 +609,19 @@ body > dialog button { margin-right: 8px; }
   .header-meta .pill-badge { display: none; }
 }
 
+/* Compact embed view (embed.html), framed by the coordinator's live provider wall */
+.is-embed body { background: var(--surface); overflow: hidden; }
+.embed-main { padding: 0; }
+.is-embed .state-box { min-height: 0; }
+.is-embed .record-card { border: 0; border-radius: 0; box-shadow: none; }
+.is-embed .record-top { padding: 14px 16px 12px; }
+.is-embed .record-body { padding: 14px 16px; gap: 12px; }
+.is-embed .record-title { font-size: .95rem; }
+.is-embed .route, .is-embed .signal, .is-embed .meter-grid, .is-embed .record-facts, .is-embed .record-foot { display: none; }
+.is-embed .record-when .date-tile { width: 52px; height: 58px; }
+.is-embed .record-when strong { font-size: 1rem; }
+.is-embed .feedback { margin: 0 16px 14px; font-size: var(--fs-xs); background: var(--ok-bg); border-color: var(--ok-line); color: #05603A; }
+
 /* PermitFlow Civic Prep — institutional, calm, reassuring. Civic blue + soft green. */
 :root {
   --record-min-h: 395px;

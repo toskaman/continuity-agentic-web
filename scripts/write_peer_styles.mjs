@@ -22,16 +22,17 @@ const CHECK = process.argv.includes("--check");
 
 const APPS = [
   { dir: "continuity-web", peer: false },
-  { dir: "demo-moveco", peer: true },
-  { dir: "demo-permitflow", peer: true },
-  { dir: "demo-homeconnect", peer: true },
-  { dir: "demo-powerflow", peer: true },
+  { dir: "demo-moveco", peer: true, title: "MoveCo Express", panel: "booking-panel" },
+  { dir: "demo-permitflow", peer: true, title: "PermitFlow Civic Prep", panel: "dossier-panel" },
+  { dir: "demo-homeconnect", peer: true, title: "HomeConnect Fiber", panel: "appt-panel" },
+  { dir: "demo-powerflow", peer: true, title: "PowerFlow Energy", panel: "grid-panel" },
 ];
 
 const read = (p) => readFile(path.join(DS, p), "utf8");
 const base = await read("base.css");
 const peer = await read("peer.css");
 const kit = await read("peer-ui-kit.js");
+const embedTpl = await read("peer-embed.html");
 
 let drift = 0;
 for (const app of APPS) {
@@ -44,9 +45,11 @@ for (const app of APPS) {
     theme,
   ].join("\n");
 
+  const embed = app.peer ? embedTpl.replaceAll("{{TITLE}}", app.title).replaceAll("{{PANEL}}", app.panel) : null;
   if (CHECK) {
     const current = await readFile(path.join(appDir, "styles.css"), "utf8").catch(() => "");
-    if (current !== css) {
+    const currentEmbed = embed ? await readFile(path.join(appDir, "embed.html"), "utf8").catch(() => "") : null;
+    if (current !== css || currentEmbed !== embed) {
       console.error(`✕ ${app.dir}/styles.css is out of date`);
       drift += 1;
     }
@@ -55,6 +58,7 @@ for (const app of APPS) {
 
   await writeFile(path.join(appDir, "styles.css"), css, "utf8");
   await writeFile(path.join(appDir, "ui-kit.js"), kit, "utf8");
+  if (embed) await writeFile(path.join(appDir, "embed.html"), embed, "utf8");
   await mkdir(path.join(appDir, "assets", "fonts"), { recursive: true });
   for (const f of ["inter-var-latin.woff2", "OFL.txt"]) {
     await copyFile(path.join(DS, "fonts", f), path.join(appDir, "assets", "fonts", f));
