@@ -2,7 +2,8 @@
 import { App } from "./script.js";
 import { afterEachRender, choiceCards, dateParts, escapeHtml as e, flash, chrome } from "./ui-kit.js";
 
-const ORIGINAL_DATE = App.page.dossier.scheduledDate;
+// Original date from a pristine instance: a signed receipt may already have synced App.page.
+const ORIGINAL_DATE = new App.page.constructor().dossier.scheduledDate;
 const select = document.querySelector("#date-select");
 
 const cards = choiceCards({
