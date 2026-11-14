@@ -140,6 +140,7 @@ When deploying any `apps/*` bundle to a public HTTPS host (Netlify, Cloudflare P
 - [Threat Model, Security & Privacy](docs/security/THREAT_MODEL.md)
 - [Chaos Lab Catalog (15 Scenarios)](docs/CHAOS_TEST_CATALOG.md)
 - [Measured Before/After Benchmarks](docs/benchmarks/BEFORE_AFTER.md)
+- [Live-Model Check (real Otari model, nothing mocked)](docs/benchmarks/LIVE_MODEL_CHECK.md)
 - [Chromium Performance Trace & V8 Heap Audit](docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md)
 - [Three-Judge Red-Team Review](docs/competition/RED_TEAM_JUDGE_REVIEW.md)
 - [Complete Pitch Suite & Tough Judge Q&A](docs/submission/PITCH_AND_JUDGE_QA_DECK.md)

@@ -42,6 +42,8 @@ Judging: stage one pass/fail on conformance; stage two has four equally weighted
 
 Proven (reproducible): conformance checks; 41 tests; 60-run benchmark (100% verified completion, 0 cancel calls, 3/3 signed receipts, 11 ms median on loopback); Lighthouse scores; public end-to-end run including receipt verification on provider origins.
 
+Also proven (single run): the real engine with the real default Otari model completes the four-provider consultation with correct consent and key isolation (`docs/benchmarks/LIVE_MODEL_CHECK.md`); it takes about a minute.
+
 Not proven: time saved for real users; behaviour with real third-party providers; behaviour under real WAN failures (Chaos Lab scenarios are simulated).
 
 ## 6. Remaining actions (owner: entrant)

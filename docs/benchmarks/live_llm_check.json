@@ -1,0 +1,26 @@
+{
+  "measuredAtIso": "2026-11-14T22:03:45.079Z",
+  "routerHost": "eu.api.otari.ai",
+  "model": "alibaba/qwen-3.5-35b-a3b",
+  "prompt": "Ask MoveCo, PermitFlow, HomeConnect, and PowerFlow what services each offers.",
+  "seconds": 66.6,
+  "error": null,
+  "routerCalls": 13,
+  "routerErrors": [],
+  "requestsWithExplicitMaxTokens": 0,
+  "modelsRequested": [
+    "alibaba/qwen-3.5-35b-a3b"
+  ],
+  "consentCards": 4,
+  "anyPeerContactedBeforeConsent": false,
+  "peerOriginsContacted": 4,
+  "apiKeySentOutsideRouter": false,
+  "replyChars": 1802,
+  "providersNamedInReply": [
+    "MoveCo",
+    "PermitFlow",
+    "HomeConnect",
+    "PowerFlow"
+  ],
+  "replyExcerpt": "Here is a summary of the services and policies offered by each partner in the network: **1. MoveCo Express (Moving Services)** * **Services:** Scheduling residential moving vans, rescheduling moving dates, and holding a 15-minute crew slot without changing an existing reservation. * **Limitations:** Cannot process online credit-card payments, sell packing boxes, or arrange international customs sh"
+}

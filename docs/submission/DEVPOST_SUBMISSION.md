@@ -55,6 +55,7 @@ Five independent websites on two origins — CONTINUITY (`toskaman.github.io`) a
 ### Why you can trust it
 - The language model interprets and explains; it cannot raise the budget, enable cancellations or commit anything. Those rules are enforced in code.
 - Network timeouts after a commit become `UNKNOWN` and are reconciled, not blindly retried.
+- **Checked with a real model, not only mocks:** the real engine on hosted Otari with the default model consulted all four providers — 4 consent cards, no provider contacted before consent, API key sent to the router only (`docs/benchmarks/LIVE_MODEL_CHECK.md`).
 - **Chaos Lab:** 15 failure scenarios (forged receipts, price drift after approval, timeouts, partial failures…) run in your browser.
 - **Measured:** 60 benchmark runs, 100% verified completion, 0 cancel calls, 3/3 signed receipts per run; full run 11 ms median on loopback (`docs/benchmarks/BEFORE_AFTER.md`). 41 automated tests pass in CI. Lighthouse 13.6 scores all five sites 100 on desktop in Performance, Accessibility, Best Practices, SEO and the new **Agentic Browsing** category (`docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md`).
 

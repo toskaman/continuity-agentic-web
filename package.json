@@ -1,7 +1,7 @@
 {
   "name": "continuity-open-agentic-web",
   "version": "1.0.0",
-  "description": "CONTINUITY — Safe Multi-Provider Change Coordinator for the Open Agentic Web (Cognizant Open Agentic Web Challenge)",
+  "description": "CONTINUITY \u2014 Safe Multi-Provider Change Coordinator for the Open Agentic Web (Cognizant Open Agentic Web Challenge)",
   "license": "Apache-2.0",
   "type": "module",
   "private": true,
@@ -21,6 +21,7 @@
     "test:sites": "node --test \"apps/*/tests/*.test.mjs\"",
     "test": "node scripts/run_all_tests.mjs",
     "benchmark": "node scripts/run_benchmarks.mjs",
-    "audit:submission": "node packages/nanda-resolver/cli.mjs"
+    "audit:submission": "node packages/nanda-resolver/cli.mjs",
+    "verify:live-llm": "node scripts/verify_live_llm.mjs"
   }
 }
