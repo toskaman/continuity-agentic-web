@@ -103,10 +103,10 @@ afterEachRender(App.page, (state, feedback) => {
   const summary = document.querySelector("#dossier-summary");
   if (summary) {
     summary.innerHTML = `
-      <div><h4>Information provided</h4><ul><li>Dossier ${e(state.dossier.dossierRef)}</li><li>${e(state.dossier.zone)}</li><li>${e(state.dossier.scheduledLabel)}, ${e(state.dossier.window)}</li></ul></div>
-      <div><h4>Documents available</h4><ul><li>Prepared application draft</li><li>Notice-period check</li></ul></div>
-      <div><h4>Still open</h4><ul>${missing.map((m) => `<li>${e(m.title)}</li>`).join("") || "<li>Nothing</li>"}</ul></div>
-      <div><h4>Next steps</h4><ul>${state.previewDate ? "<li>Update the draft to the previewed date</li>" : ""}<li>Review the draft, then submit it to the city yourself</li></ul></div>`;
+      <div><h3>Information provided</h3><ul><li>Dossier ${e(state.dossier.dossierRef)}</li><li>${e(state.dossier.zone)}</li><li>${e(state.dossier.scheduledLabel)}, ${e(state.dossier.window)}</li></ul></div>
+      <div><h3>Documents available</h3><ul><li>Prepared application draft</li><li>Notice-period check</li></ul></div>
+      <div><h3>Still open</h3><ul>${missing.map((m) => `<li>${e(m.title)}</li>`).join("") || "<li>Nothing</li>"}</ul></div>
+      <div><h3>Next steps</h3><ul>${state.previewDate ? "<li>Update the draft to the previewed date</li>" : ""}<li>Review the draft, then submit it to the city yourself</li></ul></div>`;
   }
   cards.refresh();
 });

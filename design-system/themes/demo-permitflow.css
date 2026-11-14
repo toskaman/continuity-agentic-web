@@ -1,5 +1,7 @@
 /* PermitFlow Civic Prep — institutional, calm, reassuring. Civic blue + soft green. */
 :root {
+  --record-min-h: 395px;
+  --choices-min-h: 223px;
   --accent: #1F4F8F;
   --accent-2: #2E9D74;
   --accent-strong: #163A6B;
@@ -26,6 +28,6 @@
 .official-banner { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-radius: var(--r-md); background: #F1F4F8; border: 1px solid var(--line-strong); font-size: var(--fs-xs); color: var(--ink-2); }
 .official-banner strong { color: var(--ink); }
 .summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.summary-grid h4 { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+.summary-grid h3 { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
 .summary-grid ul { margin: 0; padding-left: 18px; font-size: var(--fs-sm); color: var(--ink-2); display: grid; gap: 4px; }
 @media (max-width: 600px) { .summary-grid { grid-template-columns: 1fr; } .check-item { grid-template-columns: 28px 1fr; } .check-item .badge { grid-column: 2; justify-self: start; } }

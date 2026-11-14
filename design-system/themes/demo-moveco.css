@@ -1,5 +1,7 @@
 /* MoveCo Express — human, practical, warm. Deep blue + warm orange. */
 :root {
+  --record-min-h: 484px;
+  --choices-min-h: 204px;
   --accent: #2043C4;
   --accent-2: #F0661A;       /* decorative: borders, route line */
   --accent-2-ink: #C94A0E;   /* text and filled tiles: 4.7:1 on white */

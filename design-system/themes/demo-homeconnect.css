@@ -1,5 +1,7 @@
 /* HomeConnect Fiber — premium telecom, technical but warm. Cyan + navy + turquoise. */
 :root {
+  --record-min-h: 490px;
+  --choices-min-h: 213px;
   --accent: #0B6E8A;
   --accent-2: #14B8A6;
   --accent-strong: #08506A;

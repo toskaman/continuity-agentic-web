@@ -524,7 +524,9 @@ body > dialog button { margin-right: 8px; }
 .record-hold { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: var(--r-md); background: var(--warn-bg); border: 1px solid var(--warn-line); color: #93370D; font-size: var(--fs-sm); font-weight: 520; }
 .record-hold::before { content: "⏱"; }
 .record-foot { padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--line); font-size: var(--fs-xs); color: var(--muted); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.state-box:empty { min-height: 260px; }
+/* Reserve the space the JS-rendered card and choices will take (avoids layout shift). */
+.state-box { min-height: var(--record-min-h, 480px); }
+[id$="-choices"] { min-height: var(--choices-min-h, 204px); }
 
 /* Date tile */
 .date-tile {
@@ -567,7 +569,7 @@ body > dialog button { margin-right: 8px; }
 .choice-side { display: grid; justify-items: end; gap: 6px; padding-right: 34px; text-align: right; }
 .choice-price { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .controls-stack { display: grid; gap: var(--s-4); }
-.controls-stack.is-enhanced .native-select { display: none; }
+.native-select { display: none; } /* shown by <noscript> when JS is off */
 .action-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding-top: var(--s-4); margin-top: var(--s-2); border-top: 1px solid var(--line); }
 .action-bar .hint { margin: 0; flex: 1 1 220px; }
 
@@ -609,6 +611,8 @@ body > dialog button { margin-right: 8px; }
 
 /* PowerFlow Energy — contemporary energy, trust. Deep green + mint + navy. */
 :root {
+  --record-min-h: 524px;
+  --choices-min-h: 204px;
   --accent: #0E6B4D;
   --accent-2: #34D399;
   --accent-strong: #0A4F39;

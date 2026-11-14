@@ -1,5 +1,7 @@
 /* PowerFlow Energy — contemporary energy, trust. Deep green + mint + navy. */
 :root {
+  --record-min-h: 524px;
+  --choices-min-h: 204px;
   --accent: #0E6B4D;
   --accent-2: #34D399;
   --accent-strong: #0A4F39;
