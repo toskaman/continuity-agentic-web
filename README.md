@@ -11,7 +11,7 @@ Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agentic
 1. Open **https://toskaman.github.io/continuity-agentic-web/?demo=1** — the demo starts by itself (or open the site and click **Run the live demo**).
 2. CONTINUITY injects a real provider failure (MoveCo's Friday crew is full), recovers through an overflow partner, compares plans and holds replacements — your original bookings stay untouched.
 3. The approval dialog lists every operation, price and provider. Click **Approve & commit**: three providers commit, three bookings stay untouched (two are never even contacted), and each commit returns an Ed25519-signed receipt.
-4. Click a provider in the network map (e.g. **MoveCo Express**): its own site, on another origin, verifies the signed receipt and shows the new date.
+4. The page scrolls to **Watch the providers react**: the four providers' real pages, framed from their own origin, each verify their signed receipt and show the new date (PowerFlow is correctly left unchanged).
 5. Optional: **Try without a key** in *Ask CONTINUITY* runs the real agent networks, `website_*` tools and consent cards with a scripted model.
 
 **Lighthouse 13.6 (desktop), all 5 live sites:** 100 Performance · 100 Accessibility · 100 Best Practices · 100 SEO · 100 Agentic Browsing — [details](docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md).
@@ -71,7 +71,7 @@ node scripts/run_all_tests.mjs
 This single command executes:
 1. Official Cognizant `build_network.mjs --check` across all 5 websites (**0 errors, 0 warnings**).
 2. Official Cognizant `check_partner.mjs` across all 5 live origins (**CORS, manifests, networks, and `bridge/action-bridge.html` verified**).
-3. All **41 automated tests in 13 suites** (unit, Google ADK → HOCON converter & cycle/secret guards, mandate & Nash bargaining bypasses, SHA-256 hash-chained ledger tamper detection, multi-domain intake & `.ics` round-trip, cross-origin browser bridge & signed receipt handoffs, WebMCP guardrails, live 7-point MVP 0.2 + NANDA conformance auditor, provider MCP contracts, cross-origin runtime composition & key isolation, adversarial security boundaries, and all **15 Chaos Lab scenarios**).
+3. All **42 automated tests in 13 suites** (unit, Google ADK → HOCON converter & cycle/secret guards, mandate & Nash bargaining bypasses, SHA-256 hash-chained ledger tamper detection, multi-domain intake & `.ics` round-trip, cross-origin browser bridge & signed receipt handoffs, WebMCP guardrails, live 7-point MVP 0.2 + NANDA conformance auditor, provider MCP contracts, cross-origin runtime composition & key isolation, adversarial security boundaries, and all **15 Chaos Lab scenarios**).
 
 ### 3. Reproduce Before/After Benchmarks (`N = 60` Live Cross-Origin Runs)
 

@@ -25,7 +25,7 @@ Judging: stage one pass/fail on conformance; stage two has four equally weighted
 
 | Criterion | Estimate | Supports it | Holds it back |
 | --- | --- | --- | --- |
-| Technological implementation | 8.5 / 10 | 5 conforming sites on 2 origins; consent before contact; signed receipts verified on the provider's origin; 41 automated tests; Chaos Lab; Lighthouse 100 incl. Agentic Browsing | Providers are demonstration services; state lives in the browser; `script.js` is one 82 KB file |
+| Technological implementation | 8.5 / 10 | 5 conforming sites on 2 origins; consent before contact; signed receipts verified on the provider's origin; 42 automated tests; Chaos Lab; Lighthouse 100 incl. Agentic Browsing | Providers are demonstration services; state lives in the browser; `script.js` is one 82 KB file |
 | Design | 8.5 / 10 | One design system, five identities; 60-second judge path; approval dialog; completion panel; mobile checked; WCAG AA contrast | Trust Center is dense; the runtime chat widget is only partly themeable |
 | Potential impact | 6.5 / 10 | Recognisable problem; 17 reusable modules; conformance auditor usable on any site | **No user evidence.** Manual baseline is an estimate; no real provider integration |
 | Quality of the idea | 8 / 10 | "Day-two change" instead of greenfield planning; hold-before-release across independent sites; receipts verified by the other party | Scheduling/coordination agents are a crowded theme; novelty is in the safety model, which needs the demo to land |
@@ -40,7 +40,7 @@ Judging: stage one pass/fail on conformance; stage two has four equally weighted
 
 ## 5. What is proven, what is not
 
-Proven (reproducible): conformance checks; 41 tests; 60-run benchmark (100% verified completion, 0 cancel calls, 3/3 signed receipts, 11 ms median on loopback); Lighthouse scores; public end-to-end run including receipt verification on provider origins.
+Proven (reproducible): conformance checks; 42 tests; 60-run benchmark (100% verified completion, 0 cancel calls, 3/3 signed receipts, 11 ms median on loopback); Lighthouse scores; public end-to-end run including receipt verification on provider origins.
 
 Also proven (single run): the real engine with the real default Otari model completes the four-provider consultation with correct consent and key isolation (`docs/benchmarks/LIVE_MODEL_CHECK.md`); it takes about a minute.
 
