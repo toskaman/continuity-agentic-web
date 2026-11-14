@@ -1,0 +1,108 @@
+{
+  "voice": "am_michael",
+  "engine": "Kokoro-82M via HyperFrames v0.9.19",
+  "brag": {
+    "text": "Move one relocation date from Tuesday to Friday, and six separate bookings break at once. Continuity coordinates independent Open Agentic Websites right in your browser. It skips unaffected bookings, recovers from a full crew, holds replacements below seven hundred euros, and verifies every receipt.",
+    "durationSec": 21.163,
+    "wav": "Z:\\continuity-titan-omega\\brag-output\\composition\\assets\\voiceover.wav"
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "sceneStart": 0,
+      "sceneDur": 13.08,
+      "sceneEnd": 13.08,
+      "voStart": 0.35,
+      "voDur": 11.883,
+      "voEnd": 12.23,
+      "tts": "Changing one date in real life should never force you to reorganize six separate companies by hand, or risk canceling a working reservation before its replacement is secured.",
+      "caption": "Changing one date shouldn't force 6 manual calls—or risk premature cancellations.",
+      "wav": "Z:\\continuity-titan-omega\\jury-film\\assets\\kokoro\\s1.wav"
+    },
+    {
+      "id": "s2",
+      "sceneStart": 13.08,
+      "sceneDur": 13.64,
+      "sceneEnd": 26.72,
+      "voStart": 13.43,
+      "voDur": 12.437,
+      "voEnd": 25.87,
+      "tts": "Shifting a move from Tuesday to Friday normally takes eighteen manual lookups, checks, and rebookings. Continuity reduces that to one plain-English request and one bound approval.",
+      "caption": "18 manual actions across 6 services → 1 plain-English request + 1 bound approval.",
+      "wav": "Z:\\continuity-titan-omega\\jury-film\\assets\\kokoro\\s2.wav"
+    },
+    {
+      "id": "s3",
+      "sceneStart": 26.72,
+      "sceneDur": 19.36,
+      "sceneEnd": 46.08,
+      "voStart": 27.07,
+      "voDur": 18.155,
+      "voEnd": 45.23,
+      "tts": "Instead of a closed marketplace, MoveCo, PermitFlow, HomeConnect, and PowerFlow are independent Open Agentic Websites. Continuity composes their Neuro SAN networks in your browser on Mozilla Otari, with consent cards and zero key leakage.",
+      "caption": "4 independent Open Agentic Websites composed locally in-browser via Mozilla Otari BYOK.",
+      "wav": "Z:\\continuity-titan-omega\\jury-film\\assets\\kokoro\\s3.wav"
+    },
+    {
+      "id": "s4",
+      "sceneStart": 46.08,
+      "sceneDur": 14.4,
+      "sceneEnd": 60.48,
+      "voStart": 46.43,
+      "voDur": 13.205,
+      "voEnd": 59.63,
+      "tts": "Watch what happens when we move Tuesday to Friday under seven hundred euros, while MoveCo's primary Friday crew is full. The Impact Engine skips unaffected storage and Saturday delivery completely.",
+      "caption": "Ripple Failure armed: Impact Engine excludes unaffected storage & Saturday delivery (0 calls).",
+      "wav": "Z:\\continuity-titan-omega\\jury-film\\assets\\kokoro\\s4.wav"
+    },
+    {
+      "id": "s5",
+      "sceneStart": 60.48,
+      "sceneDur": 16.26,
+      "sceneEnd": 76.74,
+      "voStart": 60.83,
+      "voDur": 15.061,
+      "voEnd": 75.89,
+      "tts": "When MoveCo's eight A M crew refuses Friday, the Minimal-Change Solver recovers with MoveCo's overflow fleet, keeps PowerFlow's Tuesday activation untouched, and holds slots at six hundred fifty-nine euros.",
+      "caption": "Minimal-Change Solver recovers via overflow crew & holds slots at €659.00 (≤ €700.00 cap).",
+      "wav": "Z:\\continuity-titan-omega\\jury-film\\assets\\kokoro\\s5.wav"
+    },
+    {
+      "id": "s6",
+      "sceneStart": 76.74,
+      "sceneDur": 15.9,
+      "sceneEnd": 92.64,
+      "voStart": 77.09,
+      "voDur": 14.699,
+      "voEnd": 91.79,
+      "tts": "Every approval is S H A two fifty-six bound to exact prices and dates. Once confirmed, Continuity commits with idempotency keys and verifies E D twenty-five fifty-one nine provider signatures.",
+      "caption": "SHA-256 bound approval → idempotent commit → 3/3 verified Ed25519 provider receipts.",
+      "wav": "Z:\\continuity-titan-omega\\jury-film\\assets\\kokoro\\s6.wav"
+    },
+    {
+      "id": "s7",
+      "sceneStart": 92.64,
+      "sceneDur": 15.83,
+      "sceneEnd": 108.47,
+      "voStart": 92.99,
+      "voDur": 14.635,
+      "voEnd": 107.63,
+      "tts": "Our built-in Chaos Lab passes all fifteen distributed fault scenarios, from post-commit timeouts to forged receipts, backed by twelve open-source Apache two modules and Project NANDA Agent Cards.",
+      "caption": "Chaos Lab: 15/15 distributed fault scenarios passed · 12 Apache-2.0 open-source modules.",
+      "wav": "Z:\\continuity-titan-omega\\jury-film\\assets\\kokoro\\s7.wav"
+    },
+    {
+      "id": "s8",
+      "sceneStart": 108.47,
+      "sceneDur": 7.47,
+      "sceneEnd": 115.94,
+      "voStart": 108.82,
+      "voDur": 6.272,
+      "voEnd": 115.09,
+      "tts": "Continuity. One change. Every commitment re-aligned, across the Open Agentic Web.",
+      "caption": "CONTINUITY — One change. Every commitment re-aligned.",
+      "wav": "Z:\\continuity-titan-omega\\jury-film\\assets\\kokoro\\s8.wav"
+    }
+  ],
+  "totalDurationSec": 115.94
+}

@@ -1,0 +1,31 @@
+1
+00:00:00,350 --> 00:00:12,230
+Changing one date shouldn't force 6 manual calls—or risk premature cancellations.
+
+2
+00:00:13,430 --> 00:00:25,870
+18 manual actions across 6 services → 1 plain-English request + 1 bound approval.
+
+3
+00:00:27,070 --> 00:00:45,230
+4 independent Open Agentic Websites composed locally in-browser via Mozilla Otari BYOK.
+
+4
+00:00:46,430 --> 00:00:59,630
+Ripple Failure armed: Impact Engine excludes unaffected storage & Saturday delivery (0 calls).
+
+5
+00:01:00,830 --> 00:01:15,890
+Minimal-Change Solver recovers via overflow crew & holds slots at €659.00 (≤ €700.00 cap).
+
+6
+00:01:17,090 --> 00:01:31,790
+SHA-256 bound approval → idempotent commit → 3/3 verified Ed25519 provider receipts.
+
+7
+00:01:32,990 --> 00:01:47,630
+Chaos Lab: 15/15 distributed fault scenarios passed · 12 Apache-2.0 open-source modules.
+
+8
+00:01:48,820 --> 00:01:55,090
+CONTINUITY — One change. Every commitment re-aligned.

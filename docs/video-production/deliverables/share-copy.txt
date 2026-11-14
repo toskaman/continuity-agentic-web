@@ -1,0 +1,1 @@
+Introducing CONTINUITY: safe multi-provider change reconciliation for the Open Agentic Web. Describe one schedule shift in plain English — CONTINUITY composes independent agentic websites in your browser, holds replacements below your €700 budget without premature cancellations, and verifies Ed25519 provider receipts.
