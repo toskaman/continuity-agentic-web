@@ -239,4 +239,23 @@ if ("IntersectionObserver" in window && navLinks.length) {
   });
 }
 
+// Demo button: show progress until the approval dialog (or an outcome) appears.
+const demoBtn = document.querySelector("#guided-demo-btn");
+demoBtn?.addEventListener("click", () => {
+  demoBtn.setAttribute("aria-busy", "true");
+  const started = Date.now();
+  const timer = setInterval(() => {
+    if (document.querySelector("dialog[open]") || App.page.lastSagaExecution || Date.now() - started > 15000) {
+      demoBtn.removeAttribute("aria-busy");
+      clearInterval(timer);
+    }
+  }, 200);
+});
+
+// Deep link for judges: ?demo=1 starts the guided demo. It stops at the approval
+// dialog like a manual run — nothing is ever approved automatically.
+if (new URLSearchParams(location.search).get("demo") === "1") {
+  setTimeout(() => demoBtn?.click(), 1800);
+}
+
 chrome();

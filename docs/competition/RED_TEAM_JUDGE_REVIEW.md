@@ -1,5 +1,8 @@
 # Three-Persona Skeptical Judge Red-Team Audit
 
+> **Historical (pre-redesign).** Scores in this file were self-assigned before the Nov 14, 2026 redesign and re-audit. See [`FINAL_READINESS_REPORT.md`](./FINAL_READINESS_REPORT.md) for the current, evidence-based assessment.
+
+
 **Audit Protocol:** Simulate three skeptical domain judges attempting to find disqualifying flaws, exaggerations, or technical weaknesses, verify fixes implemented in code, and state remaining limitations transparently.
 
 ---

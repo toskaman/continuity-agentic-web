@@ -36,7 +36,7 @@
 When one date in your life changes, CONTINUITY asks every affected provider's own agentic website what is possible, holds replacements before releasing anything, and lets you approve one verified plan instead of calling six companies.
 
 ### Try it in 60 seconds — no API key
-Open https://toskaman.github.io/continuity-agentic-web/ and click **Run the live demo**. A provider failure is injected and recovered, plans are compared, replacements are held, and an approval dialog opens. Approve: three providers commit with signed receipts and three bookings stay untouched. Click **MoveCo Express** in the network map — MoveCo's own site, on another origin, verifies the receipt and shows the new date.
+Open https://toskaman.github.io/continuity-agentic-web/?demo=1 — the demo starts by itself (or click **Run the live demo**). A provider failure is injected and recovered, plans are compared, replacements are held, and an approval dialog opens. Approve: three providers commit with signed receipts and three bookings stay untouched. Click **MoveCo Express** in the network map — MoveCo's own site, on another origin, verifies the receipt and shows the new date.
 
 ### The problem
 Agent demos usually plan something new. Real life breaks *after* things are booked. Moving house from Tuesday to Friday touches a moving crew, a parking permit, a fiber installation, an electricity activation, storage and a furniture delivery — six companies, six websites, and a real risk of cancelling a working booking before a replacement exists, or paying fees nobody needed to pay.
@@ -56,7 +56,7 @@ Five independent websites on two origins — CONTINUITY (`toskaman.github.io`) a
 - The language model interprets and explains; it cannot raise the budget, enable cancellations or commit anything. Those rules are enforced in code.
 - Network timeouts after a commit become `UNKNOWN` and are reconciled, not blindly retried.
 - **Chaos Lab:** 15 failure scenarios (forged receipts, price drift after approval, timeouts, partial failures…) run in your browser.
-- **Measured:** 60 benchmark runs, 100% verified completion, 0 cancel calls, 3/3 signed receipts per run; full run 11 ms median on loopback (`docs/benchmarks/BEFORE_AFTER.md`). 38 automated tests pass in CI. Lighthouse 13.6 scores all five sites 100 on desktop in Performance, Accessibility, Best Practices, SEO and the new **Agentic Browsing** category (`docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md`).
+- **Measured:** 60 benchmark runs, 100% verified completion, 0 cancel calls, 3/3 signed receipts per run; full run 11 ms median on loopback (`docs/benchmarks/BEFORE_AFTER.md`). 41 automated tests pass in CI. Lighthouse 13.6 scores all five sites 100 on desktop in Performance, Accessibility, Best Practices, SEO and the new **Agentic Browsing** category (`docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md`).
 
 ### Shared with the community (Apache-2.0)
 17 zero-dependency modules, including: a cross-origin browser bridge with signed receipt handoff for static sites; an Open Agentic Web MVP 0.2 + Project NANDA conformance auditor (7 checks, usable on any site from the Trust Center); a Google ADK / OpenAI Agents → Neuro SAN HOCON converter; an email/`.ics` intake compiler; and a WebMCP adapter with confirmation gates on irreversible tools.

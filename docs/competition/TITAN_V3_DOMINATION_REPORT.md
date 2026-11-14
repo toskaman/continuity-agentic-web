@@ -1,5 +1,8 @@
 # TITAN OMEGA v3.0 — Comprehensive Domination Audit, Implementation & Red-Team Report
 
+> **Historical (pre-redesign).** Scores in this file were self-assigned before the Nov 14, 2026 redesign and re-audit. See [`FINAL_READINESS_REPORT.md`](./FINAL_READINESS_REPORT.md) for the current, evidence-based assessment.
+
+
 **Project:** CONTINUITY — Safe Multi-Provider Change Coordinator for the Open Agentic Web (`v2.0`)  
 **Target Competition:** Cognizant Open Agentic Web Challenge (`https://cognizant-agenticweb.devpost.com/`)  
 **Deadline:** January 11, 2027 @ 08:00 AM PT (`16:00 UTC` / `17:00 GMT+1`)  
