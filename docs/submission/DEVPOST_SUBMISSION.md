@@ -71,7 +71,9 @@ First commit November 13, 2026, after the submission period opened (November 11,
 
 ## 3. Mozilla Otari Usage & Constructive Feedback (Required When Using Otari)
 
-- **Otari Account Email:** `[INSERT_YOUR_OTARI_ACCOUNT_EMAIL_HERE]`
+- **Otari Account Email:** paste it in the Devpost form only (kept out of this public repo; stored locally in the git-ignored `.env.local`).
+- **Verified Nov 14, 2026 with the entrant's own Otari key:** `alibaba/qwen-3.5-35b-a3b` is listed, returns a correct tool call, and the endpoint allows browser (CORS) requests.
+- **Second issue found (optional extra feedback):** *"EU keys (`otk_v1_eu_…`) are rejected by `api.otari.ai` with HTTP 421 and must use `eu.api.otari.ai`; a redirect, or a region field in the dashboard's copy-paste snippet, would save browser apps from a confusing first error. Our sites now switch the URL automatically when an EU key is pasted."*
 - **How Otari Is Used:** All 5 Open Agentic Websites configure Hosted Mozilla Otari (`https://api.otari.ai/api/v1`) as their default CORS-enabled browser `llm_router` and `byok_router` with `alibaba/qwen-3.5-35b-a3b` for multi-agent tool calling, allowing visitors to bring one Otari key across all composed peer networks without site-funded server proxies.
 - **Two-Sentence Feedback on Problem Faced & Suggested Improvement:**
   > *"When calling Hosted Otari (`https://api.otari.ai/api/v1/chat/completions`) directly from a browser runtime that omits an explicit `max_tokens` field, certain open-weight models (such as `alibaba/qwen3-14b` and `alibaba/qwen3-30b-a3b`) fail on every turn with HTTP 400 because the upstream defaults `max_tokens` to the model's entire 40,960-token context window, leaving zero room for the prompt. Having Otari clamp default `max_tokens` to `min(default_cap, context_window - prompt_tokens)` (and exposing a `tool_calling_verified` filter on `GET /api/v1/models`) would make zero-backend browser agent sites work reliably across every listed model."*

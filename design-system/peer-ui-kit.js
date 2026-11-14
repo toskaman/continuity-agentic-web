@@ -109,8 +109,32 @@ export function flash(el) {
   el.classList.add("is-updated");
 }
 
+/**
+ * Mozilla Otari issues region-bound keys: an EU key (otk_v1_eu_…) is rejected by
+ * api.otari.ai with HTTP 421. When such a key is typed or pasted, point the
+ * provider URL at the EU endpoint so the visitor does not hit that error.
+ * Only the URL field is touched; the key itself is never read elsewhere or stored here.
+ */
+function otariRegionHelper() {
+  document.addEventListener("input", (ev) => {
+    const key = ev.target;
+    if (!key || key.id !== "ns-key") return;
+    const router = document.querySelector("#ns-router");
+    if (!router || !/^otk_v1_eu_/.test(key.value.trim())) return;
+    if (router.value && !/^https:\/\/api\.otari\.ai\//.test(router.value.trim())) return;
+    router.value = "https://eu.api.otari.ai/api/v1";
+    router.dispatchEvent(new Event("input", { bubbles: true }));
+    router.dispatchEvent(new Event("change", { bubbles: true }));
+    const adv = router.closest("details");
+    if (adv) adv.open = true;
+    const status = document.querySelector("#assistant-status");
+    if (status) status.textContent = "EU Otari key detected — provider URL set to https://eu.api.otari.ai/api/v1. Click Save and start.";
+  });
+}
+
 /** Header shadow + reveal-on-scroll. */
 export function chrome() {
+  otariRegionHelper();
   const header = document.querySelector(".site-header");
   const onScroll = () => header?.classList.toggle("is-scrolled", window.scrollY > 8);
   onScroll();
