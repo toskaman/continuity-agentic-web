@@ -56,6 +56,7 @@ export class IndependentProviderHost {
     this.idempotencyStore = new Map();
     this.publicFiles = new Set([
       "/agent-manifest.json",
+      "/agent-card.json",
       "/links.json",
       "/agent-mcp.json",
       "/.well-known/nsdeploy.json",

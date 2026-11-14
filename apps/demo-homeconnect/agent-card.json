@@ -1,0 +1,51 @@
+{
+  "name": "HomeConnect Fiber Assistant",
+  "description": "Check HomeConnect 2 Gbps fiber installation technician windows, hold a slot, or reschedule appointment HC-5510.",
+  "version": "1.0.0",
+  "url": "http://127.0.0.1:8083/homeconnect_scheduler",
+  "supportedInterfaces": [
+    {
+      "url": "http://127.0.0.1:8083/homeconnect_scheduler",
+      "protocolBinding": "HTTP+JSON",
+      "protocolVersion": "1.0"
+    }
+  ],
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "extendedAgentCard": false
+  },
+  "defaultInputModes": [
+    "text/plain",
+    "application/json"
+  ],
+  "defaultOutputModes": [
+    "text/plain",
+    "application/json"
+  ],
+  "skills": [
+    {
+      "id": "fiber-technician-scheduling",
+      "name": "2 Gbps Fiber ONT Technician Windows & Holds",
+      "description": "Lists broadband optical installation technician windows, places 10-minute holds, and updates confirmed demonstration appointments.",
+      "tags": [
+        "broadband",
+        "fiber",
+        "appointments",
+        "demo-peer"
+      ]
+    }
+  ],
+  "extensions": {
+    "org.worldwideagenticweb": {
+      "mvpProfile": "0.2",
+      "manifestUrl": "http://127.0.0.1:8083/agent-manifest.json",
+      "networkUrl": "http://127.0.0.1:8083/homeconnect_scheduler.network.json",
+      "browserExecuted": true
+    },
+    "org.projectnanda": {
+      "subjectUrnHint": "urn:air:127.0.0.1:agent:homeconnect_scheduler",
+      "resolutionProfile": "known-subject-resolution-02"
+    }
+  }
+}

@@ -56,12 +56,18 @@ for (const p of PEERS) {
   html = html.replace(/http:\/\/127\.0\.0\.1:8080\//g, "https://toskaman.github.io/continuity-agentic-web/");
   await writeFile(idxPath, html, "utf8");
 
-  const cardPath = path.join(tmp, ".well-known", "agent-card.json");
-  let card = await readFile(cardPath, "utf8");
-  card = card
-    .replace(/http:\/\/(127\.0\.0\.1|localhost):808[1-4]/g, `https://gpaschercher-sudo.github.io/${p.repo}`)
-    .replace(/urn:air:(127\.0\.0\.1|localhost):/g, "urn:air:gpaschercher-sudo.github.io:");
-  await writeFile(cardPath, card, "utf8");
+  for (const relCard of [path.join(".well-known", "agent-card.json"), "agent-card.json"]) {
+    const cardPath = path.join(tmp, relCard);
+    try {
+      let card = await readFile(cardPath, "utf8");
+      card = card
+        .replace(/http:\/\/(127\.0\.0\.1|localhost):808[1-4]/g, `https://gpaschercher-sudo.github.io/${p.repo}`)
+        .replace(/urn:air:(127\.0\.0\.1|localhost):/g, "urn:air:gpaschercher-sudo.github.io:");
+      await writeFile(cardPath, card, "utf8");
+    } catch {
+      // Skip if absent
+    }
+  }
 
   run("git", ["-C", tmp, "init"], { stdio: "inherit" });
   run("git", ["-C", tmp, "checkout", "-b", "main"], { stdio: "inherit" });

@@ -375,11 +375,16 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
     });
   }
 
-  // 6. Project NANDA / A2A v1.0 Agent Card (`/.well-known/agent-card.json`)
+  // 6. Project NANDA / A2A v1.0 Agent Card (`/agent-card.json` subpath-safe mirror or `/.well-known/agent-card.json`)
   try {
-    const cardRes = await fetchImpl(new URL(".well-known/agent-card.json", base).href, {
+    let cardRes = await fetchImpl(new URL("agent-card.json", base).href, {
       headers: { Accept: "application/json" },
     });
+    if (!cardRes.ok) {
+      cardRes = await fetchImpl(new URL(".well-known/agent-card.json", base).href, {
+        headers: { Accept: "application/json" },
+      });
+    }
     if (cardRes.ok) {
       agentCard = sanitizeJson(await cardRes.json());
       const cardValidation = validateA2aAgentCard(agentCard);

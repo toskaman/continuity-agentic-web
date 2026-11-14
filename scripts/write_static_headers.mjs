@@ -134,11 +134,9 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
 
     const wellKnownDir = path.join(siteDir, ".well-known");
     await mkdir(wellKnownDir, { recursive: true });
-    await writeFile(
-      path.join(wellKnownDir, "agent-card.json"),
-      `${JSON.stringify(agentCard, null, 2)}\n`,
-      "utf8",
-    );
+    const serializedCard = `${JSON.stringify(agentCard, null, 2)}\n`;
+    await writeFile(path.join(wellKnownDir, "agent-card.json"), serializedCard, "utf8");
+    await writeFile(path.join(siteDir, "agent-card.json"), serializedCard, "utf8");
 
     const headersContent = `/agent-manifest.json
   Access-Control-Allow-Origin: *
