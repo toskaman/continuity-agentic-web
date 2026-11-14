@@ -54,6 +54,10 @@ const testFiles = [
   .map((f) => path.relative(process.cwd(), f))
   .sort();
 
-runStep(`3. Run All ${testFiles.length} Automated Test Suites`, ["--test", ...testFiles]);
+runStep(`3. Run All ${testFiles.length} Automated Test Suites`, [
+  "--test",
+  "--test-concurrency=1",
+  ...testFiles,
+]);
 
 console.log("\nALL CHECKS & TESTS PASSED CLEANLY.");
