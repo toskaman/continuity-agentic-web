@@ -1,6 +1,6 @@
 # Reproducible Benchmarks — Before vs. After CONTINUITY
 
-**Date Measured:** 2026-11-13T22:25:27.451Z
+**Date Measured:** 2026-11-14T02:29:40.975Z
 **Hardware / Runtime:** Node.js `v26.13.1` on `win32 x64` (AMD Ryzen 7 5700X 8-Core Processor             , 16 logical cores)
 **Sample Size:** `N = 30` live cross-origin runs for Normal Relocation Shift + `N = 30` live cross-origin runs for Ripple Failure Recovery (`60` total full Saga executions).
 **Raw Machine-Readable Data:** [`docs/benchmarks/benchmark_results.json`](./benchmark_results.json)
@@ -27,11 +27,11 @@
 
 | Phase | Normal Shift Mean (ms) | Normal Shift P95 (ms) | Ripple Recovery Mean (ms) | Ripple Recovery P95 (ms) |
 | --- | --- | --- | --- | --- |
-| **Mission Compiler & Hard-Invariant Validation** | 0.119 ms | 0.128 ms | 0.069 ms | 0.123 ms |
-| **Bounded Incremental Impact Analysis (6 nodes, 6 edges)** | 0.098 ms | 0.132 ms | 0.079 ms | 0.13 ms |
-| **Cross-Origin Peer Quote Collection (4 origins)** | 2.126 ms | 3.729 ms | 1.956 ms | 3.256 ms |
-| **Minimal-Change Constraint Solver** | 0.458 ms | 0.224 ms | 0.123 ms | 0.217 ms |
-| **Full Prepare -> Bound Approval -> Commit -> Ed25519 Reconcile** | **13.32 ms** | **21.238 ms** | **9.567 ms** | **12.788 ms** |
+| **Mission Compiler & Hard-Invariant Validation** | 0.087 ms | 0.078 ms | 0.05 ms | 0.085 ms |
+| **Bounded Incremental Impact Analysis (6 nodes, 6 edges)** | 0.075 ms | 0.107 ms | 0.063 ms | 0.09 ms |
+| **Cross-Origin Peer Quote Collection (4 origins)** | 1.645 ms | 2.601 ms | 2 ms | 3.546 ms |
+| **Minimal-Change Constraint Solver** | 0.305 ms | 0.15 ms | 0.084 ms | 0.115 ms |
+| **Full Prepare -> Bound Approval -> Commit -> Ed25519 Reconcile** | **8.46 ms** | **13.527 ms** | **7.99 ms** | **11.57 ms** |
 | **Verified Saga Completion Rate** | **100%** | — | **100%** | — |
 
 ---

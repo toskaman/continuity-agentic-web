@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="CONTINUITY — Decentralized Open Agentic Web coordinator for safe multi-provider schedule change reconciliation, minimal-change optimization, and cryptographic approval binding.">
+  <meta name="description" content="CONTINUITY — Decentralized Open Agentic Web coordinator for safe multi-provider schedule change reconciliation, minimal-change Pareto optimization, cross-origin browser bridges, and Ed25519 receipt verification.">
   <title>CONTINUITY — Open Agentic Change Coordinator</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="styles.css">
@@ -26,6 +26,7 @@
           <div class="brand-name-row">
             <span class="brand-title">CONTINUITY</span>
             <span class="spec-pill">Open Agentic Web · MVP 0.2</span>
+            <span id="webmcp-badge" class="spec-pill" title="Exposes site actions to both Neuro SAN website_* tools and W3C/Browser navigator.modelContext WebMCP">WebMCP · 6 Tools</span>
             <span id="transport-badge" class="mode-pill">Detecting Peer Origins…</span>
           </div>
           <p class="brand-tagline">One change. Every commitment re-aligned.</p>
@@ -34,7 +35,7 @@
 
       <nav class="top-actions" aria-label="Workspace controls">
         <button id="theme-toggle-btn" type="button" class="ghost-btn">Light / Dark Theme</button>
-        <button id="inject-ripple-btn" type="button" class="ghost-btn" title="Inject primary Friday crew refusal on MoveCo so CONTINUITY recovers via overflow partner">Inject Ripple Failure</button>
+        <button id="inject-ripple-btn" type="button" class="ghost-btn" title="Inject primary Friday crew refusal so CONTINUITY recovers via overflow partner">Inject Ripple Failure</button>
         <button id="reset-mission-btn" type="button" class="ghost-btn">Reset Demo Mission</button>
       </nav>
     </div>
@@ -50,7 +51,7 @@
             <span class="mono-ref">MISSION ID <code id="mission-id-badge">move_paris_lyon_001</code></span>
           </div>
           <h1 id="hero-heading">Safe Multi-Provider Change Coordination</h1>
-          <p class="hero-lead">Describe one schedule change. CONTINUITY computes bounded graph impact across independent Open Agentic Websites, places temporary replacement holds before touching working reservations, enforces your hard budget, and verifies Ed25519 receipts.</p>
+          <p class="hero-lead">Describe one schedule change — or import your own `.ics` calendar / confirmation emails. CONTINUITY computes bounded graph impact across independent Open Agentic Websites, places temporary replacement holds before touching working reservations, computes Pareto-optimal minimal-change plans, and verifies Ed25519 receipts.</p>
         </div>
 
         <aside class="peer-directory-card" aria-label="Independent peer websites">
@@ -61,33 +62,68 @@
           <div class="peer-links-grid">
             <a id="peer-link-moveco" href="http://127.0.0.1:8081/" target="_blank" rel="noopener" class="peer-chip">
               <span class="peer-dot dot-blue" aria-hidden="true"></span>
-              <span>MoveCo Express</span>
+              <span class="peer-name-txt">MoveCo Express</span>
+              <span id="peer-sync-moveco" class="peer-sync-tag" hidden>Synced</span>
               <span class="peer-arrow" aria-hidden="true">↗</span>
             </a>
             <a id="peer-link-permitflow" href="http://localhost:8082/" target="_blank" rel="noopener" class="peer-chip">
               <span class="peer-dot dot-teal" aria-hidden="true"></span>
-              <span>PermitFlow Civic</span>
+              <span class="peer-name-txt">PermitFlow Civic</span>
+              <span id="peer-sync-permitflow" class="peer-sync-tag" hidden>Synced</span>
               <span class="peer-arrow" aria-hidden="true">↗</span>
             </a>
             <a id="peer-link-homeconnect" href="http://127.0.0.1:8083/" target="_blank" rel="noopener" class="peer-chip">
               <span class="peer-dot dot-indigo" aria-hidden="true"></span>
-              <span>HomeConnect Fiber</span>
+              <span class="peer-name-txt">HomeConnect Fiber</span>
+              <span id="peer-sync-homeconnect" class="peer-sync-tag" hidden>Synced</span>
               <span class="peer-arrow" aria-hidden="true">↗</span>
             </a>
             <a id="peer-link-powerflow" href="http://localhost:8084/" target="_blank" rel="noopener" class="peer-chip">
               <span class="peer-dot dot-amber" aria-hidden="true"></span>
-              <span>PowerFlow Energy</span>
+              <span class="peer-name-txt">PowerFlow Energy</span>
+              <span id="peer-sync-powerflow" class="peer-sync-tag" hidden>Synced</span>
               <span class="peer-arrow" aria-hidden="true">↗</span>
             </a>
           </div>
         </aside>
       </div>
 
+      <!-- SCENARIO SWITCHER & MAGIC INTAKE DRAWER -->
+      <div class="scenario-strip" role="region" aria-label="Mission scenario and calendar intake">
+        <div class="scenario-pills-row">
+          <span class="strip-label">Active Mission:</span>
+          <button type="button" class="scenario-pill active" data-scenario-id="home_relocation">Home Relocation (6 · Live Peers)</button>
+          <button type="button" class="scenario-pill" data-scenario-id="outpatient_surgery">Outpatient Surgery &amp; Care (5)</button>
+          <button type="button" class="scenario-pill" data-scenario-id="product_launch_expo">Expo Freight Delay (6)</button>
+          <button id="toggle-intake-btn" type="button" class="scenario-pill intake-trigger-pill" aria-expanded="false" aria-controls="magic-intake-drawer">+ Import Emails / .ics Calendar</button>
+        </div>
+
+        <div id="magic-intake-drawer" class="intake-drawer" hidden>
+          <div class="intake-drawer-head">
+            <div>
+              <strong>Magic Schedule Intake — Paste Confirmation Emails or Upload RFC 5545 <code>.ics</code> Calendar</strong>
+              <p class="panel-sub">Deterministically extracts commitments, booking refs, fees, and temporal dependency edges in &lt;2 ms (zero API key required).</p>
+            </div>
+            <div class="intake-head-actions">
+              <button id="load-sample-emails-btn" type="button" class="mini-btn">Load Sample Emails (5)</button>
+              <label for="ics-file-input" class="mini-btn file-label-btn">Upload .ics File</label>
+              <input id="ics-file-input" type="file" accept=".ics,text/calendar" class="sr-only">
+            </div>
+          </div>
+          <label for="raw-intake-textarea" class="sr-only">Confirmation emails or iCalendar text</label>
+          <textarea id="raw-intake-textarea" rows="5" placeholder="Paste 2+ booking confirmation emails separated by --- OR upload an .ics calendar file..."></textarea>
+          <div class="intake-footer-row">
+            <button id="compile-intake-btn" type="button" class="cta-btn">Compile Live Mission Graph</button>
+            <span id="intake-feedback" role="status" class="status-banner"></span>
+          </div>
+        </div>
+      </div>
+
       <div class="prompt-composer">
         <div class="composer-label-row">
           <label for="mission-input" class="input-label">Change Request Specification</label>
           <div class="invariant-tags" aria-label="Active hard invariants">
-            <span class="inv-tag">Cap ≤ €700.00</span>
+            <span id="inv-cap-tag" class="inv-tag">Cap ≤ €700.00</span>
             <span class="inv-tag">Hold-Before-Release</span>
             <span class="inv-tag">Zero Auto-Cancel</span>
           </div>
@@ -156,9 +192,28 @@ Do not cancel anything or approve additional fees without my confirmation.</text
       </section>
 
       <section class="panel-card package-panel" aria-labelledby="package-heading">
-        <h2 id="package-heading">Unified Change Package &amp; Candidate Plans</h2>
+        <div class="panel-header">
+          <div>
+            <h2 id="package-heading">Unified Change Package &amp; Pareto Plans</h2>
+            <p class="panel-sub">Deterministic multi-objective optimizer (Changes · Cost · Span · Irreversibility).</p>
+          </div>
+          <div id="export-actions-bar" class="export-actions" hidden>
+            <button id="export-ics-btn" type="button" class="mini-btn" title="Download updated RFC 5545 .ics calendar">↓ .ics Calendar</button>
+            <button id="export-audit-btn" type="button" class="mini-btn" title="Download signed SHA-256 & Ed25519 audit JSON">↓ Audit JSON</button>
+          </div>
+        </div>
+
         <div id="change-summary-box" class="narrative-summary">
           No active change proposal yet. Run <strong>1. Analyze Impact &amp; Prepare Minimal-Change Plan</strong> above or ask the Open Agentic Web assistant below.
+        </div>
+
+        <!-- Counterfactual What-If Budget Slider (Progressive Disclosure once analyzed) -->
+        <div id="whatif-budget-box" class="whatif-box" hidden>
+          <div class="whatif-top">
+            <label for="whatif-budget-slider" class="whatif-label">What-If Hard Budget Cap: <strong id="whatif-budget-val">€700</strong></label>
+            <span id="whatif-min-badge" class="mono-ref"></span>
+          </div>
+          <input id="whatif-budget-slider" type="range" min="620" max="760" step="5" value="700">
         </div>
 
         <div id="plans-selector" class="plans-list" role="region" aria-label="Feasible minimal-change plans"></div>
@@ -170,15 +225,16 @@ Do not cancel anything or approve additional fees without my confirmation.</text
       </section>
     </div>
 
-    <!-- SECTION 4: INSPECTION LEDGERS & CHAOS LAB -->
+    <!-- SECTION 4: INSPECTION LEDGERS, CHAOS LAB & LIVE SPEC/NANDA AUDITOR -->
     <section class="panel-card tabs-section" aria-labelledby="diagnostics-heading">
       <div class="tabs-bar">
-        <h2 id="diagnostics-heading" class="sr-only">Verification, Privacy, and Chaos Lab</h2>
+        <h2 id="diagnostics-heading" class="sr-only">Verification, Privacy, Chaos Lab, and Open Agentic Spec Auditor</h2>
         <div role="tablist" aria-label="Inspection panels" class="tablist">
-          <button role="tab" id="tab-btn-commitments" aria-selected="true" aria-controls="tab-panel-commitments" class="tab-btn active">All 6 Commitments</button>
+          <button role="tab" id="tab-btn-commitments" aria-selected="true" aria-controls="tab-panel-commitments" class="tab-btn active">All Commitments</button>
           <button role="tab" id="tab-btn-privacy" aria-selected="false" aria-controls="tab-panel-privacy" class="tab-btn">Privacy &amp; Data Minimization</button>
           <button role="tab" id="tab-btn-timeline" aria-selected="false" aria-controls="tab-panel-timeline" class="tab-btn">Immutable Saga Audit Log</button>
           <button role="tab" id="tab-btn-chaos" aria-selected="false" aria-controls="tab-panel-chaos" class="tab-btn">Chaos Lab (15 Scenarios)</button>
+          <button role="tab" id="tab-btn-auditor" aria-selected="false" aria-controls="tab-panel-auditor" class="tab-btn">Spec &amp; NANDA Auditor (5 Sites)</button>
         </div>
       </div>
 
@@ -249,11 +305,40 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           </table>
         </div>
       </div>
+
+      <div id="tab-panel-auditor" role="tabpanel" aria-labelledby="tab-btn-auditor" class="tab-panel" hidden>
+        <div class="chaos-header">
+          <div>
+            <strong>Community Tool — Live Open Agentic Web MVP 0.2 &amp; Project NANDA Conformance Auditor</strong>
+            <p class="panel-sub">Inspects live <code>agent-manifest.json</code>, resolved Neuro SAN <code>.network.json</code>, BYOK router isolation, <code>peer_policy</code>, action bridges, and Project NANDA / A2A v1.0 <code>/.well-known/agent-card.json</code> with SHA-256 digests.</p>
+          </div>
+          <div class="auditor-controls">
+            <label for="custom-audit-url" class="sr-only">Open Agentic Website URL to audit</label>
+            <input id="custom-audit-url" type="url" class="audit-url-input" placeholder="https://example.org/agentic-site/">
+            <button id="audit-single-btn" type="button" class="ghost-btn">Audit Custom URL</button>
+            <button id="audit-ecosystem-btn" type="button" class="cta-btn">Audit All 5 Ecosystem Sites</button>
+          </div>
+        </div>
+        <div id="auditor-summary" class="chaos-summary" role="status">Click "Audit All 5 Ecosystem Sites" or enter any Open Agentic Website URL to run the 6-point conformance verifier.</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Open Agentic Website</th>
+                <th>Network &amp; Artifacts</th>
+                <th>MVP 0.2 &amp; NANDA Checks</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+            <tbody id="auditor-tbody"></tbody>
+          </table>
+        </div>
+      </div>
     </section>
 
     <footer class="protocol-footer">
       <div class="protocol-links">
-        <span>Machine-Readable Artifacts:</span>
+        <span>Machine-Readable Artifacts &amp; 15 Open-Source Modules:</span>
         <a href="./agent-manifest.json" target="_blank" rel="noopener">agent-manifest.json</a>
         <a href="./continuity_coordinator.network.json" target="_blank" rel="noopener">continuity_coordinator.network.json</a>
         <a href="./links.json" target="_blank" rel="noopener">links.json</a>

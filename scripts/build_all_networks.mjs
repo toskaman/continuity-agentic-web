@@ -1,10 +1,11 @@
 /**
  * Builds or checks (`--check`) all 5 Open Agentic Website bundles using Cognizant's
- * official `skills/agentify-website/scripts/build_network.mjs` validator.
+ * official `skills/agentify-website/scripts/build_network.mjs` validator, and syncs
+ * reusable `@continuity/*` vendor modules into the static site bundles.
  */
 
 import { execFile } from "node:child_process";
-import { cp } from "node:fs/promises";
+import { cp, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -14,21 +15,38 @@ const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const BUILDER = path.join(ROOT, "skills", "agentify-website", "scripts", "build_network.mjs");
 
 const SITES = [
-  { dir: "apps/continuity-web", hocon: "continuity_coordinator.hocon" },
-  { dir: "apps/demo-moveco", hocon: "moveco_dispatch.hocon" },
-  { dir: "apps/demo-permitflow", hocon: "permitflow_advisor.hocon" },
-  { dir: "apps/demo-homeconnect", hocon: "homeconnect_scheduler.hocon" },
-  { dir: "apps/demo-powerflow", hocon: "powerflow_grid.hocon" },
+  { dir: "apps/continuity-web", hocon: "continuity_coordinator.hocon", isPrimary: true },
+  { dir: "apps/demo-moveco", hocon: "moveco_dispatch.hocon", isPrimary: false },
+  { dir: "apps/demo-permitflow", hocon: "permitflow_advisor.hocon", isPrimary: false },
+  { dir: "apps/demo-homeconnect", hocon: "homeconnect_scheduler.hocon", isPrimary: false },
+  { dir: "apps/demo-powerflow", hocon: "powerflow_grid.hocon", isPrimary: false },
+];
+
+const PEER_VENDOR_PACKAGES = [
+  "shared-schemas",
+  "proof-verifier",
+  "cross-origin-bridge",
+  "webmcp-adapter",
 ];
 
 const isCheck = process.argv.includes("--check");
 
-// Sync vendor packages into apps/continuity-web/vendor when building
 if (!isCheck) {
   await cp(path.join(ROOT, "packages"), path.join(ROOT, "apps", "continuity-web", "vendor"), {
     recursive: true,
     force: true,
   });
+
+  for (const site of SITES.filter((s) => !s.isPrimary)) {
+    const vendorBase = path.join(ROOT, site.dir, "vendor");
+    await mkdir(vendorBase, { recursive: true });
+    for (const pkgName of PEER_VENDOR_PACKAGES) {
+      await cp(path.join(ROOT, "packages", pkgName), path.join(vendorBase, pkgName), {
+        recursive: true,
+        force: true,
+      });
+    }
+  }
 }
 
 let hasFailure = false;

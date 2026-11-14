@@ -312,7 +312,10 @@ export const MISSION_CHANGE_PROPOSAL_SCHEMA = {
   required: ["mission_id", "mission_type", "requested_change", "invariants", "preferences", "permissions"],
   properties: {
     mission_id: { type: "string", minLength: 3, maxLength: 64 },
-    mission_type: { type: "string", enum: ["home_relocation", "event_coordination", "service_bundle"] },
+    mission_type: {
+      type: "string",
+      enum: ["home_relocation", "event_coordination", "service_bundle", "care_coordination", "custom_imported"],
+    },
     requested_change: {
       type: "object",
       additionalProperties: false,

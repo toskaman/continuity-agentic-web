@@ -1,5 +1,5 @@
 {
-  "measuredAtIso": "2026-11-13T22:25:27.451Z",
+  "measuredAtIso": "2026-11-14T02:29:40.975Z",
   "environment": {
     "nodeVersion": "v26.13.1",
     "platform": "win32 x64",
@@ -16,24 +16,24 @@
   "continuityMeasuredNormalScenario": {
     "sampleSize": 30,
     "compileMs": {
-      "mean": 0.119,
-      "p95": 0.128
+      "mean": 0.087,
+      "p95": 0.078
     },
     "impactMs": {
-      "mean": 0.098,
-      "p95": 0.132
+      "mean": 0.075,
+      "p95": 0.107
     },
     "quoteLatencyMs": {
-      "mean": 2.126,
-      "p95": 3.729
+      "mean": 1.645,
+      "p95": 2.601
     },
     "solveMs": {
-      "mean": 0.458,
-      "p95": 0.224
+      "mean": 0.305,
+      "p95": 0.15
     },
     "totalEndToEndMs": {
-      "mean": 13.32,
-      "p95": 21.238
+      "mean": 8.46,
+      "p95": 13.527
     },
     "httpRequestsPerRun": 13,
     "providersContacted": 4,
@@ -46,24 +46,24 @@
   "continuityMeasuredRippleRecoveryScenario": {
     "sampleSize": 30,
     "compileMs": {
-      "mean": 0.069,
-      "p95": 0.123
+      "mean": 0.05,
+      "p95": 0.085
     },
     "impactMs": {
-      "mean": 0.079,
-      "p95": 0.13
+      "mean": 0.063,
+      "p95": 0.09
     },
     "quoteLatencyMs": {
-      "mean": 1.956,
-      "p95": 3.256
+      "mean": 2,
+      "p95": 3.546
     },
     "solveMs": {
-      "mean": 0.123,
-      "p95": 0.217
+      "mean": 0.084,
+      "p95": 0.115
     },
     "totalEndToEndMs": {
-      "mean": 9.567,
-      "p95": 12.788
+      "mean": 7.99,
+      "p95": 11.57
     },
     "httpRequestsPerRun": 13,
     "providersContacted": 4,

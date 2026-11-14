@@ -17,6 +17,7 @@ import http from "node:http";
 import path from "node:path";
 import { validateAgainstSchema } from "../../packages/shared-schemas/index.js";
 import { generateDemoProviderKeyPair, signProviderReceipt } from "../../packages/proof-verifier/index.js";
+import { encodeSignedReceiptHandoff } from "../../packages/cross-origin-bridge/index.js";
 
 const WORKER_CSP = "default-src 'none'; script-src blob:; connect-src 'none'; worker-src 'none'";
 
@@ -351,6 +352,13 @@ export class IndependentProviderHost {
     };
 
     const payload = await handler(this.state, args, helpers);
+    if (payload && typeof payload === "object" && payload.receipt_envelope && !payload.handoff_token) {
+      payload.handoff_token = encodeSignedReceiptHandoff(
+        payload.receipt_envelope,
+        this.keyPair,
+        this.origin(),
+      );
+    }
     return {
       httpStatus: 200,
       payload,

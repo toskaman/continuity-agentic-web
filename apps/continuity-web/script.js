@@ -1,19 +1,18 @@
 /**
- * CONTINUITY Coordinator Page Controller (`App.page`).
+ * CONTINUITY Coordinator Page Controller (`App.page`) — v2.0
  *
- * Unifies manual UI controls and `website_*` agentic tools on one authoritative state machine:
- * - `@continuity/mission-core` (compiler + hard-invariant enforcement)
- * - `@continuity/mission-graph` (typed dependency graph)
- * - `@continuity/impact-engine` (bounded incremental impact analysis)
+ * Unifies manual UI controls, Neuro SAN `website_*` agentic tools, and W3C WebMCP (`navigator.modelContext`)
+ * on one authoritative, deterministic state machine powered by 15 `@continuity/*` open-source modules:
+ * - `@continuity/mission-core` & `@continuity/intake-compiler` (NL + `.ics` + email compiler & hard-invariant guard)
+ * - `@continuity/mission-graph` (typed dependency DAG + automatic topological layout)
+ * - `@continuity/impact-engine` (bounded incremental blast-radius analysis)
  * - `@continuity/capability-adapter` (peer capability normalization)
- * - `@continuity/constraint-solver` (deterministic minimal-change optimizer)
- * - `@continuity/approval-engine` & `@continuity/saga-engine` (bound approvals + Saga reconciliation)
+ * - `@continuity/constraint-solver` (Pareto-optimal minimal-change optimizer & counterfactual budget sweep)
+ * - `@continuity/cross-origin-bridge` (zero-server cross-origin `postMessage` RPC + WebCrypto Ed25519 signing)
+ * - `@continuity/approval-engine` & `@continuity/saga-engine` (SHA-256 bound approvals + 14-state Saga)
  * - `@continuity/proof-verifier` (Ed25519 provider receipt verification)
- * - `@continuity/chaos-lab` (15-scenario failure injection testbench)
- *
- * Automatically connects to Live Cross-Origin Peer HTTP/MCP Endpoints when running locally
- * (`127.0.0.1:8081..8084` / `localhost:8082,8084`) and cleanly falls back to labelled
- * Deterministic In-Browser Simulation Harness on static-only hosts (e.g., GitHub Pages).
+ * - `@continuity/nanda-resolver` (Open Agentic Web MVP 0.2 & Project NANDA A2A v1.0 conformance auditor)
+ * - `@continuity/chaos-lab` (15-scenario distributed fault-injection testbench)
  */
 
 import {
@@ -24,15 +23,26 @@ import {
 import { GRAPH_VISUAL_STATES, MissionGraph } from "./vendor/mission-graph/index.js";
 import { analyzeMissionImpact } from "./vendor/impact-engine/index.js";
 import { normalizePeerOffer } from "./vendor/capability-adapter/index.js";
-import { solveMinimalChangePlans } from "./vendor/constraint-solver/index.js";
+import { analyzeBudgetSensitivity, solveMinimalChangePlans } from "./vendor/constraint-solver/index.js";
 import { ReceiptVerifier } from "./vendor/proof-verifier/index.js";
 import { SagaCoordinator } from "./vendor/saga-engine/index.js";
 import {
   createSimulatedProviderHarness,
   runAllChaosScenarios,
 } from "./vendor/chaos-lab/index.js";
+import { CrossOriginBridgeClient } from "./vendor/cross-origin-bridge/index.js";
+import {
+  buildScenarioPeerHarness,
+  compileUnstructuredIntake,
+  createScenarioMission,
+  exportMissionToIcs,
+  exportVerifiableAuditBundle,
+  SAMPLE_RAW_CONFIRMATION_EMAILS,
+  SCENARIO_CATALOG,
+} from "./vendor/intake-compiler/index.js";
+import { auditOpenAgenticSite } from "./vendor/nanda-resolver/index.js";
 
-const NODE_COORDS = {
+const RELOCATION_PRESET_COORDS = {
   cmt_moveco_van: { x: 40, y: 155 },
   cmt_permitflow_bay: { x: 355, y: 24 },
   cmt_homeconnect_fiber: { x: 665, y: 95 },
@@ -57,8 +67,6 @@ const STATE_PALETTE = {
 export class ContinuityCoordinatorPage {
   constructor() {
     this.version = 1;
-    // Auto-detect deployment environment: if running on https:// (e.g. GitHub Pages),
-    // default to live cross-origin HTTPS peer deployments; otherwise use local dev origins.
     const isHttpsHosted =
       typeof location !== "undefined" && location.protocol === "https:";
     this.peerOrigins = isHttpsHosted
@@ -74,16 +82,24 @@ export class ContinuityCoordinatorPage {
           homeconnect: "http://127.0.0.1:8083",
           powerflow: "http://localhost:8084",
         };
+
     this.livePeersDetected = false;
+    this.crossOriginBridgeConnected = false;
+    this.crossOriginBridge = null;
+    this.latestPeerHandoffTokens = {};
+
+    this.activeScenarioId = "home_relocation";
     this.rippleFailureInjected = false;
     this.zoomScale = 1;
     this.selectedNodeId = "cmt_moveco_van";
 
     this.mission = createSignatureMoveMission({ origins: this.peerOrigins });
-    this.graph = MissionGraph.fromRelocationMission(this.mission);
+    this.graph = MissionGraph.fromMission(this.mission);
 
     this.compiledProposal = null;
     this.impactReport = null;
+    this.cachedNormalizedOffers = [];
+    this.budgetSensitivity = null;
     this.solverResult = null;
     this.selectedPlanId = null;
     this.saga = null;
@@ -92,12 +108,33 @@ export class ContinuityCoordinatorPage {
     this.privacyDisclosures = [];
     this.providerAlerts = [];
     this.chaosReport = null;
+    this.auditorResults = [];
     this.providerHarnessPromise = null;
   }
 
+  baselineTotalEur() {
+    return (this.mission?.commitments || []).reduce((s, c) => s + Number(c.price_eur || 0), 0);
+  }
+
+  isRelocationScenario() {
+    return this.activeScenarioId === "home_relocation" && this.mission.mission_id === "move_paris_lyon_001";
+  }
+
   async ensureProviderClients() {
+    if (!this.isRelocationScenario()) {
+      if (!this.providerHarnessPromise) {
+        this.providerHarnessPromise = buildScenarioPeerHarness(this.mission, {
+          rippleFailureInjected: this.rippleFailureInjected,
+        });
+      }
+      return this.providerHarnessPromise;
+    }
+
     if (this.livePeersDetected) {
       return this.buildLiveHttpProviderClients();
+    }
+    if (this.crossOriginBridgeConnected && this.crossOriginBridge) {
+      return this.crossOriginBridge.buildSagaHarness();
     }
     if (!this.providerHarnessPromise) {
       this.providerHarnessPromise = createSimulatedProviderHarness();
@@ -107,23 +144,31 @@ export class ContinuityCoordinatorPage {
 
   async probeLivePeerOrigins() {
     if (typeof fetch !== "function") return false;
-    // Static GitHub Pages hosts (`*.github.io`) serve static Open Agentic Web bundles only (no `/api/*` server);
-    // skip probing `/api/public-key` there so the browser console stays 100% free of 404 warnings.
-    if (/\.github\.io$/i.test(new URL(this.peerOrigins.moveco).hostname)) {
-      this.livePeersDetected = false;
-      return false;
+    const isGithubPagesPeer = /\.github\.io$/i.test(new URL(this.peerOrigins.moveco).hostname);
+
+    if (!isGithubPagesPeer) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 900);
+        const resp = await fetch(`${this.peerOrigins.moveco}/api/public-key`, { signal: controller.signal });
+        clearTimeout(timer);
+        if (resp.ok) {
+          this.livePeersDetected = true;
+          this.crossOriginBridgeConnected = false;
+          return true;
+        }
+      } catch {
+        this.livePeersDetected = false;
+      }
     }
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 900);
-      const resp = await fetch(`${this.peerOrigins.moveco}/api/public-key`, { signal: controller.signal });
-      clearTimeout(timer);
-      if (resp.ok) {
-        this.livePeersDetected = true;
+
+    // Zero-server static HTTPS / browser mode: connect live Cross-Origin `postMessage` Bridge iframes!
+    if (typeof document !== "undefined" && typeof window !== "undefined") {
+      this.crossOriginBridge = new CrossOriginBridgeClient(this.peerOrigins);
+      this.crossOriginBridgeConnected = await this.crossOriginBridge.connectAll();
+      if (this.crossOriginBridgeConnected) {
         return true;
       }
-    } catch {
-      this.livePeersDetected = false;
     }
     return false;
   }
@@ -172,7 +217,11 @@ export class ContinuityCoordinatorPage {
           body: JSON.stringify({ tool, arguments: args }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status} from ${origin}`);
-        return res.json();
+        const data = await res.json();
+        if (data?.handoff_token) {
+          this.latestPeerHandoffTokens[pid] = data.handoff_token;
+        }
+        return data;
       };
 
       clients[pid] = {
@@ -209,16 +258,14 @@ export class ContinuityCoordinatorPage {
   }
 
   getPeerLinks() {
-    const readHref = (id, fallback) =>
-      typeof document !== "undefined"
-        ? document.querySelector(id)?.getAttribute("href") || fallback
-        : fallback;
-    return {
-      moveco: readHref("#peer-link-moveco", `${this.peerOrigins.moveco}/`),
-      permitflow: readHref("#peer-link-permitflow", `${this.peerOrigins.permitflow}/`),
-      homeconnect: readHref("#peer-link-homeconnect", `${this.peerOrigins.homeconnect}/`),
-      powerflow: readHref("#peer-link-powerflow", `${this.peerOrigins.powerflow}/`),
-    };
+    const out = {};
+    for (const [pid, origin] of Object.entries(this.peerOrigins)) {
+      const baseHref = `${String(origin).replace(/\/+$/, "")}/`;
+      const token =
+        this.latestPeerHandoffTokens[pid] || this.crossOriginBridge?.latestHandoffTokens?.[pid] || null;
+      out[pid] = token ? `${baseHref}#continuity_receipt=${token}` : baseHref;
+    }
+    return out;
   }
 
   getState() {
@@ -231,23 +278,31 @@ export class ContinuityCoordinatorPage {
     return JSON.parse(
       JSON.stringify({
         version: this.version,
+        activeScenarioId: this.activeScenarioId,
         transportMode: this.livePeersDetected
           ? "LIVE_INDEPENDENT_PEER_ORIGINS"
-          : "BROWSER_DETERMINISTIC_SIMULATION_FALLBACK",
+          : this.crossOriginBridgeConnected
+            ? "LIVE_CROSS_ORIGIN_BROWSER_BRIDGE"
+            : "BROWSER_DETERMINISTIC_SIMULATION_FALLBACK",
+        webMcpToolsExposed: 6,
         rippleFailureInjected: this.rippleFailureInjected,
         mission: {
           mission_id: this.mission.mission_id,
           title: this.mission.title,
+          mission_type: this.mission.mission_type,
           anchor_date: this.mission.anchor_date,
+          anchor_commitment_id: this.mission.anchor_commitment_id,
           invariants: this.mission.authoritative_invariants,
         },
         graph: this.graph.toJSON(),
         compiledProposal: this.compiledProposal,
         impactMetrics: this.impactReport?.metrics || null,
         unaffectedIds: this.impactReport?.unaffectedIds || [],
+        budgetSensitivity: this.budgetSensitivity,
         feasiblePlans: (this.solverResult?.plans || []).map((p) => ({
           plan_id: p.plan_id,
           label: p.label,
+          paretoOptimal: Boolean(p.paretoOptimal),
           metrics: p.metrics,
           operationsCount: p.operations.length,
         })),
@@ -256,6 +311,7 @@ export class ContinuityCoordinatorPage {
           ? {
               plan_id: selectedPlan.plan_id,
               label: selectedPlan.label,
+              paretoOptimal: Boolean(selectedPlan.paretoOptimal),
               metrics: selectedPlan.metrics,
               operations: selectedPlan.operations,
               preservedCommitments: selectedPlan.preservedCommitments,
@@ -298,12 +354,77 @@ export class ContinuityCoordinatorPage {
     return ["PLAN_A_MINIMAL_CHANGE", "PLAN_B_LOWEST_COST", "PLAN_C_FASTEST_RESOLUTION", "PLAN_ALT_1"];
   }
 
-  async resetMission(options = {}) {
-    this.rippleFailureInjected = Boolean(options.rippleFailureInjected ?? false);
-    this.mission = createSignatureMoveMission({ origins: this.peerOrigins });
-    this.graph = MissionGraph.fromRelocationMission(this.mission);
+  scenarioIdEnums() {
+    return ["home_relocation", "outpatient_surgery", "product_launch_expo", "custom_intake"];
+  }
+
+  async switchScenario(scenarioId) {
+    this.activeScenarioId = scenarioId;
+    this.mission = createScenarioMission(scenarioId, { origins: this.peerOrigins });
+    this.selectedNodeId = this.mission.anchor_commitment_id || this.mission.commitments[0]?.id;
+    await this._resetExecutionState();
+
+    if (typeof document !== "undefined") {
+      const cat = SCENARIO_CATALOG.find((s) => s.id === scenarioId);
+      const inputEl = document.querySelector("#mission-input");
+      if (cat && inputEl) inputEl.value = cat.defaultPrompt;
+    }
+
+    const count = this.mission.commitments.length;
+    const base = this.baselineTotalEur().toFixed(2);
+    this.render(`Loaded scenario "${this.mission.title}" — ${count} confirmed commitments (€${base} baseline).`);
+    return {
+      ok: true,
+      version: this.version,
+      scenarioId,
+      missionId: this.mission.mission_id,
+      commitmentsCount: count,
+      baselineTotalEur: Number(base),
+    };
+  }
+
+  async importCustomSchedule(rawText) {
+    let compiled;
+    try {
+      compiled = compileUnstructuredIntake(rawText);
+    } catch (err) {
+      return { ok: false, field: "rawScheduleText", reason: err.message };
+    }
+
+    this.activeScenarioId = "custom_intake";
+    this.mission = compiled.mission;
+    this.selectedNodeId = this.mission.anchor_commitment_id;
+    await this._resetExecutionState();
+
+    if (typeof document !== "undefined") {
+      const inputEl = document.querySelector("#mission-input");
+      if (inputEl) inputEl.value = compiled.suggestedPrompt;
+      const drawer = document.querySelector("#magic-intake-drawer");
+      if (drawer) drawer.hidden = true;
+      document.querySelector("#toggle-intake-btn")?.setAttribute("aria-expanded", "false");
+    }
+
+    this.render(
+      `Imported ${compiled.mission.commitments.length} commitments & ${compiled.inferredEdgesCount} inferred dependency rules from ${compiled.format === "ics" ? "RFC 5545 .ics calendar" : "confirmation emails"} (€${compiled.baselineTotalEur.toFixed(2)} baseline).`,
+    );
+
+    return {
+      ok: true,
+      version: this.version,
+      format: compiled.format,
+      missionId: this.mission.mission_id,
+      commitmentsCount: this.mission.commitments.length,
+      inferredEdgesCount: compiled.inferredEdgesCount,
+      suggestedPrompt: compiled.suggestedPrompt,
+    };
+  }
+
+  async _resetExecutionState() {
+    this.graph = MissionGraph.fromMission(this.mission);
     this.compiledProposal = null;
     this.impactReport = null;
+    this.cachedNormalizedOffers = [];
+    this.budgetSensitivity = null;
     this.solverResult = null;
     this.selectedPlanId = null;
     this.saga = null;
@@ -311,49 +432,60 @@ export class ContinuityCoordinatorPage {
     this.lastSagaExecution = null;
     this.privacyDisclosures = [];
     this.providerAlerts = [];
+    this.latestPeerHandoffTokens = {};
     this.providerHarnessPromise = null;
     this.version += 1;
 
-    if (this.livePeersDetected) {
-      for (const [pid, origin] of Object.entries(this.peerOrigins)) {
-        try {
-          await fetch(`${origin}/api/reset`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              injectScenario:
-                pid === "moveco" && this.rippleFailureInjected ? "primary_fri_full" : "normal",
-            }),
-          });
-        } catch {
-          // Ignore reset error on offline peer
+    if (this.isRelocationScenario()) {
+      if (this.livePeersDetected) {
+        for (const [pid, origin] of Object.entries(this.peerOrigins)) {
+          try {
+            await fetch(`${origin}/api/reset`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                injectScenario:
+                  pid === "moveco" && this.rippleFailureInjected ? "primary_fri_full" : "normal",
+              }),
+            });
+          } catch {
+            // Ignore offline peer during reset
+          }
         }
+      } else if (this.crossOriginBridgeConnected && this.crossOriginBridge) {
+        await this.crossOriginBridge.resetAll({ rippleFailureInjected: this.rippleFailureInjected });
       }
     }
+  }
 
+  async resetMission(options = {}) {
+    this.rippleFailureInjected = Boolean(options.rippleFailureInjected ?? false);
+    if (options.resetToDefaultScenario || !this.mission) {
+      this.activeScenarioId = "home_relocation";
+    }
+    if (this.activeScenarioId !== "custom_intake") {
+      this.mission = createScenarioMission(this.activeScenarioId, { origins: this.peerOrigins });
+    }
+    this.selectedNodeId = this.mission.anchor_commitment_id || this.mission.commitments[0]?.id;
+    await this._resetExecutionState();
+
+    const base = this.baselineTotalEur().toFixed(2);
     this.render(
       this.rippleFailureInjected
-        ? "Ripple Failure Armed: MoveCo primary Friday 08:00 crew will refuse the new date, triggering automatic backup overflow recovery."
-        : "Mission reset to baseline (6 confirmed commitments, €624.00).",
+        ? `Ripple Failure Armed: Primary anchor provider will refuse the requested Friday slot, triggering automatic overflow partner recovery.`
+        : `Mission reset to baseline (${this.mission.commitments.length} confirmed commitments, €${base}).`,
     );
     return { ok: true, version: this.version, rippleFailureInjected: this.rippleFailureInjected };
   }
 
-  /**
-   * Compile change request, analyze bounded impact, collect peer offers, solve minimal-change plans,
-   * and prepare temporary slot holds WITHOUT committing or cancelling any existing booking.
-   *
-   * @param {string} requestText
-   */
   async analyzeAndPrepareChange(requestText) {
     const cleanText = String(requestText || "").trim();
     if (!cleanText) {
       return { ok: false, field: "requestText", reason: "Enter a natural-language change request first." };
     }
 
-    // Reset graph nodes to clean baseline if re-planning before commit
     if (!this.lastSagaExecution) {
-      this.graph = MissionGraph.fromRelocationMission(this.mission);
+      this.graph = MissionGraph.fromMission(this.mission);
     }
 
     let compiled;
@@ -369,9 +501,9 @@ export class ContinuityCoordinatorPage {
     this.privacyDisclosures = [];
 
     const targetDate = this.compiledProposal.requested_change.new_value;
-    const { clients, verifier } = await this.ensureProviderClients();
+    const harness = await this.ensureProviderClients();
+    const { clients, verifier } = harness;
 
-    // Collect offers ONLY from affected/soft-candidate providers (unaffected providers are never contacted!)
     const normalizedOffers = [];
     for (const contact of this.impactReport.providersToContact) {
       const node = this.graph.nodes.get(contact.commitmentId);
@@ -385,7 +517,7 @@ export class ContinuityCoordinatorPage {
         keyExposure: "NONE (LLM BYOK key stays on caller router)",
       });
 
-      if (this.livePeersDetected && clients[contact.providerId]?.quote) {
+      if (this.isRelocationScenario() && (this.livePeersDetected || this.crossOriginBridgeConnected) && clients[contact.providerId]?.quote) {
         const quoteResp = await clients[contact.providerId].quote(node.booking_ref, targetDate);
         if (quoteResp.primary_refused && quoteResp.refusal_reason) {
           this.providerAlerts.push(`MoveCo Alert: ${quoteResp.refusal_reason}`);
@@ -393,18 +525,52 @@ export class ContinuityCoordinatorPage {
         for (const rawOffer of quoteResp.offers || []) {
           normalizedOffers.push(normalizePeerOffer(rawOffer));
         }
+      } else if (!this.isRelocationScenario() && typeof harness.buildOffersForNode === "function") {
+        const customOffers = harness.buildOffersForNode(node, targetDate, this.graph);
+        if (this.rippleFailureInjected && node.id === this.mission.anchor_commitment_id) {
+          this.providerAlerts.push(
+            `Anchor Alert: Primary slot full on ${targetDate}; recovered with verified overflow partner while keeping ${node.booking_ref} held.`,
+          );
+        }
+        normalizedOffers.push(...customOffers);
       } else {
-        // Deterministic browser simulation fallback using identical normalized contracts
         const simOffers = this.buildFallbackOffersForNode(node, targetDate);
         normalizedOffers.push(...simOffers);
       }
     }
 
-    this.solverResult = solveMinimalChangePlans({
+    this.cachedNormalizedOffers = normalizedOffers;
+    this.budgetSensitivity = analyzeBudgetSensitivity({
       graph: this.graph,
       proposal: this.compiledProposal,
       impact: this.impactReport,
       normalizedOffers,
+    });
+
+    return await this._solveAndPrepareFromCachedOffers({ clients, verifier });
+  }
+
+  async recalculateWithBudgetCeiling(newBudgetEur) {
+    if (!this.compiledProposal || !this.impactReport) return null;
+    const cap = Number(newBudgetEur);
+    if (!Number.isFinite(cap) || cap <= 0) return null;
+    this.compiledProposal = {
+      ...this.compiledProposal,
+      invariants: {
+        ...this.compiledProposal.invariants,
+        maximum_budget_eur: cap,
+      },
+    };
+    const harness = await this.ensureProviderClients();
+    return await this._solveAndPrepareFromCachedOffers(harness);
+  }
+
+  async _solveAndPrepareFromCachedOffers({ clients, verifier }) {
+    this.solverResult = solveMinimalChangePlans({
+      graph: this.graph,
+      proposal: this.compiledProposal,
+      impact: this.impactReport,
+      normalizedOffers: this.cachedNormalizedOffers,
     });
 
     if (!this.solverResult.feasible) {
@@ -425,6 +591,7 @@ export class ContinuityCoordinatorPage {
 
     this.version += 1;
     const selected = this.getSelectedPlan();
+    const targetDate = this.compiledProposal.requested_change.new_value;
     this.render(
       `Prepared ${selected.label}: ${selected.metrics.changedCount} modifications prepared, ${selected.metrics.unchangedCount} commitments preserved untouched, total €${selected.metrics.totalMissionCostEur.toFixed(2)} (<= €${selected.metrics.maxBudgetEur.toFixed(2)}).`,
     );
@@ -434,9 +601,12 @@ export class ContinuityCoordinatorPage {
       version: this.version,
       targetDate,
       recommendedPlanId: this.selectedPlanId,
+      paretoFrontierCount: this.solverResult.paretoFrontierCount,
+      minimumFeasibleBudgetEur: this.budgetSensitivity?.minimumFeasibleBudgetEur ?? null,
       plans: this.solverResult.plans.map((p) => ({
         plan_id: p.plan_id,
         label: p.label,
+        paretoOptimal: Boolean(p.paretoOptimal),
         metrics: p.metrics,
       })),
       preparedOperationsCount: this.preparedOps.length,
@@ -626,8 +796,7 @@ export class ContinuityCoordinatorPage {
       return { ok: false, field: "planId", reason: `Plan "${planId}" is not among current feasible plans.` };
     }
 
-    // Reset visual graph states to clean post-impact baseline before marking chosen plan's prepared nodes
-    this.graph = MissionGraph.fromRelocationMission(this.mission);
+    this.graph = MissionGraph.fromMission(this.mission);
     for (const id of this.impactReport.unaffectedIds) {
       this.graph.updateNode(id, { visual_state: "UNCHANGED" });
     }
@@ -737,6 +906,7 @@ export class ContinuityCoordinatorPage {
       sagaStatus: execResult.status,
       committedCount: execResult.committedOperationIds.length,
       preservedCount: check.plan.metrics.unchangedCount,
+      partnerLinks: this.getPeerLinks(),
       reason: execResult.partialFailureReason || undefined,
       receipts: execResult.operations
         .filter((o) => o.state === "COMMITTED")
@@ -755,6 +925,67 @@ export class ContinuityCoordinatorPage {
     return this.chaosReport;
   }
 
+  async runConformanceAudit(targetUrlOrAll = "all") {
+    const selfBase =
+      typeof location !== "undefined"
+        ? new URL("./", location.href).href
+        : "http://127.0.0.1:8080/";
+
+    const urls =
+      !targetUrlOrAll || targetUrlOrAll === "all"
+        ? [
+            selfBase,
+            `${this.peerOrigins.moveco}/`,
+            `${this.peerOrigins.permitflow}/`,
+            `${this.peerOrigins.homeconnect}/`,
+            `${this.peerOrigins.powerflow}/`,
+          ]
+        : [String(targetUrlOrAll).trim()];
+
+    const results = [];
+    for (const u of urls) {
+      results.push(await auditOpenAgenticSite(u));
+    }
+    this.auditorResults = results;
+    this.renderAuditorTable();
+    return {
+      ok: results.every((r) => r.ok),
+      sitesAudited: results.length,
+      results,
+    };
+  }
+
+  triggerBrowserDownload(filename, mimeType, textContent) {
+    if (typeof document === "undefined" || typeof Blob === "undefined") return;
+    const blob = new Blob([textContent], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  downloadUpdatedIcsCalendar() {
+    const ics = exportMissionToIcs(this.mission, this.graph, this.preparedOps);
+    this.triggerBrowserDownload(`${this.mission.mission_id}.ics`, "text/calendar;charset=utf-8", ics);
+    return { ok: true, bytes: ics.length };
+  }
+
+  async downloadSignedAuditBundle() {
+    const bundle = await exportVerifiableAuditBundle({
+      mission: this.mission,
+      selectedPlan: this.getSelectedPlan(),
+      operations: this.preparedOps,
+      auditLog: this.saga?.ledger?.getHistory() || [],
+    });
+    const text = `${JSON.stringify(bundle, null, 2)}\n`;
+    this.triggerBrowserDownload(`${this.mission.mission_id}-audit-bundle.json`, "application/json;charset=utf-8", text);
+    return bundle;
+  }
+
   /* ------------------------------ UI RENDERING ------------------------------ */
 
   render(bannerMessage = "") {
@@ -762,19 +993,43 @@ export class ContinuityCoordinatorPage {
 
     const badge = document.querySelector("#transport-badge");
     if (badge) {
-      const isHttps = typeof location !== "undefined" && location.protocol === "https:";
       badge.textContent = this.livePeersDetected
-        ? "Live Independent Peer Origins (4 Active)"
-        : isHttps
-          ? "HTTPS Peer Networks Active · Browser Saga Engine"
-          : "Browser Simulation Fallback (Static Mode)";
-      badge.classList.toggle("live", this.livePeersDetected || isHttps);
+        ? "Live Independent Peer Origins (4 HTTP/MCP)"
+        : this.crossOriginBridgeConnected
+          ? "Live Cross-Origin Browser Mesh (4 Peers · Ed25519)"
+          : "Browser Deterministic Saga Engine";
+      badge.classList.toggle("live", this.livePeersDetected || this.crossOriginBridgeConnected);
+    }
+
+    const missionBadge = document.querySelector("#mission-id-badge");
+    if (missionBadge) missionBadge.textContent = this.mission.mission_id;
+
+    const activeCap =
+      this.compiledProposal?.invariants?.maximum_budget_eur
+      ?? this.mission.authoritative_invariants.maximum_budget_eur;
+    const invCapTag = document.querySelector("#inv-cap-tag");
+    if (invCapTag) invCapTag.textContent = `Cap ≤ €${Number(activeCap).toFixed(2)}`;
+
+    document.querySelectorAll(".scenario-pill[data-scenario-id]").forEach((btn) => {
+      const sid = btn.getAttribute("data-scenario-id");
+      btn.classList.toggle("active", sid === this.activeScenarioId);
+    });
+
+    // Update peer links with signed #continuity_receipt handoff tokens when committed!
+    const peerLinks = this.getPeerLinks();
+    for (const [pid, href] of Object.entries(peerLinks)) {
+      const linkEl = document.querySelector(`#peer-link-${pid}`);
+      if (linkEl) linkEl.setAttribute("href", href);
+      const syncEl = document.querySelector(`#peer-sync-${pid}`);
+      if (syncEl) {
+        syncEl.hidden = !href.includes("#continuity_receipt=");
+      }
     }
 
     const rippleBtn = document.querySelector("#inject-ripple-btn");
     if (rippleBtn) {
       rippleBtn.textContent = this.rippleFailureInjected
-        ? "Ripple Failure: ARMED (MoveCo Fri Full)"
+        ? "Ripple Failure: ARMED (Primary Full)"
         : "Inject Ripple Failure";
       rippleBtn.classList.toggle("ripple-active", this.rippleFailureInjected);
     }
@@ -794,6 +1049,12 @@ export class ContinuityCoordinatorPage {
       approveBtn.disabled = !readyToApprove;
     }
 
+    const exportBar = document.querySelector("#export-actions-bar");
+    if (exportBar) {
+      exportBar.hidden = !this.compiledProposal;
+    }
+
+    this.renderWhatIfSlider();
     this.renderKpis(plan);
     this.renderGraphSvg();
     this.renderNodeInspector(this.selectedNodeId);
@@ -803,24 +1064,56 @@ export class ContinuityCoordinatorPage {
     this.renderAuditTimeline();
   }
 
+  renderWhatIfSlider() {
+    const box = document.querySelector("#whatif-budget-box");
+    const slider = document.querySelector("#whatif-budget-slider");
+    const valEl = document.querySelector("#whatif-budget-val");
+    const minEl = document.querySelector("#whatif-min-badge");
+    if (!box || !slider || !valEl || !minEl) return;
+
+    if (!this.compiledProposal || this.lastSagaExecution) {
+      box.hidden = true;
+      return;
+    }
+
+    box.hidden = false;
+    const base = Math.round(this.baselineTotalEur());
+    const minSlider = Math.max(20, base - 10);
+    const maxSlider = base + 220;
+    const curCap = Math.round(this.compiledProposal.invariants.maximum_budget_eur);
+    slider.min = String(minSlider);
+    slider.max = String(Math.max(maxSlider, curCap + 20));
+    slider.value = String(curCap);
+    valEl.textContent = `€${curCap}`;
+    const minFeas = this.budgetSensitivity?.minimumFeasibleBudgetEur;
+    minEl.textContent =
+      minFeas !== null && minFeas !== undefined
+        ? `Min feasible threshold: €${minFeas.toFixed(2)}`
+        : "Exceeds available offers";
+  }
+
   renderKpis(plan) {
     const set = (sel, txt) => {
       const el = document.querySelector(sel);
       if (el) el.textContent = txt;
     };
+    const totalCount = this.mission.commitments.length;
+    const baseEur = this.baselineTotalEur();
+    const capEur = this.mission.authoritative_invariants.maximum_budget_eur;
+
     if (!plan) {
-      set("#kpi-affected", "0 / 6");
+      set("#kpi-affected", `0 / ${totalCount}`);
       set("#kpi-affected-sub", "Awaiting change request");
-      set("#kpi-preserved", "6");
+      set("#kpi-preserved", `${totalCount}`);
       set("#kpi-preserved-sub", "All original bookings intact");
-      set("#kpi-cost", "€624.00");
-      set("#kpi-cost-sub", "Hard ceiling: €700.00");
+      set("#kpi-cost", `€${baseEur.toFixed(2)}`);
+      set("#kpi-cost-sub", `Hard ceiling: €${Number(capEur).toFixed(2)}`);
       set("#kpi-approvals", "0");
       set("#kpi-approvals-sub", "Bound by SHA-256 hash");
       return;
     }
     const m = plan.metrics;
-    set("#kpi-affected", `${m.changedCount} / 6`);
+    set("#kpi-affected", `${m.changedCount} / ${totalCount}`);
     set("#kpi-affected-sub", `${this.impactReport.metrics.providersContactedCount} peers contacted · ${this.impactReport.metrics.unnecessaryOperationsAvoided} skipped`);
     set("#kpi-preserved", `${m.unchangedCount}`);
     set("#kpi-preserved-sub", "Original reservations untouched");
@@ -838,6 +1131,7 @@ export class ContinuityCoordinatorPage {
     const zoomReadout = document.querySelector("#zoom-readout");
     if (zoomReadout) zoomReadout.textContent = `${Math.round(this.zoomScale * 100)}%`;
 
+    const coordsMap = MissionGraph.computeTopologicalLayout(this.graph, RELOCATION_PRESET_COORDS);
     const snap = this.graph.toJSON();
     const parts = [
       `<defs>
@@ -847,10 +1141,9 @@ export class ContinuityCoordinatorPage {
       </defs>`,
     ];
 
-    // Edges
     for (const edge of snap.edges) {
-      const src = NODE_COORDS[edge.from];
-      const dst = NODE_COORDS[edge.to];
+      const src = coordsMap[edge.from];
+      const dst = coordsMap[edge.to];
       if (!src || !dst) continue;
       const x1 = src.x + 225;
       const y1 = src.y + 44;
@@ -867,9 +1160,8 @@ export class ContinuityCoordinatorPage {
       );
     }
 
-    // Nodes
     for (const node of snap.nodes) {
-      const pos = NODE_COORDS[node.id] || { x: 40, y: 40 };
+      const pos = coordsMap[node.id] || { x: 40, y: 40 };
       const pal = STATE_PALETTE[node.visual_state] || STATE_PALETTE.UNCHANGED;
       const meta = GRAPH_VISUAL_STATES[node.visual_state] || GRAPH_VISUAL_STATES.UNCHANGED;
       const isSelected = node.id === this.selectedNodeId;
@@ -911,10 +1203,10 @@ export class ContinuityCoordinatorPage {
   renderNodeInspector(nodeId) {
     const box = document.querySelector("#node-inspector");
     if (!box) return;
-    const node = this.graph.nodes.get(nodeId);
+    const node = this.graph.nodes.get(nodeId) || Array.from(this.graph.nodes.values())[0];
     if (!node) return;
     const meta = GRAPH_VISUAL_STATES[node.visual_state] || GRAPH_VISUAL_STATES.UNCHANGED;
-    const impactInfo = this.impactReport?.nodeDecisions?.[nodeId];
+    const impactInfo = this.impactReport?.nodeDecisions?.[node.id];
     box.innerHTML = `
       <div><strong>${this.escapeXml(node.title)}</strong> — <span>[${this.escapeXml(`${meta.icon} ${meta.label}`)}]</span></div>
       <div>Provider: <code>${this.escapeXml(node.provider_name)}</code> (${this.escapeXml(node.provider_origin)}) · Ref: <code>${this.escapeXml(node.booking_ref)}</code></div>
@@ -939,7 +1231,7 @@ export class ContinuityCoordinatorPage {
     }
 
     if (!this.solverResult?.feasible || !plan) {
-      summaryBox.innerHTML = `<strong>Hard Constraint Guard Triggered:</strong> ${this.escapeXml((this.solverResult?.rejectionReasonsSummary || []).join(" "))} Your original bookings remain completely untouched.`;
+      summaryBox.innerHTML = `<strong>Hard Constraint Guard Triggered:</strong> ${this.escapeXml((this.solverResult?.rejectionReasonsSummary || []).join(" "))} Slide the What-If budget ceiling below or adjust your request — your original bookings remain completely untouched.`;
       plansContainer.innerHTML = "";
       opsContainer.innerHTML = "";
       return;
@@ -951,8 +1243,8 @@ export class ContinuityCoordinatorPage {
 
     const committedBanner =
       this.lastSagaExecution?.status === "ALL_COMMITTED_AND_VERIFIED"
-        ? `<strong>Mission Re-Aligned &amp; Cryptographically Verified.</strong> ${plan.metrics.changedCount} service arrangements have been committed for ${formatDateWithWeekday(this.compiledProposal.requested_change.new_value)}. ${plan.metrics.unchangedCount} unaffected commitments remained untouched throughout.`
-        : `<strong>Change Package Prepared:</strong> Moving anchor shifts from ${formatDateWithWeekday(this.compiledProposal.requested_change.previous_value)} to <strong>${formatDateWithWeekday(this.compiledProposal.requested_change.new_value)}</strong>. <strong>${plan.metrics.changedCount}</strong> service arrangements need modification; <strong>${plan.metrics.unchangedCount}</strong> existing arrangements remain unchanged. Replacements are prepared and held — your original bookings remain intact until you approve.`;
+        ? `<strong>Mission Re-Aligned &amp; Cryptographically Verified.</strong> ${plan.metrics.changedCount} service arrangements have been committed for ${formatDateWithWeekday(this.compiledProposal.requested_change.new_value)}. ${plan.metrics.unchangedCount} unaffected commitments remained untouched throughout. Download your updated <code>.ics</code> calendar or click any synced peer above.`
+        : `<strong>Change Package Prepared:</strong> Primary anchor shifts from ${formatDateWithWeekday(this.compiledProposal.requested_change.previous_value)} to <strong>${formatDateWithWeekday(this.compiledProposal.requested_change.new_value)}</strong>. <strong>${plan.metrics.changedCount}</strong> service arrangements need modification; <strong>${plan.metrics.unchangedCount}</strong> existing arrangements remain unchanged. Replacements are prepared and held — your original bookings remain intact until you approve.`;
 
     summaryBox.innerHTML = `${committedBanner}${alertsHtml}`;
 
@@ -960,10 +1252,11 @@ export class ContinuityCoordinatorPage {
       .map((p) => {
         const isSel = p.plan_id === this.selectedPlanId;
         const deltaSign = p.metrics.netDeltaEur >= 0 ? "+" : "";
+        const paretoHtml = p.paretoOptimal ? `<span class="pareto-badge">PARETO OPTIMAL</span>` : "";
         return `
           <button type="button" class="plan-option ${isSel ? "selected" : ""}" data-plan-id="${this.escapeXml(p.plan_id)}" ${this.lastSagaExecution ? "disabled" : ""}>
             <div class="plan-option-top">
-              <span>${isSel ? "✓ " : ""}${this.escapeXml(p.label)}</span>
+              <span>${isSel ? "✓ " : ""}${this.escapeXml(p.label)}${paretoHtml}</span>
               <span>€${p.metrics.totalMissionCostEur.toFixed(2)} (${deltaSign}€${p.metrics.netDeltaEur.toFixed(2)})</span>
             </div>
             <div class="plan-option-meta">
@@ -1051,7 +1344,7 @@ export class ContinuityCoordinatorPage {
     if (!list) return;
     const history = this.saga?.ledger?.getHistory() || [];
     if (!history.length) {
-      list.innerHTML = "<li>Mission initialized — 6 confirmed commitments active (€624.00 baseline).</li>";
+      list.innerHTML = `<li>Mission initialized — ${this.mission.commitments.length} confirmed commitments active (€${this.baselineTotalEur().toFixed(2)} baseline).</li>`;
       return;
     }
     list.innerHTML = history
@@ -1083,6 +1376,32 @@ export class ContinuityCoordinatorPage {
       .join("");
   }
 
+  renderAuditorTable() {
+    const summary = document.querySelector("#auditor-summary");
+    const tbody = document.querySelector("#auditor-tbody");
+    if (!summary || !tbody || !this.auditorResults.length) return;
+
+    const allOk = this.auditorResults.every((r) => r.ok);
+    summary.textContent = `Conformance Audit Complete: ${this.auditorResults.filter((r) => r.ok).length}/${this.auditorResults.length} Open Agentic Website(s) passed all required MVP 0.2 & Project NANDA checks (${allOk ? "ZERO FAILURES" : "ISSUES DETECTED"}).`;
+
+    tbody.innerHTML = this.auditorResults
+      .map(
+        (r) => `
+        <tr>
+          <td><strong><code>${this.escapeXml(r.siteBaseUrl)}</code></strong></td>
+          <td>Network: <code>${this.escapeXml(r.networkName || "n/a")}</code><br><small>${this.escapeXml(r.manifestDigest || "")}</small></td>
+          <td>${r.checks
+            .map(
+              (c) =>
+                `<div><strong>[${this.escapeXml(c.status)}]</strong> ${this.escapeXml(c.check)} — <small>${this.escapeXml(c.detail)}</small></div>`,
+            )
+            .join("")}</td>
+          <td><strong>${r.ok ? "✓ PASS" : "✕ FAIL"}</strong><br><code>${this.escapeXml(r.score)}</code></td>
+        </tr>`,
+      )
+      .join("");
+  }
+
   escapeXml(str) {
     return String(str ?? "")
       .replace(/&/g, "&amp;")
@@ -1106,7 +1425,50 @@ export class ContinuityCoordinatorPage {
     });
 
     document.querySelector("#reset-mission-btn")?.addEventListener("click", () => {
-      void this.resetMission({ rippleFailureInjected: false });
+      void this.resetMission({ rippleFailureInjected: false, resetToDefaultScenario: false });
+    });
+
+    // Scenario pills
+    document.querySelectorAll(".scenario-pill[data-scenario-id]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const sid = btn.getAttribute("data-scenario-id");
+        if (sid) void this.switchScenario(sid);
+      });
+    });
+
+    // Magic Intake Drawer controls
+    const toggleIntakeBtn = document.querySelector("#toggle-intake-btn");
+    const intakeDrawer = document.querySelector("#magic-intake-drawer");
+    toggleIntakeBtn?.addEventListener("click", () => {
+      if (!intakeDrawer) return;
+      const nextHidden = !intakeDrawer.hidden;
+      intakeDrawer.hidden = nextHidden;
+      toggleIntakeBtn.setAttribute("aria-expanded", String(!nextHidden));
+    });
+
+    document.querySelector("#load-sample-emails-btn")?.addEventListener("click", () => {
+      const ta = document.querySelector("#raw-intake-textarea");
+      if (ta) ta.value = SAMPLE_RAW_CONFIRMATION_EMAILS;
+      const fb = document.querySelector("#intake-feedback");
+      if (fb) fb.textContent = "Loaded 5 sample booking confirmation emails — click Compile Live Mission Graph.";
+    });
+
+    document.querySelector("#ics-file-input")?.addEventListener("change", async (ev) => {
+      const file = ev.target?.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      const ta = document.querySelector("#raw-intake-textarea");
+      if (ta) ta.value = text;
+      const res = await this.importCustomSchedule(text);
+      const fb = document.querySelector("#intake-feedback");
+      if (fb) fb.textContent = res.ok ? `Imported ${res.commitmentsCount} .ics events.` : res.reason;
+    });
+
+    document.querySelector("#compile-intake-btn")?.addEventListener("click", async () => {
+      const raw = document.querySelector("#raw-intake-textarea")?.value || "";
+      const res = await this.importCustomSchedule(raw);
+      const fb = document.querySelector("#intake-feedback");
+      if (fb) fb.textContent = res.ok ? "" : res.reason;
     });
 
     document.querySelector("#analyze-plan-btn")?.addEventListener("click", () => {
@@ -1114,10 +1476,26 @@ export class ContinuityCoordinatorPage {
       void this.analyzeAndPrepareChange(text);
     });
 
+    // Counterfactual What-If Budget Slider
+    document.querySelector("#whatif-budget-slider")?.addEventListener("change", (ev) => {
+      void this.recalculateWithBudgetCeiling(Number(ev.target.value));
+    });
+    document.querySelector("#whatif-budget-slider")?.addEventListener("input", (ev) => {
+      const valEl = document.querySelector("#whatif-budget-val");
+      if (valEl) valEl.textContent = `€${ev.target.value}`;
+    });
+
+    // Export .ics & Signed Audit Bundle
+    document.querySelector("#export-ics-btn")?.addEventListener("click", () => {
+      this.downloadUpdatedIcsCalendar();
+    });
+    document.querySelector("#export-audit-btn")?.addEventListener("click", () => {
+      void this.downloadSignedAuditBundle();
+    });
+
     document.querySelector("#approve-commit-btn")?.addEventListener("click", async () => {
       const plan = this.getSelectedPlan();
       if (!plan) return;
-      // Use the same review confirmation dialog as the agentic runtime when mounted!
       const args = {
         planId: plan.plan_id,
         expectedVersion: this.version,
@@ -1167,11 +1545,23 @@ export class ContinuityCoordinatorPage {
         if (targetId === "tab-panel-chaos" && !this.chaosReport) {
           void this.executeChaosSuite();
         }
+        if (targetId === "tab-panel-auditor" && !this.auditorResults.length) {
+          void this.runConformanceAudit("all");
+        }
       });
     });
 
     document.querySelector("#run-chaos-suite-btn")?.addEventListener("click", () => {
       void this.executeChaosSuite();
+    });
+
+    document.querySelector("#audit-ecosystem-btn")?.addEventListener("click", () => {
+      void this.runConformanceAudit("all");
+    });
+
+    document.querySelector("#audit-single-btn")?.addEventListener("click", () => {
+      const custom = document.querySelector("#custom-audit-url")?.value?.trim();
+      if (custom) void this.runConformanceAudit(custom);
     });
   }
 }

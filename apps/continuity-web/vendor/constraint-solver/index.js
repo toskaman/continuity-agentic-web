@@ -297,7 +297,8 @@ export function solveMinimalChangePlans({ graph, proposal, impact, normalizedOff
     });
   }
 
-  const plans = Array.from(uniqueBySig.values());
+  const rawCandidatePlans = Array.from(uniqueBySig.values());
+  const plans = computeParetoFrontier(rawCandidatePlans);
   const preferredMode = proposal.preferences?.priority_mode || "minimal_change";
   const recommended =
     plans.find((p) => p.co_optimizes.includes(preferredMode)) || plans[0];
@@ -306,9 +307,112 @@ export function solveMinimalChangePlans({ graph, proposal, impact, normalizedOff
     feasible: true,
     recommendedPlanId: recommended.plan_id,
     plans,
+    paretoFrontierCount: plans.filter((p) => p.paretoOptimal).length,
     rejectedCombinationsCount: rejectedCount,
     rejectionReasonsSummary: Array.from(rejectionReasons),
     solverDurationMs: Number((performance.now() - t0).toFixed(3)),
+  };
+}
+
+/**
+ * Multi-objective Pareto Dominance Classifier across the 4 minimization objectives:
+ * `(changedCount, totalMissionCostEur, completionOffsetDays, irreversibleCount)`.
+ * Plan X dominates Plan Y iff X is `<=` Y on all 4 objectives and strictly `<` on at least one.
+ *
+ * @param {Array<Record<string, any>>} plans
+ * @returns {Array<Record<string, any>>}
+ */
+export function computeParetoFrontier(plans) {
+  const vec = (p) => [
+    Number(p.metrics.changedCount),
+    Number(p.metrics.totalMissionCostEur),
+    Number(p.metrics.completionOffsetDays),
+    Number(p.metrics.irreversibleCount),
+  ];
+
+  return plans.map((plan) => {
+    const vP = vec(plan);
+    let dominator = null;
+    for (const other of plans) {
+      if (other.plan_id === plan.plan_id) continue;
+      const vO = vec(other);
+      const noWorseAll = vO.every((val, i) => val <= vP[i]);
+      const strictlyBetterOne = vO.some((val, i) => val < vP[i]);
+      if (noWorseAll && strictlyBetterOne) {
+        dominator = other.plan_id;
+        break;
+      }
+    }
+    return {
+      ...plan,
+      paretoOptimal: dominator === null,
+      dominatedByPlanId: dominator,
+    };
+  });
+}
+
+/**
+ * Counterfactual Budget Sensitivity Sweep: determines the exact minimum hard budget ceiling
+ * required for feasibility and maps budget thresholds to unlocked Pareto-optimal plans.
+ *
+ * @param {object} params
+ * @param {import("../mission-graph/index.js").MissionGraph} params.graph
+ * @param {Record<string, any>} params.proposal
+ * @param {Record<string, any>} params.impact
+ * @param {Array<Record<string, any>>} params.normalizedOffers
+ * @param {number[]} [params.testCeilingsEur]
+ */
+export function analyzeBudgetSensitivity({
+  graph,
+  proposal,
+  impact,
+  normalizedOffers,
+  testCeilingsEur,
+}) {
+  const baselineTotalEur = Array.from(graph.nodes.values()).reduce(
+    (sum, n) => sum + Number(n.price_eur || 0),
+    0,
+  );
+  const grid =
+    testCeilingsEur
+    || [0, 15, 25, 35, 50, 75, 100, 140].map((delta) => Number((baselineTotalEur + delta).toFixed(2)));
+
+  let minimumFeasibleBudgetEur = null;
+  const points = [];
+
+  for (const cap of grid) {
+    const variedProposal = {
+      ...proposal,
+      invariants: {
+        ...proposal.invariants,
+        maximum_budget_eur: cap,
+      },
+    };
+    const solved = solveMinimalChangePlans({
+      graph,
+      proposal: variedProposal,
+      impact,
+      normalizedOffers,
+    });
+    if (solved.feasible && minimumFeasibleBudgetEur === null) {
+      minimumFeasibleBudgetEur = solved.plans.reduce(
+        (minC, p) => Math.min(minC, p.metrics.totalMissionCostEur),
+        cap,
+      );
+    }
+    points.push({
+      budgetCapEur: cap,
+      feasible: solved.feasible,
+      feasiblePlansCount: solved.plans.length,
+      bestTotalEur: solved.plans[0]?.metrics?.totalMissionCostEur ?? null,
+      bestChangedCount: solved.plans[0]?.metrics?.changedCount ?? null,
+    });
+  }
+
+  return {
+    baselineTotalEur,
+    minimumFeasibleBudgetEur,
+    points,
   };
 }
 

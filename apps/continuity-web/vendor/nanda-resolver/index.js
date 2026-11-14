@@ -238,3 +238,188 @@ export class AuthorityBoundResolver {
     };
   }
 }
+
+/**
+ * Live Open Agentic Web MVP Profile 0.2 + Project NANDA A2A v1.0 Conformance Auditor.
+ * Can be called from any browser or Node.js tool to inspect a candidate Open Agentic Website URL
+ * and return a deterministic 7-point compliance & cryptographic digest report.
+ *
+ * @param {string} siteBaseUrl - Base URL of the Open Agentic Website (e.g. `https://toskaman.github.io/continuity-agentic-web/`)
+ * @param {typeof fetch} [fetchImpl=globalThis.fetch]
+ */
+export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.fetch) {
+  const base = String(siteBaseUrl || "").trim().replace(/\/+$/, "") + "/";
+  /** @type {Array<{ id: string, check: string, status: "PASS" | "WARN" | "FAIL", detail: string }>} */
+  const checks = [];
+  let manifest = null;
+  let networkJson = null;
+  let agentCard = null;
+  let manifestDigest = null;
+  let networkDigest = null;
+
+  try {
+    const parsedBase = new URL(base);
+    const isHttpsOrLoopback =
+      parsedBase.protocol === "https:"
+      || (parsedBase.protocol === "http:" && ["127.0.0.1", "localhost"].includes(parsedBase.hostname));
+    checks.push({
+      id: "MVP-HTTPS",
+      check: "Transport Security (HTTPS or Loopback)",
+      status: isHttpsOrLoopback ? "PASS" : "FAIL",
+      detail: isHttpsOrLoopback ? `Valid origin ${parsedBase.origin}` : `Insecure non-loopback HTTP ${base}`,
+    });
+  } catch {
+    return {
+      ok: false,
+      siteBaseUrl: base,
+      score: "0 / 7",
+      checks: [{ id: "MVP-URL", check: "Valid Site URL", status: "FAIL", detail: `Invalid URL "${siteBaseUrl}"` }],
+    };
+  }
+
+  // 1. Fetch & validate agent-manifest.json
+  try {
+    const mUrl = new URL("agent-manifest.json", base).href;
+    const res = await fetchImpl(mUrl, { headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    manifest = sanitizeJson(await res.json());
+    manifestDigest = `sha256:${(await sha256Hex(canonicalizeJson(manifest))).slice(0, 16)}`;
+    const firstNet = Array.isArray(manifest.networks) ? manifest.networks[0] : null;
+    const validManifest = Boolean(firstNet?.name && firstNet?.front_man && firstNet?.hocon);
+    checks.push({
+      id: "MVP-MANIFEST",
+      check: "Public agent-manifest.json & Front Agent",
+      status: validManifest ? "PASS" : "FAIL",
+      detail: validManifest
+        ? `Network "${firstNet.name}" -> front_man "${firstNet.front_man}" (${manifestDigest})`
+        : "Missing networks[0].name, front_man, or hocon path.",
+    });
+
+    // 2. Fetch & validate resolved .network.json
+    if (validManifest) {
+      const nUrl = new URL(firstNet.hocon, base).href;
+      const nRes = await fetchImpl(nUrl, { headers: { Accept: "application/json" } });
+      if (!nRes.ok) throw new Error(`Network fetch HTTP ${nRes.status}`);
+      const rawNetText = await nRes.text();
+      networkJson = sanitizeJson(JSON.parse(rawNetText));
+      networkDigest = `sha256:${(await sha256Hex(canonicalizeJson(networkJson))).slice(0, 16)}`;
+
+      const toolsArr = Array.isArray(networkJson.tools) ? networkJson.tools : [];
+      const hasFrontMan = toolsArr.some((t) => t?.name === firstNet.front_man);
+      const hasUnresolvedInclude = /\binclude\s+["']/.test(rawNetText);
+      const hasLeakedKey = /\bsk-[a-zA-Z0-9]{16,}|\bBearer\s+[a-zA-Z0-9._-]{16,}/.test(rawNetText);
+
+      checks.push({
+        id: "MVP-NETWORK",
+        check: "Resolved Portable Neuro SAN .network.json",
+        status: hasFrontMan && !hasUnresolvedInclude && !hasLeakedKey ? "PASS" : "FAIL",
+        detail:
+          hasFrontMan && !hasUnresolvedInclude && !hasLeakedKey
+            ? `${toolsArr.length} agent(s) resolved, 0 unresolved includes, 0 embedded credentials (${networkDigest})`
+            : "Front agent missing, unresolved HOCON include, or credential pattern detected.",
+      });
+    } else {
+      checks.push({
+        id: "MVP-NETWORK",
+        check: "Resolved Portable Neuro SAN .network.json",
+        status: "FAIL",
+        detail: "Skipped because agent-manifest.json lacks network hocon path.",
+      });
+    }
+
+    // 3. Pluggable Inference / BYOK Router Metadata
+    const routerUrl = manifest.llm_router?.base_url || manifest.llm_router?.byok_router || "";
+    checks.push({
+      id: "MVP-INFERENCE",
+      check: "Pluggable Inference & BYOK Router Policy",
+      status: routerUrl ? "PASS" : "WARN",
+      detail: routerUrl ? `Router configured (${routerUrl})` : "No explicit llm_router declared in manifest.",
+    });
+
+    // 4. Peer Policy & Trust Boundary
+    const peerMode = manifest.peer_policy?.mode;
+    const allowedPeers = Array.isArray(manifest.allowed_peers) ? manifest.allowed_peers.length : 0;
+    checks.push({
+      id: "MVP-TRUST",
+      check: "Explicit Peer Policy & Origin Allowlist",
+      status: peerMode === "closed" || peerMode === "open" ? "PASS" : "WARN",
+      detail: peerMode
+        ? `peer_policy.mode="${peerMode}" (${allowedPeers} allowed peer origin(s))`
+        : "peer_policy metadata omitted.",
+    });
+  } catch (err) {
+    checks.push({
+      id: "MVP-MANIFEST",
+      check: "Public agent-manifest.json & CORS Access",
+      status: "FAIL",
+      detail: `Failed to fetch/parse manifest: ${err.message}`,
+    });
+  }
+
+  // 5. Action Bridge Check
+  try {
+    const bridgeRel = manifest?.actions?.bridge || "./bridge/action-bridge.html";
+    const bRes = await fetchImpl(new URL(bridgeRel, base).href);
+    checks.push({
+      id: "MVP-BRIDGE",
+      check: "Isolated Cross-Site Action Bridge Frame",
+      status: bRes.ok ? "PASS" : "WARN",
+      detail: bRes.ok ? `Reachable (${bridgeRel})` : `HTTP ${bRes.status} on ${bridgeRel}`,
+    });
+  } catch (err) {
+    checks.push({
+      id: "MVP-BRIDGE",
+      check: "Isolated Cross-Site Action Bridge Frame",
+      status: "WARN",
+      detail: `Unavailable: ${err.message}`,
+    });
+  }
+
+  // 6. Project NANDA / A2A v1.0 Agent Card (`/.well-known/agent-card.json`)
+  try {
+    const cardRes = await fetchImpl(new URL(".well-known/agent-card.json", base).href, {
+      headers: { Accept: "application/json" },
+    });
+    if (cardRes.ok) {
+      agentCard = sanitizeJson(await cardRes.json());
+      const cardValidation = validateA2aAgentCard(agentCard);
+      checks.push({
+        id: "NANDA-A2A",
+        check: "Project NANDA / A2A v1.0 Agent Card",
+        status: cardValidation.valid ? "PASS" : "FAIL",
+        detail: cardValidation.valid
+          ? `Valid A2A v${agentCard.version} card · ${agentCard.skills?.length || 0} skill(s) declared`
+          : `Invalid Agent Card: ${cardValidation.errors.join("; ")}`,
+      });
+    } else {
+      checks.push({
+        id: "NANDA-A2A",
+        check: "Project NANDA / A2A v1.0 Agent Card",
+        status: "WARN",
+        detail: `Optional /.well-known/agent-card.json returned HTTP ${cardRes.status}`,
+      });
+    }
+  } catch (err) {
+    checks.push({
+      id: "NANDA-A2A",
+      check: "Project NANDA / A2A v1.0 Agent Card",
+      status: "WARN",
+      detail: `Optional card not fetched: ${err.message}`,
+    });
+  }
+
+  const passedCount = checks.filter((c) => c.status === "PASS").length;
+  const failedCount = checks.filter((c) => c.status === "FAIL").length;
+
+  return {
+    ok: failedCount === 0,
+    siteBaseUrl: base,
+    networkName: manifest?.networks?.[0]?.name || null,
+    manifestDigest,
+    networkDigest,
+    passedCount,
+    totalChecks: checks.length,
+    score: `${passedCount} / ${checks.length}`,
+    checks,
+  };
+}

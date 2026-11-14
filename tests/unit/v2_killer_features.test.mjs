@@ -1,0 +1,199 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  createPeerBrowserDomainEngine,
+  verifySignedReceiptHandoff,
+} from "../../packages/cross-origin-bridge/index.js";
+import {
+  compileUnstructuredIntake,
+  createScenarioMission,
+  exportMissionToIcs,
+  exportVerifiableAuditBundle,
+  SAMPLE_RAW_CONFIRMATION_EMAILS,
+} from "../../packages/intake-compiler/index.js";
+import { MissionGraph } from "../../packages/mission-graph/index.js";
+import { auditOpenAgenticSite } from "../../packages/nanda-resolver/index.js";
+import { exposeActionsToWebMcp } from "../../packages/webmcp-adapter/index.js";
+import { App } from "../../apps/continuity-web/script.js";
+import { startAllEcosystemServers } from "../../scripts/serve_ecosystem.mjs";
+
+test("V2.1 — Intake Compiler parses unstructured confirmation emails, infers dependencies, and executes Ed25519 Saga", async () => {
+  const imp = await App.page.importCustomSchedule(SAMPLE_RAW_CONFIRMATION_EMAILS);
+  assert.equal(imp.ok, true);
+  assert.equal(imp.format, "emails");
+  assert.equal(imp.commitmentsCount, 5);
+  assert.equal(imp.inferredEdgesCount, 4);
+
+  const prep = await App.page.analyzeAndPrepareChange(imp.suggestedPrompt);
+  assert.equal(prep.ok, true);
+  assert.ok(prep.plans.length >= 1);
+  assert.ok(prep.unaffectedCommitmentsCount >= 1); // Multi-day eSIM + earlier PCR preserved
+
+  const state = App.page.getState();
+  const commit = await App.page.commitPreparedPackage({
+    planId: state.selectedPlanId,
+    expectedVersion: state.version,
+    expectedTotalEur: state.selectedPlanSummary.metrics.totalMissionCostEur,
+  });
+  assert.equal(commit.ok, true);
+  assert.equal(commit.sagaStatus, "ALL_COMMITTED_AND_VERIFIED");
+  assert.ok(commit.receipts.every((r) => r.proof_level === "VERIFIED_ED25519_DEMO_PROVIDER_SIGNATURE"));
+});
+
+test("V2.2 — Multi-Domain Scenarios (Outpatient Surgery & Product Launch Expo) + RFC 5545 .ics round-trip + Audit Bundle", async () => {
+  for (const scenarioId of ["outpatient_surgery", "product_launch_expo"]) {
+    const sw = await App.page.switchScenario(scenarioId);
+    assert.equal(sw.ok, true);
+
+    const prep = await App.page.analyzeAndPrepareChange("Shift primary date from Tuesday to Friday.");
+    assert.equal(prep.ok, true);
+    assert.ok(prep.minimumFeasibleBudgetEur > 0);
+
+    // Counterfactual budget sensitivity check: dropping budget below baseline cleanly rejects without mutating bookings
+    const tight = await App.page.recalculateWithBudgetCeiling(10);
+    assert.equal(tight.ok, false);
+
+    // Restoring generous budget restores feasibility
+    const restored = await App.page.recalculateWithBudgetCeiling(sw.baselineTotalEur + 200);
+    assert.equal(restored.ok, true);
+  }
+
+  // Export .ics and re-import via RFC 5545 parser
+  const m = createScenarioMission("outpatient_surgery");
+  const g = MissionGraph.fromMission(m);
+  const icsText = exportMissionToIcs(m, g, []);
+  assert.match(icsText, /BEGIN:VCALENDAR/);
+  assert.match(icsText, /BEGIN:VEVENT/);
+
+  const roundTrip = compileUnstructuredIntake(icsText);
+  assert.equal(roundTrip.ok, true);
+  assert.equal(roundTrip.format, "ics");
+  assert.equal(roundTrip.mission.commitments.length, 5);
+
+  const bundle = await exportVerifiableAuditBundle({
+    mission: m,
+    selectedPlan: null,
+    operations: [],
+    auditLog: [],
+  });
+  assert.equal(bundle.schema, "continuity-verifiable-audit-bundle/v1");
+  assert.equal(bundle.bundle_integrity.bundle_sha256.length, 64);
+
+  await App.page.resetMission({ resetToDefaultScenario: true });
+});
+
+test("V2.3 — Cross-Origin Browser Bridge Engine signs verifiable Ed25519 receipt handoffs & rejects tampering", async () => {
+  const moveco = createPeerBrowserDomainEngine("moveco", {
+    origin: "https://gpaschercher-sudo.github.io/moveco-agentic-peer",
+  });
+  moveco.reset("primary_fri_full");
+
+  const quote = await moveco.callTool("get_moving_quote", {
+    booking_ref: "MC-8841",
+    target_date: "2026-11-20",
+  });
+  assert.equal(quote.ok, true);
+  assert.equal(quote.primary_refused, true);
+  assert.equal(quote.offers[0].offer_id, "off_moveco_partner_overflow_fri");
+
+  const hold = await moveco.callTool("hold_moving_slot", {
+    booking_ref: "MC-8841",
+    offer_id: "off_moveco_partner_overflow_fri",
+    proposed_date: "2026-11-20",
+    idempotency_key: "idem_bridge_hold_1",
+  });
+  assert.equal(hold.ok, true);
+  assert.equal(hold.original_booking_preserved, true);
+
+  const commit = await moveco.callTool("reschedule_van_booking", {
+    booking_ref: "MC-8841",
+    new_date: "2026-11-20",
+    window: "09:30–14:30",
+    offer_id: "off_moveco_partner_overflow_fri",
+    hold_id: hold.hold_id,
+    idempotency_key: "idem_bridge_commit_1",
+  });
+  assert.equal(commit.ok, true);
+  assert.ok(commit.handoff_token);
+
+  // Verify signed cross-tab handoff token
+  const okHandoff = await verifySignedReceiptHandoff("moveco", commit.handoff_token);
+  assert.equal(okHandoff.valid, true);
+  assert.equal(okHandoff.receiptBody.scheduled_date, "2026-11-20");
+
+  // Reject wrong expectedProviderId
+  const wrongProv = await verifySignedReceiptHandoff("permitflow", commit.handoff_token);
+  assert.equal(wrongProv.valid, false);
+});
+
+test("V2.4 — WebMCP Adapter enforces JSON Schema & mandatory human confirmation on irreversible tools", async () => {
+  let executed = 0;
+  const bridge = exposeActionsToWebMcp(
+    (actions) => {
+      actions.register({
+        name: "read_ping",
+        description: "Safe read tool",
+        effect: "read",
+        inputSchema: { type: "object", properties: {}, additionalProperties: false },
+        execute: () => ({ pong: true }),
+      });
+      actions.register({
+        name: "commit_order",
+        description: "Irreversible order commit",
+        effect: "irreversible",
+        inputSchema: {
+          type: "object",
+          additionalProperties: false,
+          required: ["amount"],
+          properties: { amount: { type: "number", minimum: 1 } },
+        },
+        execute: (args) => {
+          executed += 1;
+          return { ok: true, charged: args.amount };
+        },
+      });
+    },
+    {
+      namespace: "testsite",
+      confirmIrreversible: async (_def, args) => args.amount <= 500,
+    },
+  );
+
+  assert.equal(bridge.registeredTools.length, 2);
+  const pong = await bridge.invokeTool("read_ping", {});
+  assert.equal(pong.pong, true);
+
+  // Denied by confirmation callback -> must NOT execute handler
+  const denied = await bridge.invokeTool("commit_order", { amount: 900 });
+  assert.equal(denied.ok, false);
+  assert.equal(denied.cancelled, true);
+  assert.equal(executed, 0);
+
+  // Approved by confirmation callback -> executes handler
+  const approved = await bridge.invokeTool("commit_order", { amount: 250 });
+  assert.equal(approved.ok, true);
+  assert.equal(executed, 1);
+});
+
+test("V2.5 — Live Open Agentic Web MVP 0.2 & Project NANDA Auditor passes 6/6 checks across all 5 ecosystem sites", async () => {
+  const eco = await startAllEcosystemServers({
+    continuity: 0,
+    moveco: 0,
+    permitflow: 0,
+    homeconnect: 0,
+    powerflow: 0,
+  });
+  try {
+    const allUrls = [
+      eco.coordinator.origin(),
+      ...Object.values(eco.peers).map((p) => p.origin()),
+    ];
+    for (const url of allUrls) {
+      const report = await auditOpenAgenticSite(url);
+      assert.equal(report.ok, true, `Expected ${url} to pass conformance audit: ${JSON.stringify(report.checks)}`);
+      assert.equal(report.passedCount, 7);
+    }
+  } finally {
+    await eco.stopAll();
+  }
+});

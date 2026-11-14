@@ -1,4 +1,25 @@
 import { App } from "./script.js";
+import { registerActions } from "./site-actions.js";
+import { exposeActionsToWebMcp } from "./vendor/webmcp-adapter/index.js";
+
+if (typeof navigator !== "undefined") {
+  exposeActionsToWebMcp(registerActions, {
+    namespace: "continuity",
+    confirmIrreversible: async (toolDef, args) => {
+      if (typeof window !== "undefined" && window.__continuityReviewHook) {
+        return window.__continuityReviewHook([
+          {
+            action: toolDef.name,
+            origin: window.location.origin,
+            effect: "irreversible",
+            arguments: args,
+          },
+        ]);
+      }
+      return false;
+    },
+  });
+}
 
 export class AssistantMount {
   static GREETING = "I coordinate multi-provider schedule changes across your relocation commitments while keeping unaffected bookings untouched. I can also consult MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber, and PowerFlow Energy about what each site offers.";

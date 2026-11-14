@@ -205,11 +205,102 @@ export class MissionGraph {
   }
 
   /**
+   * Build a MissionGraph from any declarative mission object (uses `mission.dependencies[]`
+   * when provided, or the canonical 6-node home relocation edges by default).
+   * @param {Record<string, any>} mission
+   * @returns {MissionGraph}
+   */
+  static fromMission(mission) {
+    if (Array.isArray(mission?.dependencies) && mission.dependencies.length > 0) {
+      const graph = new MissionGraph({ missionId: mission.mission_id });
+      for (const cmt of mission.commitments) {
+        graph.addNode(cmt);
+      }
+      for (const dep of mission.dependencies) {
+        graph.addEdge(dep);
+      }
+      return graph;
+    }
+    return MissionGraph.fromRelocationMission(mission);
+  }
+
+  /**
+   * Compute deterministic layered DAG coordinates `{ [nodeId]: { x, y } }` inside a `920x430` viewBox
+   * for arbitrary multi-provider mission graphs.
+   * @param {MissionGraph} graph
+   * @param {Record<string, { x: number, y: number }>} [presetCoords]
+   * @returns {Record<string, { x: number, y: number }>}
+   */
+  static computeTopologicalLayout(graph, presetCoords = {}) {
+    const nodeIds = Array.from(graph.nodes.keys());
+    if (nodeIds.length > 0 && nodeIds.every((id) => presetCoords[id])) {
+      return { ...presetCoords };
+    }
+
+    const indegree = new Map(nodeIds.map((id) => [id, 0]));
+    const depth = new Map(nodeIds.map((id) => [id, 0]));
+    const adj = new Map(nodeIds.map((id) => [id, []]));
+
+    for (const e of graph.edges) {
+      if (e.type !== EDGE_TYPES.ALTERNATIVE_PROVIDER && e.type !== EDGE_TYPES.COMPENSATION_LINK) {
+        adj.get(e.from)?.push(e.to);
+        indegree.set(e.to, (indegree.get(e.to) || 0) + 1);
+      }
+    }
+
+    const queue = nodeIds.filter((id) => (indegree.get(id) || 0) === 0);
+    while (queue.length > 0) {
+      const u = queue.shift();
+      const dU = depth.get(u) || 0;
+      for (const v of adj.get(u) || []) {
+        depth.set(v, Math.max(depth.get(v) || 0, dU + 1));
+        indegree.set(v, (indegree.get(v) || 1) - 1);
+        if (indegree.get(v) === 0) queue.push(v);
+      }
+    }
+
+    const columns = new Map();
+    for (const id of nodeIds) {
+      const col = Math.min(2, depth.get(id) || 0);
+      if (!columns.has(col)) columns.set(col, []);
+      columns.get(col).push(id);
+    }
+
+    const colKeys = Array.from(columns.keys()).sort((a, b) => a - b);
+    const colX =
+      colKeys.length === 1
+        ? [355]
+        : colKeys.length === 2
+          ? [95, 590]
+          : [40, 355, 665];
+
+    const coords = {};
+    colKeys.forEach((ck, colIdx) => {
+      const bucket = columns.get(ck);
+      const count = bucket.length;
+      const usableHeight = Math.max(300, Math.min(360, count * 124));
+      const stepY = count === 1 ? 0 : Math.floor((usableHeight - 96) / (count - 1));
+      const startY = count === 1 ? 155 : Math.max(18, Math.floor((410 - (96 + stepY * (count - 1))) / 2));
+      bucket.forEach((id, rowIdx) => {
+        coords[id] = {
+          x: colX[Math.min(colIdx, colX.length - 1)],
+          y: startY + rowIdx * Math.max(108, stepY),
+        };
+      });
+    });
+
+    return coords;
+  }
+
+  /**
    * Build the standard relocation MissionGraph from a mission object.
    * @param {Record<string, any>} mission
    * @returns {MissionGraph}
    */
   static fromRelocationMission(mission) {
+    if (Array.isArray(mission?.dependencies) && mission.dependencies.length > 0) {
+      return MissionGraph.fromMission(mission);
+    }
     const graph = new MissionGraph({ missionId: mission.mission_id });
     for (const cmt of mission.commitments) {
       graph.addNode(cmt);

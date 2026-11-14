@@ -80,9 +80,11 @@
     "bridge": "./bridge/action-bridge.html",
     "agentTools": [
       "get_mission_state",
+      "switch_or_import_mission",
       "analyze_and_prepare_change",
       "select_change_plan",
-      "commit_prepared_change_package"
+      "commit_prepared_change_package",
+      "audit_open_agentic_site"
     ]
   }
 }

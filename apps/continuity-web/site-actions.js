@@ -4,7 +4,7 @@ class SiteActions {
   static registerActions(actions) {
     actions.register({
       name: "get_mission_state",
-      description: "Read the active relocation mission graph, confirmed commitments, hard budget invariants, feasible minimal-change plans, prepared operations, partner peer links, and current version.",
+      description: "Read the active mission graph, confirmed commitments, hard budget invariants, Pareto-optimal minimal-change plans, prepared operations, partner peer links, and current version.",
       effect: "read",
       inputSchema: {
         type: "object",
@@ -15,8 +15,35 @@ class SiteActions {
     });
 
     actions.register({
+      name: "switch_or_import_mission",
+      description: "Switch between built-in multi-provider scenarios (home_relocation, outpatient_surgery, product_launch_expo) OR compile pasted confirmation emails / RFC 5545 .ics calendar text into a live MissionGraph.",
+      effect: "write",
+      inputSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["mode"],
+        properties: {
+          mode: {
+            type: "string",
+            enum: ["home_relocation", "outpatient_surgery", "product_launch_expo", "custom_intake"],
+            description: "Built-in scenario ID or custom_intake when supplying rawScheduleText.",
+          },
+          rawScheduleText: {
+            type: "string",
+            maxLength: 32000,
+            description: "Pasted booking confirmation emails (separated by ---) or RFC 5545 .ics text when mode is custom_intake.",
+          },
+        },
+      },
+      execute: (args) =>
+        args.mode === "custom_intake"
+          ? App.page.importCustomSchedule(args.rawScheduleText || "")
+          : App.page.switchScenario(args.mode),
+    });
+
+    actions.register({
       name: "analyze_and_prepare_change",
-      description: "Compile a natural-language schedule change request, run bounded dependency impact analysis, obtain alternative offers, compute minimal-change plans, and place reversible slot holds without cancelling or committing existing bookings.",
+      description: "Compile a natural-language schedule change request, run bounded dependency impact analysis, obtain alternative offers, compute Pareto-optimal minimal-change plans, and place reversible slot holds without cancelling or committing existing bookings.",
       effect: "write",
       inputSchema: {
         type: "object",
@@ -81,6 +108,26 @@ class SiteActions {
         },
       },
       execute: (args) => App.page.commitPreparedPackage(args),
+    });
+
+    actions.register({
+      name: "audit_open_agentic_site",
+      description: "Run the live Open Agentic Web MVP Profile 0.2 and Project NANDA A2A v1.0 conformance verifier against all 5 ecosystem sites ('all') or any specified HTTPS Open Agentic Website URL.",
+      effect: "read",
+      inputSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["target"],
+        properties: {
+          target: {
+            type: "string",
+            minLength: 3,
+            maxLength: 512,
+            description: "Pass 'all' to audit all 5 ecosystem sites, or pass a full https:// Open Agentic Website base URL.",
+          },
+        },
+      },
+      execute: (args) => App.page.runConformanceAudit(args.target),
     });
   }
 }

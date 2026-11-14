@@ -6,7 +6,7 @@ import { registerActions } from "../site-actions.js";
 import { AssistantMount } from "../site.js";
 
 test("CONTINUITY site-actions register cleanly and run full analyze -> select -> commit lifecycle", async () => {
-  await App.page.resetMission();
+  await App.page.resetMission({ resetToDefaultScenario: true });
 
   const registry = new ActionRegistry();
   const scope = { base: "http://127.0.0.1:8080", network: "continuity_coordinator" };
@@ -17,9 +17,11 @@ test("CONTINUITY site-actions register cleanly and run full analyze -> select ->
     catalog.map((c) => c.name),
     [
       "get_mission_state",
+      "switch_or_import_mission",
       "analyze_and_prepare_change",
       "select_change_plan",
       "commit_prepared_change_package",
+      "audit_open_agentic_site",
     ],
   );
 
@@ -34,6 +36,7 @@ test("CONTINUITY site-actions register cleanly and run full analyze -> select ->
   assert.equal(prep.ok, true);
   assert.equal(prep.targetDate, "2026-11-20");
   assert.equal(prep.unaffectedCommitmentsCount, 3);
+  assert.ok(prep.paretoFrontierCount >= 1);
 
   // 3. Verify confirmation dialog details BEFORE commit
   const state1 = App.page.getState();

@@ -112,6 +112,8 @@ export function createSignatureMoveMission(options = {}) {
     simulation_disclosure: "Independent demonstration provider services for the Open Agentic Web Challenge.",
     created_at: "2026-11-13T09:00:00Z",
     anchor_date: baseTuesday,
+    anchor_commitment_id: "cmt_moveco_van",
+    primary_change_field: "move_date",
     destination_summary: "District 2, Place Bellecour (Zone B)",
     authoritative_invariants: {
       maximum_budget_eur: 700,
@@ -417,10 +419,11 @@ export function compileMissionChange(input, mission) {
       mission_id: mission.mission_id,
       mission_type: mission.mission_type,
       requested_change: {
-        field: "move_date",
+        field: mission.primary_change_field || "move_date",
         previous_value: prevDate,
         new_value: newDate,
-        target_commitment_id: "cmt_moveco_van",
+        target_commitment_id:
+          mission.anchor_commitment_id || mission.commitments?.[0]?.id || "cmt_moveco_van",
         summary: rawText.slice(0, 240),
       },
       invariants: {
