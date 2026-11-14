@@ -717,6 +717,13 @@ html[data-theme="light"] .hold-countdown-strip {
 .protocol-links a:hover { border-color: var(--brand); }
 .disclosure-footer { font-size: 0.8rem; color: var(--ink-muted); margin: 0; }
 
+.sample-prompts-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 6px;
+}
 .assistant-note { font-size: 0.83rem; color: var(--ink-muted); margin: 8px 0; }
 .runtime-status-pill {
   font-size: 0.82rem;

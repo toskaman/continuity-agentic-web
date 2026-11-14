@@ -3,7 +3,7 @@ import test from "node:test";
 import { ActionRegistry } from "../../../skills/agentify-website/runtime/actions.js";
 import { App } from "../script.js";
 import { registerActions } from "../site-actions.js";
-import { AssistantMount } from "../site.js";
+import { AssistantMount, ContinuityScriptedReplayLlm } from "../site.js";
 
 test("CONTINUITY site-actions register cleanly and run full analyze -> select -> commit lifecycle", async () => {
   await App.page.resetMission({ resetToDefaultScenario: true });
@@ -62,4 +62,48 @@ test("CONTINUITY site-actions register cleanly and run full analyze -> select ->
   assert.equal(commitRes.sagaStatus, "ALL_COMMITTED_AND_VERIFIED");
   assert.equal(commitRes.committedCount, 3);
   assert.equal(commitRes.preservedCount, 3);
+});
+
+test("ContinuityScriptedReplayLlm drives deterministic zero-key tool calls and CRUSE charts", async () => {
+  const replay = new ContinuityScriptedReplayLlm();
+  const offeredTools = [
+    { function: { name: "website_analyze_and_prepare_change" } },
+    { function: { name: "render_cruse" } },
+  ];
+
+  // Step 1: emits website_analyze_and_prepare_change tool call
+  const turn1 = await replay.chat({
+    messages: [{ role: "user", content: "Move my relocation from Tuesday to Friday under €700." }],
+    tools: offeredTools,
+  });
+  assert.equal(turn1.toolCalls[0].function.name, "website_analyze_and_prepare_change");
+
+  // Step 2: emits render_cruse chart after receiving tool result
+  const turn2 = await replay.chat({
+    messages: [
+      { role: "user", content: "Move my relocation from Tuesday to Friday under €700." },
+      {
+        role: "tool",
+        name: "website_analyze_and_prepare_change",
+        content: JSON.stringify({
+          result: {
+            ok: true,
+            targetDate: "2026-11-20",
+            recommendedPlanId: "PLAN_A_MINIMAL_CHANGE",
+            preparedOperationsCount: 3,
+            unaffectedCommitmentsCount: 3,
+            plans: [
+              {
+                plan_id: "PLAN_A_MINIMAL_CHANGE",
+                label: "Plan A",
+                metrics: { totalMissionCostEur: 649, maxBudgetEur: 700 },
+              },
+            ],
+          },
+        }),
+      },
+    ],
+    tools: offeredTools,
+  });
+  assert.equal(turn2.toolCalls[0].function.name, "render_cruse");
 });
