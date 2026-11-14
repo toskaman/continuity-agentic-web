@@ -39,9 +39,25 @@ To verify that repeated multi-origin planning, Pareto optimization, WebCrypto Ed
 
 ---
 
-## 3. Lighthouse Accessibility, Best Practices & SEO Across All 5 Live HTTPS Sites
+## 3. Lighthouse — all 5 live HTTPS sites (re-measured after the redesign)
 
-> Measured on the pre-redesign UI (Nov 14, 2026). The interface was redesigned afterwards; re-run `npx lighthouse <url> --preset=desktop` on each live site before quoting these scores.
+Measured **Nov 14, 2026** with **Lighthouse 13.6.0**, headless Chrome, on the public GitHub Pages URLs. Categories: Performance · Accessibility · Best Practices · SEO · Agentic Browsing.
+
+| Site | Desktop | Mobile (default emulation) | CLS |
+| --- | --- | --- | --- |
+| CONTINUITY | 100 · 100 · 100 · 100 · 100 | 100 · 100 · 100 · 100 · 100 | 0 |
+| MoveCo Express | 100 · 100 · 100 · 100 · 100 | 99 · 100 · 100 · 100 · 100 | 0 |
+| PermitFlow Civic Prep | 100 · 100 · 100 · 100 · 100 | 99 · 100 · 100 · 100 · 100 | 0 |
+| HomeConnect Fiber | 100 · 100 · 100 · 100 · 100 | 100 · 100 · 100 · 100 · 100 | 0 |
+| PowerFlow Energy | 100 · 100 · 100 · 100 · 100 | 100 · 100 · 100 · 100 · 100 | 0 |
+
+Reproduce: `npx lighthouse <url> --preset=desktop --chrome-flags="--headless=new"` (drop `--preset=desktop` for mobile). Scores vary by a few points between machines and network conditions.
+
+Fixes made to reach these numbers: space reserved for the JavaScript-rendered booking card and date choices on the four provider sites (CLS 0.11 → 0), and heading order on PermitFlow.
+
+### Previous measurement (pre-redesign UI, kept for history)
+
+
 
 | Live Public HTTPS Site | Accessibility | Best Practices | SEO | Console Errors |
 |---|---:|---:|---:|---:|

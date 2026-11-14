@@ -56,7 +56,7 @@ Five independent websites on two origins — CONTINUITY (`toskaman.github.io`) a
 - The language model interprets and explains; it cannot raise the budget, enable cancellations or commit anything. Those rules are enforced in code.
 - Network timeouts after a commit become `UNKNOWN` and are reconciled, not blindly retried.
 - **Chaos Lab:** 15 failure scenarios (forged receipts, price drift after approval, timeouts, partial failures…) run in your browser.
-- **Measured:** 60 benchmark runs, 100% verified completion, 0 cancel calls, 3/3 signed receipts per run; full run 11 ms median on loopback (`docs/benchmarks/BEFORE_AFTER.md`). 38 automated tests pass in CI.
+- **Measured:** 60 benchmark runs, 100% verified completion, 0 cancel calls, 3/3 signed receipts per run; full run 11 ms median on loopback (`docs/benchmarks/BEFORE_AFTER.md`). 38 automated tests pass in CI. Lighthouse 13.6 scores all five sites 100 on desktop in Performance, Accessibility, Best Practices, SEO and the new **Agentic Browsing** category (`docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md`).
 
 ### Shared with the community (Apache-2.0)
 17 zero-dependency modules, including: a cross-origin browser bridge with signed receipt handoff for static sites; an Open Agentic Web MVP 0.2 + Project NANDA conformance auditor (7 checks, usable on any site from the Trust Center); a Google ADK / OpenAI Agents → Neuro SAN HOCON converter; an email/`.ics` intake compiler; and a WebMCP adapter with confirmation gates on irreversible tools.

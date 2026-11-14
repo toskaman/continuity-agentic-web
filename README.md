@@ -14,6 +14,8 @@ Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agentic
 4. Click a provider in the network map (e.g. **MoveCo Express**): its own site, on another origin, verifies the signed receipt and shows the new date.
 5. Optional: **Try without a key** in *Ask CONTINUITY* runs the real agent networks, `website_*` tools and consent cards with a scripted model.
 
+**Lighthouse 13.6 (desktop), all 5 live sites:** 100 Performance · 100 Accessibility · 100 Best Practices · 100 SEO · 100 Agentic Browsing — [details](docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md).
+
 > Demo data: the four providers are independent demonstration services built for this challenge. No real bookings, payments or permits are touched.
 
 ## Live Public HTTPS Deployments (Verified Cross-Origin Ecosystem)
