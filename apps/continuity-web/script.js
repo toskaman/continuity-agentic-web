@@ -37,6 +37,7 @@ import {
   createScenarioMission,
   exportMissionToIcs,
   exportVerifiableAuditBundle,
+  SAMPLE_HYBRID_ICS_CALENDAR,
   SAMPLE_RAW_CONFIRMATION_EMAILS,
   SCENARIO_CATALOG,
   verifyExportedAuditBundle,
@@ -53,6 +54,7 @@ import {
   convertAgentFrameworkToHoconBundle,
   SAMPLE_GOOGLE_ADK_CONFIG,
 } from "./vendor/adk-hocon-converter/index.js";
+import { buildHybridTransitionPlaybook } from "./vendor/transition-playbook/index.js";
 import { buildFallbackOffersForRelocationNode } from "./modules/fallback-offers.js";
 import {
   renderChangePackageView,
@@ -965,8 +967,9 @@ export class ContinuityCoordinatorPage {
         ? new URL("./", location.href).href
         : "http://127.0.0.1:8080/";
 
-    const urls =
-      !targetUrlOrAll || targetUrlOrAll === "all"
+    const urls = Array.isArray(targetUrlOrAll)
+      ? targetUrlOrAll
+      : !targetUrlOrAll || targetUrlOrAll === "all"
         ? [
             selfBase,
             `${this.peerOrigins.moveco}/`,
@@ -1006,6 +1009,36 @@ export class ContinuityCoordinatorPage {
     const ics = exportMissionToIcs(this.mission, this.graph, this.preparedOps);
     this.triggerBrowserDownload(`${this.mission.mission_id}.ics`, "text/calendar;charset=utf-8", ics);
     return { ok: true, bytes: ics.length };
+  }
+
+  getTransitionPlaybook() {
+    const plan = this.getSelectedPlan();
+    if (!plan) {
+      return { ok: false, reason: "Analyze and prepare a change plan first so the execution playbook can be built." };
+    }
+    const playbook = buildHybridTransitionPlaybook({
+      mission: this.mission,
+      plan,
+      preparedOps: this.preparedOps,
+    });
+    return { ok: true, ...playbook };
+  }
+
+  downloadTransitionPlaybook() {
+    const res = this.getTransitionPlaybook();
+    if (!res.ok) return res;
+    this.triggerBrowserDownload(
+      `${this.mission.mission_id}-hold-first-playbook.md`,
+      "text/markdown;charset=utf-8",
+      res.markdown,
+    );
+    return {
+      ok: true,
+      bytes: res.markdown.length,
+      agenticStepsCount: res.agenticStepsCount,
+      legacyStepsCount: res.legacyStepsCount,
+      avoidedPenaltiesTotalEur: res.avoidedPenaltiesTotalEur,
+    };
   }
 
   async buildCurrentAuditBundle() {
@@ -1286,7 +1319,17 @@ export class ContinuityCoordinatorPage {
       const ta = document.querySelector("#raw-intake-textarea");
       if (ta) ta.value = SAMPLE_RAW_CONFIRMATION_EMAILS;
       const fb = document.querySelector("#intake-feedback");
-      if (fb) fb.textContent = "Loaded 5 sample booking confirmation emails — click Compile Live Mission Graph.";
+      if (fb) fb.textContent = "Loaded 5 sample booking confirmation emails — click Build my mission.";
+    });
+
+    document.querySelector("#load-hybrid-ics-btn")?.addEventListener("click", () => {
+      const ta = document.querySelector("#raw-intake-textarea");
+      if (ta) ta.value = SAMPLE_HYBRID_ICS_CALENDAR;
+      const fb = document.querySelector("#intake-feedback");
+      if (fb) {
+        fb.textContent =
+          "Loaded 4-event Hybrid RFC 5545 .ics (2 Open Agentic Web peers + 1 legacy email vendor + 1 multi-day storage) — click Build my mission.";
+      }
     });
 
     document.querySelector("#ics-file-input")?.addEventListener("change", async (ev) => {
@@ -1321,13 +1364,41 @@ export class ContinuityCoordinatorPage {
       if (valEl) valEl.textContent = `€${ev.target.value}`;
     });
 
-    // Export .ics & Signed Audit Bundle
+    // Export .ics, Hold-First Playbook & Signed Audit Bundle
     document.querySelector("#export-ics-btn")?.addEventListener("click", () => {
       this.downloadUpdatedIcsCalendar();
+    });
+    document.querySelector("#export-playbook-btn")?.addEventListener("click", () => {
+      this.downloadTransitionPlaybook();
     });
     document.querySelector("#export-audit-btn")?.addEventListener("click", () => {
       void this.downloadSignedAuditBundle();
     });
+
+    // Direct Drag-and-Drop .ics / .json / .txt schedule intake on the Workspace composer card
+    const dropzone = document.querySelector("#composer-dropzone");
+    if (dropzone) {
+      dropzone.addEventListener("dragover", (ev) => {
+        if (!ev.dataTransfer?.types?.includes?.("Files")) return;
+        ev.preventDefault();
+        dropzone.classList.add("is-dragover");
+      });
+      dropzone.addEventListener("dragleave", (ev) => {
+        if (!dropzone.contains(ev.relatedTarget)) {
+          dropzone.classList.remove("is-dragover");
+        }
+      });
+      dropzone.addEventListener("drop", async (ev) => {
+        const file = ev.dataTransfer?.files?.[0];
+        dropzone.classList.remove("is-dragover");
+        if (!file) return;
+        ev.preventDefault();
+        const text = await file.text();
+        const ta = document.querySelector("#raw-intake-textarea");
+        if (ta) ta.value = text;
+        await this.importCustomSchedule(text);
+      });
+    }
 
     document.querySelector("#release-holds-btn")?.addEventListener("click", () => {
       void this.releasePreparedHolds();
@@ -1460,6 +1531,16 @@ export class ContinuityCoordinatorPage {
 
     document.querySelector("#audit-ecosystem-btn")?.addEventListener("click", () => {
       void this.runConformanceAudit("all");
+    });
+
+    document.querySelector("#audit-external-btn")?.addEventListener("click", () => {
+      const selfBase =
+        typeof location !== "undefined" ? new URL("./", location.href).href : "http://127.0.0.1:8080/";
+      void this.runConformanceAudit([
+        selfBase,
+        "https://sainath998.github.io/plainly-agent/",
+        "https://shutdown-clerk.pages.dev/",
+      ]);
     });
 
     document.querySelector("#audit-single-btn")?.addEventListener("click", () => {

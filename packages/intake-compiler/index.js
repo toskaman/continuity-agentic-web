@@ -39,6 +39,63 @@ export const SAMPLE_RAW_CONFIRMATION_EMAILS = [
   "Price: €29 · Reschedule fee: €10 · Cancel fee: €15 · Multi-day coverage span",
 ].join("\n");
 
+export const SAMPLE_HYBRID_ICS_CALENDAR = [
+  "BEGIN:VCALENDAR",
+  "VERSION:2.0",
+  "PRODID:-//CONTINUITY//Hybrid Open Agentic Web + Legacy Schedule//EN",
+  "BEGIN:VEVENT",
+  "UID:MC-8841@moveco.demo",
+  "DTSTART:20261117T080000Z",
+  "DTEND:20261117T130000Z",
+  "SUMMARY:[ANCHOR] Residential Moving Van & 3-Mover Crew",
+  "LOCATION:MoveCo Express (Open Agentic Web Peer)",
+  "URL:https://gpaschercher-sudo.github.io/moveco-agentic-peer/",
+  "X-AGENTIC-NETWORK:https://gpaschercher-sudo.github.io/moveco-agentic-peer/moveco_dispatch",
+  "DESCRIPTION:Ref: MC-8841 | Price: €390 | Reschedule fee: €25 | Cancel fee: €120",
+  "END:VEVENT",
+  "BEGIN:VEVENT",
+  "UID:ELV-204@bellecour-syndic.example",
+  "DTSTART:20261117T083000Z",
+  "DTEND:20261117T123000Z",
+  "SUMMARY:Building Service Freight Elevator & Courtyard Key",
+  "LOCATION:Syndic Résidence Bellecour (Legacy Email Vendor)",
+  "DESCRIPTION:Ref: ELV-204 | Same-day courtyard access | Price: €40 | Reschedule fee: €10 | Cancel fee: €25",
+  "END:VEVENT",
+  "BEGIN:VEVENT",
+  "UID:HC-5520@homeconnect.demo",
+  "DTSTART:20261117T140000Z",
+  "DTEND:20261117T170000Z",
+  "SUMMARY:FTTH Fiber Optic Technician Installation",
+  "LOCATION:HomeConnect Fiber (Open Agentic Web Peer)",
+  "URL:https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/",
+  "X-AGENTIC-NETWORK:https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/homeconnect_scheduler",
+  "DESCRIPTION:Ref: HC-5520 | After arrival install | Price: €69 | Reschedule fee: €0 | Cancel fee: €35",
+  "END:VEVENT",
+  "BEGIN:VEVENT",
+  "UID:BOX-910@cityvault.example",
+  "DTSTART:20261110",
+  "DTEND:20261130",
+  "SUMMARY:20-Day Climate-Controlled Transit Storage Unit",
+  "LOCATION:CityVault Storage",
+  "DESCRIPTION:Ref: BOX-910 | Price: €95 | Reschedule fee: €20 | Cancel fee: €45",
+  "END:VEVENT",
+  "END:VCALENDAR",
+].join("\r\n");
+
+function normalizeSafeAgenticUrl(rawUrl) {
+  const s = String(rawUrl || "").trim();
+  if (!s) return null;
+  try {
+    const u = new URL(s);
+    if (u.username || u.password) return null;
+    const isLoopback = ["127.0.0.1", "localhost"].includes(u.hostname);
+    if (u.protocol === "https:" || (u.protocol === "http:" && isLoopback)) {
+      return u.href;
+    }
+  } catch {}
+  return null;
+}
+
 export const SCENARIO_CATALOG = Object.freeze([
   {
     id: "home_relocation",
@@ -474,8 +531,8 @@ export function compileUnstructuredIntake(rawInput, options = {}) {
     category: it.category,
     provider_id: `imp_prov_${idx + 1}`,
     provider_name: it.providerName.slice(0, 56),
-    provider_origin: `https://imported-peer-${idx + 1}.example`,
-    peer_network_url: null,
+    provider_origin: it.providerOrigin || `https://imported-peer-${idx + 1}.example`,
+    peer_network_url: it.peerNetworkUrl || null,
     booking_ref: it.bookingRef,
     status: "CONFIRMED",
     scheduled_date: it.scheduledDate,
@@ -595,6 +652,8 @@ function parseIcsEvents(icsText) {
     const desc = field("DESCRIPTION");
     const loc = field("LOCATION");
     const uid = field("UID");
+    const eventUrl = normalizeSafeAgenticUrl(field("URL") || field("X-AGENTIC-ORIGIN"));
+    const agenticNetUrl = normalizeSafeAgenticUrl(field("X-AGENTIC-NETWORK"));
     const startParsed = parseIcsDateToIso(field("DTSTART"));
     const endParsed = parseIcsDateToIso(field("DTEND"));
     if (!startParsed) return;
@@ -614,6 +673,8 @@ function parseIcsEvents(icsText) {
       explicitAnchor: /\[ANCHOR\]/i.test(combined),
       title: summary.replace(/\[ANCHOR\]\s*/i, "").trim(),
       providerName: loc || `Calendar Provider ${i + 1}`,
+      providerOrigin: eventUrl ? eventUrl.replace(/\/+$/, "") : null,
+      peerNetworkUrl: agenticNetUrl,
       bookingRef: refMatch ? refMatch[1].toUpperCase() : (uid ? uid.slice(0, 10).toUpperCase() : `ICS-${100 + i}`),
       scheduledDate: startParsed.iso,
       validUntil,
@@ -660,10 +721,15 @@ function parseJsonBookingArray(jsonText) {
     const rescheduleFeeEur = Math.max(0, Number(entry.reschedule_fee_eur ?? entry.rescheduleFee ?? 10) || 0);
     const cancelFeeEur = Math.max(0, Number(entry.cancellation_fee_eur ?? entry.cancelFee ?? 30) || 0);
 
+    const providerOrigin = normalizeSafeAgenticUrl(entry.provider_origin || entry.url);
+    const peerNetworkUrl = normalizeSafeAgenticUrl(entry.peer_network_url || entry.agentic_network);
+
     out.push({
       explicitAnchor: Boolean(entry.anchor || /\[ANCHOR\]/i.test(title)),
       title: title.replace(/\[ANCHOR\]\s*/i, "").trim(),
       providerName,
+      providerOrigin: providerOrigin ? providerOrigin.replace(/\/+$/, "") : null,
+      peerNetworkUrl,
       bookingRef,
       scheduledDate: rawDate,
       validUntil,

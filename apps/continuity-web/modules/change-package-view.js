@@ -3,6 +3,7 @@
  */
 
 import { formatDateWithWeekday } from "../vendor/mission-core/index.js";
+import { buildHybridTransitionPlaybook } from "../vendor/transition-playbook/index.js";
 
 export function renderHoldCountdownView(page) {
   const el = document.querySelector("#hold-countdown-strip");
@@ -162,15 +163,37 @@ export function renderChangePackageView(page, plan) {
     });
   });
 
+  const playbook = buildHybridTransitionPlaybook({
+    mission: page.mission,
+    plan,
+    preparedOps: page.preparedOps,
+  });
+  const playbookStepByCommitment = new Map(playbook.steps.map((s) => [s.commitmentId, s]));
+
   opsContainer.innerHTML = page.preparedOps
     .map((op) => {
       const totalOp =
         Number(op.base_price_eur) + Number(op.change_fee_eur || 0) + Number(op.cancellation_penalty_eur || 0);
+      const stepInfo = playbookStepByCommitment.get(op.commitment_id);
       const proofBadge = op.proof_verification?.level
         ? `<div>Proof: <code>${page.escapeXml(op.proof_verification.level)}</code></div>`
         : "";
       const receiptDrawer = op.receipt_envelope?.proof
         ? `<details class="receipt-drawer"><summary>Inspect Ed25519 signature (${page.escapeXml(op.receipt_envelope.proof.key_id)})</summary><pre class="receipt-pre">${page.escapeXml(JSON.stringify(op.receipt_envelope, null, 2))}</pre></details>`
+        : "";
+      const legacyDraftDrawer =
+        stepInfo && stepInfo.executionChannel === "LEGACY_VENDOR_HOLD_FIRST_DRAFT"
+          ? `<details class="receipt-drawer">
+               <summary>Step #${stepInfo.stepNumber} Hold-First Reschedule Draft (for real-world / legacy vendor)</summary>
+               <pre class="receipt-pre">${page.escapeXml(`Subject: ${stepInfo.subject}\n\n${stepInfo.messageDraft}`)}</pre>
+               <div class="draft-actions-row">
+                 <a class="mini-btn" href="${page.escapeXml(stepInfo.mailtoHref)}">✉ Open in Mail</a>
+                 <button type="button" class="mini-btn" data-copy-draft="${page.escapeXml(op.commitment_id)}">Copy Hold-First Request</button>
+               </div>
+             </details>`
+          : "";
+      const channelLine = stepInfo
+        ? `<div>Channel: <code>${page.escapeXml(stepInfo.channelBadge)}</code></div>`
         : "";
       return `
         <div class="op-card">
@@ -179,12 +202,29 @@ export function renderChangePackageView(page, plan) {
             <span class="state-tag">${page.escapeXml(op.state)}</span>
           </div>
           <div>Provider: <strong>${page.escapeXml(op.provider_name)}</strong> (${page.escapeXml(op.provider_origin)}) · Capability: <code>${page.escapeXml(op.capability)}</code></div>
+          ${channelLine}
           <div>Window: ${page.escapeXml(op.window)} · Total: <strong>€${totalOp.toFixed(2)}</strong> (Fee €${Number(op.change_fee_eur || 0).toFixed(2)}) · Reversible: ${op.reversible ? "Yes (Draft)" : "No (Irreversible Booking)"}</div>
           <div>Idempotency Key: <code>${page.escapeXml(op.idempotency_key)}</code>${op.hold_id ? ` · Hold: <code>${page.escapeXml(op.hold_id)}</code>` : ""}</div>
           ${proofBadge}
           ${receiptDrawer}
+          ${legacyDraftDrawer}
         </div>
       `;
     })
     .join("");
+
+  opsContainer.querySelectorAll("[data-copy-draft]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const cid = btn.getAttribute("data-copy-draft");
+      const s = cid ? playbookStepByCommitment.get(cid) : null;
+      if (!s) return;
+      try {
+        await navigator.clipboard.writeText(`Subject: ${s.subject}\n\n${s.messageDraft}`);
+        btn.textContent = "✓ Copied";
+        setTimeout(() => {
+          btn.textContent = "Copy Hold-First Request";
+        }, 1600);
+      } catch {}
+    });
+  });
 }

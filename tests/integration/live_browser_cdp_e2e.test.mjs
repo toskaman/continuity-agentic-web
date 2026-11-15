@@ -242,7 +242,7 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
     await cdp.send("Page.navigate", { url: `${eco.coordinator.origin()}/community-kit.html` });
     const kitOutcome = await cdp.evalJson(`(async () => {
       for (let i = 0; i < 30; i++) {
-        if (document.querySelectorAll("#kit-modules-tbody tr").length === 19 && document.querySelector("#kit-nanda-cat-out")?.value) {
+        if (document.querySelectorAll("#kit-modules-tbody tr").length === 20 && document.querySelector("#kit-nanda-cat-out")?.value) {
           break;
         }
         await new Promise((r) => setTimeout(r, 100));
@@ -259,10 +259,28 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
       };
     })()`);
 
-    assert.equal(kitOutcome.modulesRows, 19);
+    assert.equal(kitOutcome.modulesRows, 20);
     assert.equal(kitOutcome.cleanCompiled, true);
     assert.equal(kitOutcome.injectionBlocked, true);
     assert.equal(kitOutcome.nandaCatalogGenerated, true);
+
+    // 5. Verify 1-click Inbound Cross-Origin Peer -> CONTINUITY trigger (`?ask_continuity=1`) on MoveCo Express
+    await cdp.send("Page.navigate", { url: `${eco.peers.moveco.origin()}/?ask_continuity=1#assistant` });
+    const inboundConsentShown = await cdp.evalJson(`(async () => {
+      for (let i = 0; i < 40; i++) {
+        const consent = document.querySelector("#ns-msgs .ns-consent");
+        if (consent && consent.textContent.includes("CONTINUITY")) {
+          return true;
+        }
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      return false;
+    })()`);
+    assert.equal(
+      inboundConsentShown,
+      true,
+      "Opening ?ask_continuity=1 on a peer site must automatically trigger the cross-origin CONTINUITY Consent Card",
+    );
 
     assert.deepEqual(cdp.exceptions, [], `Expected 0 uncaught browser exceptions, got: ${cdp.exceptions.join("; ")}`);
     assert.deepEqual(cdp.consoleErrors, [], `Expected 0 browser console errors, got: ${cdp.consoleErrors.join("; ")}`);

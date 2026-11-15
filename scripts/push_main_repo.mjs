@@ -17,7 +17,7 @@ run(
   [
     "commit",
     "-m",
-    "feat: bidirectional 5-site Open Agentic Web mesh, facts/ networks, NANDA AI Catalog, 5-tool Community Builder Kit & 66 automated tests",
+    "feat: hybrid Open Agentic Web + Legacy Hold-First Transition Playbook, mixed .ics URL discovery, 1-click inbound peer calls & 70 automated tests",
   ],
   { stdio: "inherit" },
 );

@@ -205,7 +205,57 @@ export class ContinuityScriptedReplayLlm {
         });
       }
       return emitText(
-        `**[Scripted Replay]** Audited **${auditRes.sitesAudited || 5}** Open Agentic Websites: **${auditRes.ok ? "ALL PASSED (7/7 checks each)" : "Issues detected"}**.`,
+        `**[Scripted Replay]** Audited **${auditRes.sitesAudited || 5}** Open Agentic Websites: **${auditRes.ok ? "ALL PASSED (9/9 checks each)" : "Issues detected"}**.`,
+      );
+    }
+
+    // 3b. Export Hold-First Transition Playbook intent
+    if (/\b(playbook|hold-first|reschedule draft|mailto|checklist)\b/i.test(userText) && avail.has("website_export_transition_playbook")) {
+      if (!calledNames.has("website_export_transition_playbook")) {
+        return emitTool("website_export_transition_playbook", {});
+      }
+      const pb = parseToolPayload("website_export_transition_playbook") || {};
+      if (!pb.ok) {
+        return emitText(`**[Scripted Replay]** ${pb.reason || "Prepare a change plan first before building the Hold-First playbook."}`);
+      }
+      if (avail.has("render_cruse") && !calledNames.has("render_cruse") && Array.isArray(pb.steps)) {
+        return emitTool("render_cruse", {
+          presentation: {
+            version: 1,
+            components: [
+              {
+                id: "hold_first_playbook_table",
+                kind: "table",
+                title: "Ordered Hold-First Change Execution Playbook",
+                columns: ["Step", "Commitment", "Channel", "Shift", "Total"],
+                rows: pb.steps.map((s) => [
+                  `#${s.stepNumber}`,
+                  `${s.commitmentTitle} (${s.bookingRef})`,
+                  s.channelBadge,
+                  `${s.fromDate} → ${s.toDate}`,
+                  `€${Number(s.expectedTotalEur || 0).toFixed(2)}`,
+                ]),
+              },
+            ],
+          },
+        });
+      }
+      return emitText(
+        `## Hold-First Transition Playbook *(Scripted Replay)*\n- **Open Agentic Web Autonomous Ops:** **${pb.agenticStepsCount}**\n- **Legacy Vendor Hold-First Drafts:** **${pb.legacyStepsCount}**\n- **Preserved Untouched:** **${pb.preservedCount}** (€${Number(pb.avoidedPenaltiesTotalEur || 0).toFixed(2)} cancellation penalties avoided)`,
+      );
+    }
+
+    // 3c. Release prepared holds (€0) intent
+    if (/\b(release|drop holds|cancel holds)\b/i.test(userText) && avail.has("website_release_prepared_holds")) {
+      if (!calledNames.has("website_release_prepared_holds")) {
+        return emitTool("website_release_prepared_holds", {});
+      }
+      const rel = parseToolPayload("website_release_prepared_holds") || {};
+      if (!rel.ok) {
+        return emitText(`**[Scripted Replay]** ${rel.reason || "No prepared holds are active."}`);
+      }
+      return emitText(
+        `**[Scripted Replay]** Released **${rel.releasedCount}** temporary slot hold(s) for **€0.00** — all original reservations remain CONFIRMED on their baseline dates.`,
       );
     }
 

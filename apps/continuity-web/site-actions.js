@@ -123,6 +123,18 @@ class SiteActions {
     });
 
     actions.register({
+      name: "export_transition_playbook",
+      description: "Generate the dependency-ordered Hold-First change execution playbook separating Open Agentic Web autonomous operations from copy-ready reschedule drafts for legacy non-agentic vendors, plus avoided cancellation fees.",
+      effect: "read",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
+      execute: () => App.page.getTransitionPlaybook(),
+    });
+
+    actions.register({
       name: "audit_open_agentic_site",
       description: "Run the live Open Agentic Web MVP Profile 0.2 and Project NANDA A2A v1.0 conformance verifier against all 5 ecosystem sites ('all') or any specified HTTPS Open Agentic Website URL.",
       effect: "read",

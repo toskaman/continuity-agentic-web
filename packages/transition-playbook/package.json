@@ -1,0 +1,11 @@
+{
+  "name": "@continuity/transition-playbook",
+  "version": "1.0.0",
+  "description": "Hybrid Open Agentic Web + Legacy Vendor Transition Playbook generator: executes autonomous Ed25519 holds on agentified peers while generating dependency-ordered hold-first reschedule drafts for unagentified .ics/email vendors",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  }
+}

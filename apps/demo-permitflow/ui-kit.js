@@ -374,4 +374,25 @@ export function bindPeerZeroKeyControls(engine, statusEl, greetFn) {
       }
     });
   });
+
+  // ?ask_continuity=1 -> auto-trigger inbound cross-origin call from this peer website into CONTINUITY!
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("ask_continuity") === "1") {
+      setTimeout(() => {
+        document.querySelector("#assistant")?.scrollIntoView({ behavior: "smooth" });
+        const hasRealKey = Boolean(engine.byokKey && engine.byokKey !== "demo");
+        if (!hasRealKey && !engine.mockLLM) {
+          activateReplay();
+        }
+        const input = document.querySelector("#ns-input");
+        const send = document.querySelector("#ns-send");
+        if (input && send) {
+          input.value =
+            "Ask CONTINUITY how to coordinate my parking dossier, fiber installation, and electricity activation if I move my booking to Friday.";
+          send.click();
+        }
+      }, 240);
+    }
+  } catch {}
 }

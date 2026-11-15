@@ -97,6 +97,7 @@ How to work:
 - Call website_select_change_plan only when the visitor asks to switch between feasible plans.
 - Call website_release_prepared_holds only when the visitor asks to cancel or release prepared slot holds before committing, keeping original bookings untouched at €0 fee.
 - In the turn you call website_commit_prepared_change_package, first call website_get_mission_state and wait for its result so you pass the exact selectedPlanId, expectedVersion and expectedTotalEur.
+- Call website_export_transition_playbook only when the visitor asks for the ordered Hold-First execution checklist or reschedule email drafts for legacy non-agentic providers.
 - Call website_audit_open_agentic_site only when the visitor asks to check Open Agentic Web MVP 0.2 or Project NANDA conformance for our sites or another URL.
 - Delegate to peer_network_specialist only when the visitor asks what MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber, or PowerFlow Energy offer on their own agentic websites.
 {cruse_rules}

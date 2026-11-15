@@ -52,7 +52,7 @@
         <div class="hero-copy reveal">
           <div class="hero-meta">
             <span class="spec-pill">Open Agentic Web · MVP 0.2</span>
-            <span id="webmcp-badge" class="spec-pill" title="Site actions are exposed to Neuro SAN website_* tools and to navigator.modelContext (WebMCP)">WebMCP · 7 tools</span>
+            <span id="webmcp-badge" class="spec-pill" title="Site actions are exposed to Neuro SAN website_* tools and to navigator.modelContext (WebMCP)">WebMCP · 8 tools</span>
           </div>
           <h1 id="hero-heading">One change.<br><span>Every commitment re-aligned.</span></h1>
           <p class="hero-sub">Your services work together. Your life stays in sync.</p>
@@ -152,7 +152,7 @@
             <p class="proof-big">2 decisions <small>one request, one approval</small></p>
             <ul class="proof-facts">
               <li><strong>4</strong> providers asked, <strong>2</strong> never contacted</li>
-              <li><strong>0</strong> cancel calls in 60 benchmark runs</li>
+              <li><strong>0</strong> cancel calls in 90 benchmark runs</li>
               <li><strong>3 / 3</strong> commits return a verified signed receipt</li>
             </ul>
             <a class="badge badge-ok" href="https://github.com/toskaman/continuity-agentic-web/blob/main/docs/benchmarks/BEFORE_AFTER.md" target="_blank" rel="noopener">Measured · see the benchmark ↗</a>
@@ -179,14 +179,14 @@
           </div>
         </div>
 
-        <div class="hero-card composer-card reveal">
+        <div id="composer-dropzone" class="hero-card composer-card reveal">
           <div class="scenario-strip" role="region" aria-label="Mission scenario and calendar import">
             <div class="scenario-pills-row">
               <span class="strip-label">Scenario</span>
               <button type="button" class="scenario-pill active" data-scenario-id="home_relocation">Home relocation · 6 bookings · live peers</button>
               <button type="button" class="scenario-pill" data-scenario-id="outpatient_surgery">Outpatient surgery · 5</button>
               <button type="button" class="scenario-pill" data-scenario-id="product_launch_expo">Expo freight delay · 6</button>
-              <button id="toggle-intake-btn" type="button" class="scenario-pill intake-trigger-pill" aria-expanded="false" aria-controls="magic-intake-drawer">+ Import emails or .ics</button>
+              <button id="toggle-intake-btn" type="button" class="scenario-pill intake-trigger-pill" aria-expanded="false" aria-controls="magic-intake-drawer" title="You can also drag and drop any .ics or .json calendar file directly onto this card">+ Import or drop .ics / emails</button>
             </div>
 
             <div id="magic-intake-drawer" class="intake-drawer" hidden>
@@ -197,6 +197,7 @@
                 </div>
                 <div class="intake-head-actions">
                   <button id="load-sample-emails-btn" type="button" class="mini-btn">Load 5 sample emails</button>
+                  <button id="load-hybrid-ics-btn" type="button" class="mini-btn" title="Loads a mixed RFC 5545 .ics calendar where 2 providers publish Open Agentic Web manifests and 1 legacy vendor gets a Hold-First mailto: draft">Load hybrid .ics (Agentic + Legacy)</button>
                   <label for="ics-file-input" class="mini-btn file-label-btn">Upload .ics</label>
                   <input id="ics-file-input" type="file" accept=".ics,text/calendar" class="sr-only">
                 </div>
@@ -296,6 +297,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
               </div>
               <div id="export-actions-bar" class="export-actions" hidden>
                 <button id="export-ics-btn" type="button" class="mini-btn" title="Download the updated RFC 5545 calendar">↓ .ics</button>
+                <button id="export-playbook-btn" type="button" class="mini-btn" title="Download the dependency-ordered Hold-First execution playbook &amp; legacy vendor reschedule drafts">↓ Playbook .md</button>
                 <button id="export-audit-btn" type="button" class="mini-btn" title="Download the signed SHA-256 and Ed25519 audit bundle">↓ Audit JSON</button>
               </div>
             </div>
@@ -384,6 +386,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
             </div>
             <button type="button" class="btn btn-on-dark btn-sm" id="live-wall-load">Load live provider pages</button>
           </div>
+          <p id="live-wall-scenario-note" class="plans-note" role="status" hidden></p>
           <div class="live-grid">
             <figure class="live-site" data-peer="moveco">
               <figcaption><span class="live-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="live-url" data-live-url="moveco">MoveCo Express</span></figcaption>
@@ -412,25 +415,25 @@ Do not cancel anything or approve additional fees without my confirmation.</text
             <div class="agent-top"><span class="eco-dot dot-moveco" aria-hidden="true"></span><div><h3>MoveCo Express</h3><p>Residential moving crews</p></div><span class="badge agent-status" data-agent-status="moveco">Not contacted</span></div>
             <ul class="agent-caps"><li><code>get_moveco_state</code></li><li><code>hold_crew_slot</code></li><li><code>confirm_van_reschedule</code></li></ul>
             <p class="agent-last" data-agent-last="moveco">No interaction yet in this session.</p>
-            <div class="agent-links"><a data-peer-href="moveco" data-path="" target="_blank" rel="noopener">Open site ↗</a><a data-peer-href="moveco" data-path="agent-manifest.json" target="_blank" rel="noopener">Manifest</a><a data-peer-href="moveco" data-path=".well-known/agent-card.json" target="_blank" rel="noopener">Agent card</a></div>
+            <div class="agent-links"><a data-peer-href="moveco" data-path="" target="_blank" rel="noopener">Open site ↗</a><a data-peer-href="moveco" data-path="?ask_continuity=1#assistant" target="_blank" rel="noopener" title="Open MoveCo Express and trigger an inbound cross-origin agent call back into CONTINUITY">Inbound → CONTINUITY ↗</a><a data-peer-href="moveco" data-path="agent-manifest.json" target="_blank" rel="noopener">Manifest</a><a data-peer-href="moveco" data-path=".well-known/agent-card.json" target="_blank" rel="noopener">Agent card</a></div>
           </article>
           <article class="agent-card reveal" data-peer="permitflow">
             <div class="agent-top"><span class="eco-dot dot-permitflow" aria-hidden="true"></span><div><h3>PermitFlow Civic</h3><p>Parking dossier preparation</p></div><span class="badge agent-status" data-agent-status="permitflow">Not contacted</span></div>
             <ul class="agent-caps"><li><code>get_permitflow_state</code></li><li><code>stage_dossier_preview</code></li><li><code>amend_prepared_dossier</code></li></ul>
             <p class="agent-last" data-agent-last="permitflow">No interaction yet in this session.</p>
-            <div class="agent-links"><a data-peer-href="permitflow" data-path="" target="_blank" rel="noopener">Open site ↗</a><a data-peer-href="permitflow" data-path="agent-manifest.json" target="_blank" rel="noopener">Manifest</a><a data-peer-href="permitflow" data-path=".well-known/agent-card.json" target="_blank" rel="noopener">Agent card</a></div>
+            <div class="agent-links"><a data-peer-href="permitflow" data-path="" target="_blank" rel="noopener">Open site ↗</a><a data-peer-href="permitflow" data-path="?ask_continuity=1#assistant" target="_blank" rel="noopener" title="Open PermitFlow Civic Prep and trigger an inbound cross-origin agent call back into CONTINUITY">Inbound → CONTINUITY ↗</a><a data-peer-href="permitflow" data-path="agent-manifest.json" target="_blank" rel="noopener">Manifest</a><a data-peer-href="permitflow" data-path=".well-known/agent-card.json" target="_blank" rel="noopener">Agent card</a></div>
           </article>
           <article class="agent-card reveal" data-peer="homeconnect">
             <div class="agent-top"><span class="eco-dot dot-homeconnect" aria-hidden="true"></span><div><h3>HomeConnect Fiber</h3><p>Fiber installation visits</p></div><span class="badge agent-status" data-agent-status="homeconnect">Not contacted</span></div>
             <ul class="agent-caps"><li><code>get_homeconnect_state</code></li><li><code>hold_fiber_window</code></li><li><code>confirm_fiber_reschedule</code></li></ul>
             <p class="agent-last" data-agent-last="homeconnect">No interaction yet in this session.</p>
-            <div class="agent-links"><a data-peer-href="homeconnect" data-path="" target="_blank" rel="noopener">Open site ↗</a><a data-peer-href="homeconnect" data-path="agent-manifest.json" target="_blank" rel="noopener">Manifest</a><a data-peer-href="homeconnect" data-path=".well-known/agent-card.json" target="_blank" rel="noopener">Agent card</a></div>
+            <div class="agent-links"><a data-peer-href="homeconnect" data-path="" target="_blank" rel="noopener">Open site ↗</a><a data-peer-href="homeconnect" data-path="?ask_continuity=1#assistant" target="_blank" rel="noopener" title="Open HomeConnect Fiber and trigger an inbound cross-origin agent call back into CONTINUITY">Inbound → CONTINUITY ↗</a><a data-peer-href="homeconnect" data-path="agent-manifest.json" target="_blank" rel="noopener">Manifest</a><a data-peer-href="homeconnect" data-path=".well-known/agent-card.json" target="_blank" rel="noopener">Agent card</a></div>
           </article>
           <article class="agent-card reveal" data-peer="powerflow">
             <div class="agent-top"><span class="eco-dot dot-powerflow" aria-hidden="true"></span><div><h3>PowerFlow Energy</h3><p>Smart-meter activation</p></div><span class="badge agent-status" data-agent-status="powerflow">Not contacted</span></div>
             <ul class="agent-caps"><li><code>get_powerflow_state</code></li><li><code>stage_energization_date</code></li><li><code>confirm_energization_shift</code></li></ul>
             <p class="agent-last" data-agent-last="powerflow">No interaction yet in this session.</p>
-            <div class="agent-links"><a data-peer-href="powerflow" data-path="" target="_blank" rel="noopener">Open site ↗</a><a data-peer-href="powerflow" data-path="agent-manifest.json" target="_blank" rel="noopener">Manifest</a><a data-peer-href="powerflow" data-path=".well-known/agent-card.json" target="_blank" rel="noopener">Agent card</a></div>
+            <div class="agent-links"><a data-peer-href="powerflow" data-path="" target="_blank" rel="noopener">Open site ↗</a><a data-peer-href="powerflow" data-path="?ask_continuity=1#assistant" target="_blank" rel="noopener" title="Open PowerFlow Energy and trigger an inbound cross-origin agent call back into CONTINUITY">Inbound → CONTINUITY ↗</a><a data-peer-href="powerflow" data-path="agent-manifest.json" target="_blank" rel="noopener">Manifest</a><a data-peer-href="powerflow" data-path=".well-known/agent-card.json" target="_blank" rel="noopener">Agent card</a></div>
           </article>
         </div>
         <p class="network-foot">Connection status reflects what this page has actually detected. Run the <a href="#trust" data-open-tab="tab-btn-auditor">conformance audit</a> to verify every manifest and agent card live.</p>
@@ -556,6 +559,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
                 <label for="custom-audit-url" class="sr-only">Website URL to audit</label>
                 <input id="custom-audit-url" type="url" class="audit-url-input" placeholder="https://example.org/agentic-site/">
                 <button id="audit-single-btn" type="button" class="ghost-btn">Audit URL</button>
+                <button id="audit-external-btn" type="button" class="ghost-btn" title="Audits real third-party community Open Agentic Websites alongside CONTINUITY">Compare external peers</button>
                 <button id="audit-ecosystem-btn" type="button" class="cta-btn">Audit all 5 sites</button>
               </div>
             </div>
@@ -620,6 +624,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
             <button type="button" class="mini-btn runtime-prompt-chip" data-prompt="Ask MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber, and PowerFlow Energy what relocation services each offers.">Ask all 4 providers</button>
             <button type="button" class="mini-btn runtime-prompt-chip" data-prompt="My move changed from Tuesday to Friday. Prepare a minimal-change plan below €700 without cancelling anything yet.">Prepare a plan under €700</button>
             <button type="button" class="mini-btn runtime-prompt-chip" data-prompt="Audit all 5 Open Agentic Websites for MVP 0.2 and Project NANDA conformance.">Audit all 5 sites</button>
+            <button type="button" class="mini-btn runtime-prompt-chip" data-prompt="Export my dependency-ordered Hold-First transition playbook and avoided cancellation fees.">Hold-First playbook</button>
             <button type="button" class="mini-btn runtime-prompt-chip" data-prompt="Commit my currently prepared minimal-change relocation package.">Commit the prepared plan</button>
           </div>
           <p class="assistant-note">Your messages and this page's mission state go to the LLM provider you configure below. You confirm every irreversible operation before it runs. With a real model, asking all four providers takes about a minute; <strong>Try without a key</strong> answers instantly.</p>

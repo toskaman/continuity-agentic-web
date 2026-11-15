@@ -67,6 +67,7 @@ const COMMUNITY_MODULES = [
   ["@continuity/saga-engine", "Prepare-first, €0 pre-commit hold release, commit-last multi-origin Saga coordinator", "SagaCoordinator"],
   ["@continuity/proof-verifier", "WebCrypto Ed25519 provider receipt verification & explicit 5-tier trust classification", "ReceiptVerifier, signProviderReceipt"],
   ["@continuity/nanda-resolver", "Project NANDA urn:air, AI Catalog, draft-raskar-02 POST /resolve, A2A & 9-point SARIF CLI", "AuthorityBoundResolver, auditOpenAgenticSite, handleFederatedResolutionRequest"],
+  ["@continuity/transition-playbook", "Hybrid Open Agentic Web + Legacy Vendor Hold-First Playbook & mailto: reschedule draft generator", "buildHybridTransitionPlaybook"],
   ["@continuity/chaos-lab", "20 deterministic distributed-failure scenarios in an isolated simulation sandbox", "runAllChaosScenarios, CHAOS_SCENARIOS"],
 ];
 
@@ -301,6 +302,13 @@ function initKit() {
   });
   document.querySelector("#kit-audit-eco-btn")?.addEventListener("click", () => {
     void runKitAudit(ecosystemUrls());
+  });
+  document.querySelector("#kit-audit-ext-btn")?.addEventListener("click", () => {
+    void runKitAudit([
+      ecosystemUrls()[0],
+      "https://sainath998.github.io/plainly-agent/",
+      "https://shutdown-clerk.pages.dev/",
+    ]);
   });
   document.querySelector("#kit-copy-ci-btn")?.addEventListener("click", async () => {
     const statusEl = document.querySelector("#kit-audit-status");

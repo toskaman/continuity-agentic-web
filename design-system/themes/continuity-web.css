@@ -344,8 +344,10 @@
 .provider-alerts-banner { margin-top: 8px; color: var(--warn); font-weight: 600; }
 .receipt-drawer { margin-top: 8px; }
 .receipt-drawer > summary { cursor: pointer; font-weight: 650; font-size: var(--fs-xs); color: var(--accent-strong); }
-.receipt-pre { margin: 6px 0 0; padding: 10px; border-radius: var(--r-sm); background: var(--navy); color: #D5DEF0; overflow: auto; font-family: var(--mono); font-size: 0.74rem; max-height: 220px; }
+.receipt-pre { margin: 6px 0 0; padding: 10px; border-radius: var(--r-sm); background: var(--navy); color: #D5DEF0; overflow: auto; font-family: var(--mono); font-size: 0.74rem; max-height: 220px; white-space: pre-wrap; }
 .inspector-head-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.composer-card.is-dragover { outline: 2.5px dashed var(--accent); outline-offset: -6px; background: var(--accent-soft); }
+.draft-actions-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 
 /* Completion panel (after a commit) */
 .outcome-panel {

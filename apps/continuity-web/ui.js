@@ -89,6 +89,15 @@ function makeFrame(pid, url) {
 
 function syncWall(page, states) {
   if (!document.querySelector("#live-wall")) return;
+  const scenNote = document.querySelector("#live-wall-scenario-note");
+  if (scenNote) {
+    const isReloc = page.isRelocationScenario?.() ?? true;
+    scenNote.hidden = isReloc;
+    if (!isReloc) {
+      scenNote.textContent =
+        "These four live cross-origin websites (MoveCo, PermitFlow, HomeConnect, PowerFlow) power the Home relocation ecosystem. Switch back to 'Home relocation · 6 bookings · live peers' in the Workspace above to watch live cross-origin signed receipt commits across all four frames.";
+    }
+  }
   if (!wall.loaded && !page.compiledProposal) return;
   wall.loaded = true;
   const loadBtn = document.querySelector("#live-wall-load");

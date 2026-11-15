@@ -20,6 +20,29 @@
 import { canonicalizeJson, isPlainObject, sanitizeJson, sha256Hex } from "../shared-schemas/index.js";
 
 const ALLOWED_METHODS = new Set(["artifact", "gateway"]);
+
+async function safeFetchJsonObject(fetchImpl, url) {
+  const res = await fetchImpl(url, { headers: { Accept: "application/json" } });
+  if (!res.ok) {
+    return { ok: false, status: res.status, reason: `HTTP ${res.status}` };
+  }
+  const ct = String(res.headers?.get?.("content-type") || "").toLowerCase();
+  const rawText = await res.text();
+  const trimmed = rawText.trimStart();
+  if (ct.includes("text/html") || trimmed.startsWith("<!doctype") || trimmed.startsWith("<html") || trimmed.startsWith("<")) {
+    return {
+      ok: false,
+      status: res.status,
+      spaFallback: true,
+      reason: "Not published (host returned HTML SPA fallback instead of JSON)",
+    };
+  }
+  try {
+    return { ok: true, status: res.status, rawText, json: sanitizeJson(JSON.parse(rawText)) };
+  } catch (err) {
+    return { ok: false, status: res.status, reason: `Invalid JSON: ${err.message}` };
+  }
+}
 const URL_SHAPED_KEY_RE = /(?:^|[_-])(?:url|uri|href|link|src)s?$/i;
 const ACTIVE_DATA_URI_RE = /^data:\s*(?:text\/html|image\/svg\+xml|application\/(?:xhtml\+)?xml)/i;
 
@@ -619,16 +642,12 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
 
   // 6. Project NANDA / A2A v1.0 Agent Card (`/agent-card.json` subpath-safe mirror or `/.well-known/agent-card.json`)
   try {
-    let cardRes = await fetchImpl(new URL("agent-card.json", base).href, {
-      headers: { Accept: "application/json" },
-    });
-    if (!cardRes.ok) {
-      cardRes = await fetchImpl(new URL(".well-known/agent-card.json", base).href, {
-        headers: { Accept: "application/json" },
-      });
+    let cardFetch = await safeFetchJsonObject(fetchImpl, new URL("agent-card.json", base).href);
+    if (!cardFetch.ok) {
+      cardFetch = await safeFetchJsonObject(fetchImpl, new URL(".well-known/agent-card.json", base).href);
     }
-    if (cardRes.ok) {
-      agentCard = sanitizeJson(await cardRes.json());
+    if (cardFetch.ok) {
+      agentCard = cardFetch.json;
       const cardValidation = validateA2aAgentCard(agentCard);
       checks.push({
         id: "NANDA-A2A",
@@ -643,7 +662,7 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
         id: "NANDA-A2A",
         check: "Project NANDA / A2A v1.0 Agent Card",
         status: "WARN",
-        detail: `Optional /.well-known/agent-card.json returned HTTP ${cardRes.status}`,
+        detail: `Optional /.well-known/agent-card.json: ${cardFetch.reason}`,
       });
     }
   } catch (err) {
@@ -657,16 +676,12 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
 
   // 7. Project NANDA AI Catalog (`ai-catalog.json` / `.well-known/ai-catalog.json`)
   try {
-    let catRes = await fetchImpl(new URL("ai-catalog.json", base).href, {
-      headers: { Accept: "application/json" },
-    });
-    if (!catRes.ok) {
-      catRes = await fetchImpl(new URL(".well-known/ai-catalog.json", base).href, {
-        headers: { Accept: "application/json" },
-      });
+    let catFetch = await safeFetchJsonObject(fetchImpl, new URL("ai-catalog.json", base).href);
+    if (!catFetch.ok) {
+      catFetch = await safeFetchJsonObject(fetchImpl, new URL(".well-known/ai-catalog.json", base).href);
     }
-    if (catRes.ok) {
-      const catJson = sanitizeJson(await catRes.json());
+    if (catFetch.ok) {
+      const catJson = catFetch.json;
       const catCheck = validateNandaAiCatalog(catJson);
       checks.push({
         id: "NANDA-CATALOG",
@@ -681,7 +696,7 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
         id: "NANDA-CATALOG",
         check: "Project NANDA AI Catalog & urn:air Binding",
         status: "WARN",
-        detail: `Optional /.well-known/ai-catalog.json returned HTTP ${catRes.status}`,
+        detail: `Optional /.well-known/ai-catalog.json: ${catFetch.reason}`,
       });
     }
   } catch (err) {
@@ -695,19 +710,15 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
 
   // 8. Public Single-Turn Facts Network (`facts/agent-manifest.json` + `facts/<network>_facts.network.json`)
   try {
-    const fManRes = await fetchImpl(new URL("facts/agent-manifest.json", base).href, {
-      headers: { Accept: "application/json" },
-    });
-    if (fManRes.ok) {
-      const fManifest = sanitizeJson(await fManRes.json());
+    const fManFetch = await safeFetchJsonObject(fetchImpl, new URL("facts/agent-manifest.json", base).href);
+    if (fManFetch.ok) {
+      const fManifest = fManFetch.json;
       const fNetEntry = fManifest?.networks?.[0];
-      const fNetRes = fNetEntry?.hocon
-        ? await fetchImpl(new URL(fNetEntry.hocon, new URL("facts/", base).href).href, {
-            headers: { Accept: "application/json" },
-          })
+      const fNetFetch = fNetEntry?.hocon
+        ? await safeFetchJsonObject(fetchImpl, new URL(fNetEntry.hocon, new URL("facts/", base).href).href)
         : null;
-      if (fNetRes?.ok) {
-        const fNet = sanitizeJson(await fNetRes.json());
+      if (fNetFetch?.ok) {
+        const fNet = fNetFetch.json;
         const fAgent = fNet?.tools?.[0];
         const isToolFreeSingleTurn =
           Boolean(fAgent?.name) && Array.isArray(fAgent.tools) && fAgent.tools.length === 0;
@@ -732,7 +743,7 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
         id: "MVP-FACTS",
         check: "Single-Turn Public Facts Network (facts/)",
         status: "WARN",
-        detail: `Optional facts/agent-manifest.json not published (HTTP ${fManRes.status})`,
+        detail: `Optional facts/agent-manifest.json: ${fManFetch.reason}`,
       });
     }
   } catch (err) {
