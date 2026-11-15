@@ -313,10 +313,11 @@ try {
   // Signed receipts only travel between the real public origins, so this one is not captured locally.
   try {
     await cdp.send("Page.navigate", { url: "https://toskaman.github.io/continuity-agentic-web/?demo=1" });
-    await new Promise((r) => setTimeout(r, 9000));
     await cdp.send("Runtime.evaluate", {
       expression: `(async () => {
-        const d = document.querySelector("dialog[open]");
+        let d = null;
+        for (let i = 0; i < 100 && !d; i++) { await new Promise((r) => setTimeout(r, 300)); d = document.querySelector("dialog[open]"); }
+        if (!d) throw new Error("approval dialog did not open");
         if (d) [...d.querySelectorAll("button")].find((b) => /Approve/.test(b.textContent))?.click();
         await new Promise((r) => setTimeout(r, 7000));
         document.querySelector("#outcome-panel")?.remove();
@@ -325,7 +326,11 @@ try {
       })()`,
       awaitPromise: true,
     });
-    await new Promise((r) => setTimeout(r, 1500));
+    const verified = await cdp.send("Runtime.evaluate", {
+      expression: `[...document.querySelectorAll(".live-site")].filter((f) => f.dataset.state === "committed").length`,
+    });
+    if ((verified.result?.value || 0) < 3) throw new Error("providers not committed on the public site");
+    await new Promise((r) => setTimeout(r, 2500));
     await snapPng("13_live_provider_wall.png");
   } catch (err) {
     console.log("Skipped 13_live_provider_wall.png:", err.message);

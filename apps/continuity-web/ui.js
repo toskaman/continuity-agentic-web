@@ -305,6 +305,19 @@ document.querySelector("#live-wall-load")?.addEventListener("click", () => {
   update();
 });
 
+// Never show an empty wall: load the provider pages as soon as it scrolls into view.
+const wallEl = document.querySelector("#live-wall");
+if (wallEl && "IntersectionObserver" in window) {
+  const wallIo = new IntersectionObserver((entries) => {
+    if (entries.some((en) => en.isIntersecting)) {
+      wallIo.disconnect();
+      wall.loaded = true;
+      update();
+    }
+  }, { rootMargin: "300px 0px" });
+  wallIo.observe(wallEl);
+}
+
 // Demo button: show progress until the approval dialog (or an outcome) appears.
 const demoBtn = document.querySelector("#guided-demo-btn");
 demoBtn?.addEventListener("click", () => {
@@ -321,7 +334,16 @@ demoBtn?.addEventListener("click", () => {
 // Deep link for judges: ?demo=1 starts the guided demo. It stops at the approval
 // dialog like a manual run — nothing is ever approved automatically.
 if (new URLSearchParams(location.search).get("demo") === "1") {
-  setTimeout(() => demoBtn?.click(), 1800);
+  // Wait until the coordinator has finished starting (its first render replaces the
+  // "Detecting…" badge and its click handlers are bound right after), then start once.
+  const startedAt = Date.now();
+  const ready = setInterval(() => {
+    const badge = document.querySelector("#transport-badge")?.textContent || "";
+    if (!/Detecting/i.test(badge) || Date.now() - startedAt > 15000) {
+      clearInterval(ready);
+      setTimeout(() => demoBtn?.click(), 600);
+    }
+  }, 150);
 }
 
 chrome();
