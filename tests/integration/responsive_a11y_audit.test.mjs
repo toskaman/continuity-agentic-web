@@ -101,6 +101,9 @@ test("Cycle 19 — Real Headless Chromium audits mobile (390x844), dark theme, k
       browserBin,
       [
         "--headless=new",
+        "--disable-gpu",
+        "--disable-extensions",
+        "--disable-background-networking",
         ...(process.platform === "linux" ? ["--no-sandbox", "--disable-dev-shm-usage"] : []),
         `--remote-debugging-port=${cdpPort}`,
         "--window-size=390,844",
@@ -112,15 +115,22 @@ test("Cycle 19 — Real Headless Chromium audits mobile (390x844), dark theme, k
       { stdio: "ignore" },
     );
 
-    for (let i = 0; i < 45; i++) {
+    let targets = null;
+    for (let i = 0; i < 100; i++) {
       try {
-        const r = await fetch(`http://127.0.0.1:${cdpPort}/json/version`);
-        if (r.ok) break;
+        const r = await fetch(`http://127.0.0.1:${cdpPort}/json/list`);
+        if (r.ok) {
+          const list = await r.json();
+          if (Array.isArray(list) && list.some((x) => x.type === "page")) {
+            targets = list;
+            break;
+          }
+        }
       } catch {}
       await new Promise((r) => setTimeout(r, 150));
     }
 
-    const targets = await (await fetch(`http://127.0.0.1:${cdpPort}/json/list`)).json();
+    assert.ok(Array.isArray(targets), "Headless browser CDP /json/list did not become ready in 15s");
     const pageTarget = targets.find((x) => x.type === "page");
     cdp = new CdpClient(pageTarget.webSocketDebuggerUrl);
     await cdp.connect();
