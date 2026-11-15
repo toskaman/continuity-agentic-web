@@ -114,7 +114,7 @@ function syncWall(page, states) {
     if (label) {
       const st = states[pid].state;
       label.textContent = token ? "Signed receipt delivered — verified by this page"
-        : st === "committed" ? "Committed"
+        : st === "committed" ? "Committed in the coordinator — no receipt reached this page (offline mode)"
         : st === "prepared" ? "Replacement held — page unchanged until you approve"
         : st === "contacted" ? (page.lastSagaExecution ? "Consulted — kept as is, nothing to change" : "Consulted")
         : "Live — no change requested";
@@ -161,7 +161,7 @@ function showOutcome(page) {
   document.body.append(panel);
   if (ok) {
     wall.justCommitted = true;
-    document.querySelector("#live-wall")?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+    document.querySelector("#live-wall")?.scrollIntoView({ behavior: document.hidden || matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
   }
   panel.querySelector(".outcome-close")?.addEventListener("click", () => panel.remove());
   panel.querySelector('[data-outcome="ics"]')?.addEventListener("click", () => document.querySelector("#export-ics-btn")?.click());

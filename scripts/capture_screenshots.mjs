@@ -309,6 +309,28 @@ try {
     await snapPng(name);
   }
 
+  // Screenshot 13: live provider wall on the PUBLIC deployment (needs network; skipped on failure).
+  // Signed receipts only travel between the real public origins, so this one is not captured locally.
+  try {
+    await cdp.send("Page.navigate", { url: "https://toskaman.github.io/continuity-agentic-web/?demo=1" });
+    await new Promise((r) => setTimeout(r, 9000));
+    await cdp.send("Runtime.evaluate", {
+      expression: `(async () => {
+        const d = document.querySelector("dialog[open]");
+        if (d) [...d.querySelectorAll("button")].find((b) => /Approve/.test(b.textContent))?.click();
+        await new Promise((r) => setTimeout(r, 7000));
+        document.querySelector("#outcome-panel")?.remove();
+        const w = document.querySelector("#live-wall");
+        window.scrollTo({ top: w.getBoundingClientRect().top + scrollY - 110, behavior: "instant" });
+      })()`,
+      awaitPromise: true,
+    });
+    await new Promise((r) => setTimeout(r, 1500));
+    await snapPng("13_live_provider_wall.png");
+  } catch (err) {
+    console.log("Skipped 13_live_provider_wall.png:", err.message);
+  }
+
   // Screenshot 7: Architecture SVG rendered cleanly to PNG
   const archFileUrl = "file:///" + path.join(OUT_DIR, "00_architecture_diagram.svg").replace(/\\/g, "/");
   await cdp.send("Emulation.setDeviceMetricsOverride", {
