@@ -1,0 +1,2 @@
+﻿Move one date and six bookings break. CONTINUITY re-plans across four independent agentic websites, holds replacements first, and asks for one bound approval - then each provider verifies a signed receipt on its own page.
+Try it (no API key): https://toskaman.github.io/continuity-agentic-web/

@@ -1,0 +1,367 @@
+{
+ "end": 110.75,
+ "vo": {},
+ "sfx": [
+  [
+   1.9,
+   "sfx_flip.wav",
+   0.5
+  ],
+  [
+   2.74,
+   "sfx_tick.wav",
+   0.18
+  ],
+  [
+   2.83,
+   "sfx_tick.wav",
+   0.18
+  ],
+  [
+   2.92,
+   "sfx_tick.wav",
+   0.18
+  ],
+  [
+   3.01,
+   "sfx_tick.wav",
+   0.18
+  ],
+  [
+   3.1,
+   "sfx_tick.wav",
+   0.18
+  ],
+  [
+   3.19,
+   "sfx_tick.wav",
+   0.18
+  ],
+  [
+   3.72,
+   "sfx_error.wav",
+   0.26
+  ],
+  [
+   6.09,
+   "sfx_tick_low.wav",
+   0.12
+  ],
+  [
+   6.19,
+   "sfx_tick_low.wav",
+   0.12
+  ],
+  [
+   6.29,
+   "sfx_tick_low.wav",
+   0.12
+  ],
+  [
+   6.39,
+   "sfx_tick_low.wav",
+   0.12
+  ],
+  [
+   6.49,
+   "sfx_tick_low.wav",
+   0.12
+  ],
+  [
+   6.59,
+   "sfx_tick_low.wav",
+   0.12
+  ],
+  [
+   10.47,
+   "sfx_thud.wav",
+   0.6
+  ],
+  [
+   12.99,
+   "sfx_resolve.wav",
+   0.24
+  ],
+  [
+   17.01,
+   "sfx_whoosh.wav",
+   0.4
+  ],
+  [
+   17.48,
+   "sfx_whoosh_soft.wav",
+   0.25
+  ],
+  [
+   22.72,
+   "sfx_tick.wav",
+   0.16
+  ],
+  [
+   23,
+   "sfx_tick.wav",
+   0.16
+  ],
+  [
+   23.28,
+   "sfx_tick.wav",
+   0.16
+  ],
+  [
+   23.56,
+   "sfx_tick.wav",
+   0.16
+  ],
+  [
+   26.32,
+   "sfx_pulse.wav",
+   0.14
+  ],
+  [
+   27.67,
+   "sfx_pulse.wav",
+   0.14
+  ],
+  [
+   27.87,
+   "sfx_tick_low.wav",
+   0.3
+  ],
+  [
+   29.95,
+   "sfx_tick_low.wav",
+   0.3
+  ],
+  [
+   30.91,
+   "sfx_whoosh.wav",
+   0.35
+  ],
+  [
+   33.02,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   39.04,
+   "sfx_click.wav",
+   0.45
+  ],
+  [
+   39.92,
+   "sfx_error.wav",
+   0.18
+  ],
+  [
+   42.63,
+   "sfx_click.wav",
+   0.45
+  ],
+  [
+   43.16,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   49.94,
+   "sfx_tick.wav",
+   0.25
+  ],
+  [
+   51.6,
+   "sfx_tick.wav",
+   0.25
+  ],
+  [
+   55.29,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   63.64,
+   "sfx_tick.wav",
+   0.28
+  ],
+  [
+   65.19,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   65.64,
+   "sfx_click.wav",
+   0.45
+  ],
+  [
+   72.93,
+   "sfx_tick.wav",
+   0.25
+  ],
+  [
+   73.43,
+   "sfx_error.wav",
+   0.22
+  ],
+  [
+   75.8,
+   "sfx_click.wav",
+   0.45
+  ],
+  [
+   75.88,
+   "sfx_whoosh_soft.wav",
+   0.3
+  ],
+  [
+   77.47,
+   "sfx_tick_low.wav",
+   0.14
+  ],
+  [
+   77.65,
+   "sfx_tick_low.wav",
+   0.14
+  ],
+  [
+   77.83,
+   "sfx_tick_low.wav",
+   0.14
+  ],
+  [
+   78.01,
+   "sfx_tick_low.wav",
+   0.14
+  ],
+  [
+   80.77,
+   "sfx_pulse.wav",
+   0.12
+  ],
+  [
+   82.42,
+   "sfx_verify_1.wav",
+   0.22
+  ],
+  [
+   83.08,
+   "sfx_verify_2.wav",
+   0.22
+  ],
+  [
+   83.79,
+   "sfx_verify_3.wav",
+   0.22
+  ],
+  [
+   87.45,
+   "sfx_tick.wav",
+   0.3
+  ],
+  [
+   93.46,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   95.83,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   96.62,
+   "sfx_click.wav",
+   0.45
+  ],
+  [
+   97.92,
+   "sfx_verify_2.wav",
+   0.16
+  ],
+  [
+   99.27,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   103.85,
+   "sfx_final.wav",
+   0.34
+  ]
+ ],
+ "captions": [],
+ "cues": [
+  "1.90s sfx sfx_flip.wav calendar flip",
+  "3.72s sfx sfx_error.wav bookings break",
+  "10.47s sfx sfx_thud.wav left with nothing",
+  "11.36–17.61 still 02_proof",
+  "12.50s focus 02_proof [913,424,847,344]",
+  "13.66s chip \"1 Say what changed\"",
+  "15.08s chip \"2 Approve the exact plan\"",
+  "12.99s sfx sfx_resolve.wav two decisions",
+  "17.01s sfx sfx_whoosh.wav to 3D",
+  "26.37s chip \"5 separately deployed websites\"",
+  "30.91s sfx sfx_whoosh.wav to live site",
+  "33.12–33.79 video 01_hero_idle @0.4",
+  "33.04–34.64 video 03_scroll_workspace @0.7",
+  "34.54–38.86 still 03_workspace",
+  "34.74s focus 03_workspace [191,673,1539,225]",
+  "35.55s focus→ 03_workspace [1153,620,576,34]",
+  "36.13s chip \"Rules it can’t break\"",
+  "38.61–40.14 video 04_arm_failure @0",
+  "39.04s sfx sfx_click.wav click",
+  "40.04–43.86 still 04_armed",
+  "40.24s focus 04_armed [554,936,1175,29]",
+  "40.22s chip \"Simulated: Friday crew full\"",
+  "39.92s sfx sfx_error.wav failure armed",
+  "42.63s sfx sfx_click.wav click",
+  "42.20–43.88 video 05_analyze @0",
+  "43.18–48.78 still 05b_kpis",
+  "43.85s focus 05b_kpis [160,494,384,118]",
+  "45.17s focus→ 05b_kpis [160,610,384,50]",
+  "45.42s chip \"4 providers asked · 2 never contacted\"",
+  "48.48–50.23 video 06_scroll_mission @0.2",
+  "50.13–56.01 still 06_mission",
+  "50.33s focus 06_mission [1132,795,572,88]",
+  "51.60s focus→ 06_mission [1126,927,601,121]",
+  "53.28s chip \"Originals stay active until you approve\"",
+  "55.31–65.94 still 07_plans",
+  "55.98s focus 07_plans [160,503,941,623]",
+  "59.22s focus→ 07_plans [160,503,461,302]",
+  "63.64s sfx sfx_tick.wav under cap",
+  "65.21–66.59 video 09_open_approval @0",
+  "65.64s sfx sfx_click.wav click",
+  "66.49–75.96 still 09_dialog",
+  "69.06s focus 09_dialog [557,381,822,136]",
+  "70.17s focus→ 09_dialog [557,589,822,84]",
+  "70.97s focus→ 09_dialog [770,383,616,132]",
+  "73.43s sfx sfx_error.wav hash mismatch",
+  "75.80s sfx sfx_click.wav click",
+  "75.37–76.22 video 10_commit_wall @0",
+  "75.98–90.41 still 08_wall_before",
+  "75.88s sfx sfx_whoosh_soft.wav to wall",
+  "77.77s chip \"Each provider’s own page, loaded cross-origin\"",
+  "80.77s sfx sfx_pulse.wav receipts sent",
+  "82.42s sfx sfx_verify_1.wav verify 1",
+  "83.08s sfx sfx_verify_2.wav verify 2",
+  "83.79s sfx sfx_verify_3.wav verify 3",
+  "84.94s chip \"Verified on MoveCo’s own page\"",
+  "87.45s sfx sfx_tick.wav powerflow consulted",
+  "87.65s chip \"Consulted — nothing to change\"",
+  "76.38s chip \"Real before/after states of the live pages · replayed slower\"",
+  "90.01–94.18 still 13_timeline",
+  "92.23s chip \"Tamper-evident chain\"",
+  "92.08s focus 13_timeline [193,752,1533,64]",
+  "93.48–97.12 still 12b_privacy",
+  "94.15s focus 12b_privacy [195,893,1531,123]",
+  "94.18s chip \"MoveCo receives only booking_ref + date\"",
+  "95.85–97.92 video 12_trust_chaos @1.95",
+  "96.62s sfx sfx_click.wav click",
+  "97.82–99.99 still 12_chaos",
+  "98.02s focus 12_chaos [193,898,1533,64]",
+  "97.92s sfx sfx_verify_2.wav 15/15",
+  "99.29–103.82 still 02_proof_b",
+  "99.96s focus 02_proof_b [940,618,392,24]",
+  "103.37–110.75 still 15_hero_after",
+  "103.85s sfx sfx_final.wav final chime"
+ ]
+}

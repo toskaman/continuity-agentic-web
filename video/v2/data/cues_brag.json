@@ -1,0 +1,134 @@
+{
+ "end": 20,
+ "vo": {
+  "brag": 0.3
+ },
+ "sfx": [
+  [
+   0.66,
+   "sfx_flip.wav",
+   0.5
+  ],
+  [
+   1.27,
+   "sfx_tick.wav",
+   0.15
+  ],
+  [
+   1.33,
+   "sfx_tick.wav",
+   0.15
+  ],
+  [
+   1.39,
+   "sfx_tick.wav",
+   0.15
+  ],
+  [
+   1.45,
+   "sfx_tick.wav",
+   0.15
+  ],
+  [
+   1.51,
+   "sfx_tick.wav",
+   0.15
+  ],
+  [
+   1.57,
+   "sfx_tick.wav",
+   0.15
+  ],
+  [
+   2.3,
+   "sfx_error.wav",
+   0.26
+  ],
+  [
+   2.9,
+   "sfx_whoosh.wav",
+   0.35
+  ],
+  [
+   4.5,
+   "sfx_tick.wav",
+   0.15
+  ],
+  [
+   4.68,
+   "sfx_tick.wav",
+   0.15
+  ],
+  [
+   4.86,
+   "sfx_tick.wav",
+   0.15
+  ],
+  [
+   5.04,
+   "sfx_tick.wav",
+   0.15
+  ],
+  [
+   10.05,
+   "sfx_whoosh_soft.wav",
+   0.3
+  ],
+  [
+   11.24,
+   "sfx_verify_1.wav",
+   0.24
+  ],
+  [
+   12.22,
+   "sfx_verify_2.wav",
+   0.24
+  ],
+  [
+   12.72,
+   "sfx_verify_3.wav",
+   0.24
+  ],
+  [
+   15.9,
+   "sfx_final.wav",
+   0.34
+  ]
+ ],
+ "captions": [
+  {
+   "s": 0.3,
+   "e": 2.94,
+   "text": "Move one date and six bookings break."
+  },
+  {
+   "s": 2.94,
+   "e": 6.86,
+   "text": "CONTINUITY re-plans across four independent provider websites,"
+  },
+  {
+   "s": 6.86,
+   "e": 10.22,
+   "text": "holds replacements first, and waits for your approval."
+  },
+  {
+   "s": 10.22,
+   "e": 13.42,
+   "text": "Then each provider verifies a signed receipt on its"
+  },
+  {
+   "s": 13.42,
+   "e": 14.96,
+   "text": "own site."
+  }
+ ],
+ "cues": [
+  "6.80–10.45 still 09_dialog",
+  "7.20s focus 09_dialog [557,381,822,136]",
+  "7.06s chip \"Replacements held · nothing runs before you approve\"",
+  "10.10–16.00 still 08_wall_before",
+  "13.67s chip \"PowerFlow: consulted — nothing to change\"",
+  "10.12s chip \"Each provider verifies its receipt on its own page\"",
+  "15.60–20.00 still 15_hero_after"
+ ]
+}

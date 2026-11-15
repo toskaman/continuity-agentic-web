@@ -1,0 +1,102 @@
+{
+  "voice": "af_heart",
+  "speed": 1.0,
+  "engine": "Kokoro-82M via HyperFrames 0.9.19 (local, offline)",
+  "note": "tts = text sent to Kokoro (spelled for pronunciation); caption = on-screen subtitle text.",
+  "segments": [
+    {
+      "id": "s01",
+      "claims": [
+        "C01",
+        "C02"
+      ],
+      "tts": "Move one date, Tuesday to Friday, and six bookings break at once. By hand, that's about eighteen steps on six websites. Cancel one too early, and you're left with nothing.",
+      "caption": "Move one date — Tuesday to Friday — and six bookings break at once. By hand, that's about 18 steps on 6 websites. Cancel one too early, and you're left with nothing."
+    },
+    {
+      "id": "s02",
+      "claims": [
+        "C03"
+      ],
+      "tts": "Continuity makes it two decisions: say what changed, then approve the exact plan.",
+      "caption": "CONTINUITY makes it two decisions: say what changed, then approve the exact plan."
+    },
+    {
+      "id": "s03",
+      "claims": [
+        "C04",
+        "C05"
+      ],
+      "tts": "It's an open agentic website that coordinates other companies' agentic websites. Each provider runs its own site and agent network, on a different origin. No backend in the middle. No shared database.",
+      "caption": "It's an open agentic website that coordinates other companies' agentic websites. Each provider runs its own site and agent network, on a different origin. No backend in the middle. No shared database."
+    },
+    {
+      "id": "s04",
+      "claims": [
+        "C06",
+        "C07"
+      ],
+      "tts": "This is the live site. I describe the change in plain English, and it becomes rules it can't break. Then I switch on a real-world failure: the moving crew is full on Friday.",
+      "caption": "This is the live site. I describe the change in plain English, and it becomes rules it can't break. Then I switch on a real-world failure: the moving crew is full on Friday."
+    },
+    {
+      "id": "s05",
+      "claims": [
+        "C08",
+        "C09",
+        "C10"
+      ],
+      "tts": "Only three of six bookings are affected. Four providers are asked; two are never contacted. The crew is recovered through an overflow partner, and replacements are held, while my originals stay active.",
+      "caption": "Only 3 of 6 bookings are affected. 4 providers are asked; 2 are never contacted. The crew is recovered through an overflow partner, and replacements are held while my originals stay active."
+    },
+    {
+      "id": "s06",
+      "claims": [
+        "C11"
+      ],
+      "tts": "Three plans, compared on changes, cost, and speed. The winner moves the fewest bookings, for six hundred and fifty-nine euros. Under my cap.",
+      "caption": "Three plans, compared on changes, cost and speed. The winner moves the fewest bookings, for €659 — under my cap."
+    },
+    {
+      "id": "s07",
+      "claims": [
+        "C12"
+      ],
+      "tts": "Nothing happens without me. My approval is bound to the exact operations, prices, and providers. Change one fee, and it no longer matches.",
+      "caption": "Nothing happens without me. My approval is bound to the exact operations, prices and providers. Change one fee, and it no longer matches."
+    },
+    {
+      "id": "s08",
+      "claims": [
+        "C13",
+        "C14",
+        "C15"
+      ],
+      "tts": "I approve. These are the providers' own pages, loaded cross-origin. Each one receives a signed receipt, checks it itself, and only then moves my booking. PowerFlow was consulted, and correctly left alone.",
+      "caption": "I approve. These are the providers' own pages, loaded cross-origin. Each one receives a signed receipt, checks it itself, and only then moves my booking. PowerFlow was consulted — and correctly left alone."
+    },
+    {
+      "id": "s09",
+      "claims": [
+        "C16",
+        "C17",
+        "C18"
+      ],
+      "tts": "And every step is auditable: a hash-chained log, exactly what each provider saw, and fifteen failure scenarios you can replay in the browser. Zero cancel calls, in sixty benchmark runs.",
+      "caption": "And every step is auditable: a hash-chained log, exactly what each provider saw, and 15 failure scenarios you can replay in the browser. Zero cancel calls in 60 benchmark runs."
+    },
+    {
+      "id": "s10",
+      "claims": [
+        "C19"
+      ],
+      "tts": "Continuity. One change. Every commitment, realigned.",
+      "caption": "CONTINUITY. One change. Every commitment re-aligned."
+    }
+  ],
+  "brag": {
+    "id": "brag",
+    "tts": "Move one date, and six bookings break. Continuity re-plans across four independent provider websites, holds replacements first, and waits for your approval. Then each provider verifies a signed receipt, on its own site.",
+    "caption": "Move one date, and six bookings break. CONTINUITY re-plans across 4 independent provider websites, holds replacements first, and waits for your approval. Then each provider verifies a signed receipt — on its own site."
+  }
+}

@@ -1,0 +1,152 @@
+1
+00:00:00,600 --> 00:00:02,680
+Move one date, Tuesday to Friday,
+
+2
+00:00:02,680 --> 00:00:04,760
+and six bookings break at once.
+
+3
+00:00:04,760 --> 00:00:08,280
+By hand, that's about 18 steps on six websites.
+
+4
+00:00:08,280 --> 00:00:11,670
+Cancel one too early and you're left with nothing.
+
+5
+00:00:11,710 --> 00:00:13,710
+CONTINUITY makes it two decisions.
+
+6
+00:00:13,710 --> 00:00:17,320
+Say what changed, then approve the exact plan.
+
+7
+00:00:17,360 --> 00:00:21,000
+It's an open agentic website that coordinates other companies'
+
+8
+00:00:21,040 --> 00:00:24,960
+agentic websites. Each provider runs its own site and
+
+9
+00:00:24,960 --> 00:00:27,600
+agent network on a different origin.
+
+10
+00:00:27,600 --> 00:00:29,360
+No backend in the middle,
+
+11
+00:00:29,360 --> 00:00:31,370
+no shared database.
+
+12
+00:00:31,410 --> 00:00:32,890
+This is the live site.
+
+13
+00:00:32,930 --> 00:00:35,250
+I describe the change in plain English,
+
+14
+00:00:35,250 --> 00:00:37,650
+and it becomes rules it can't break.
+
+15
+00:00:37,650 --> 00:00:40,130
+Then I switch on a real-world failure.
+
+16
+00:00:40,130 --> 00:00:42,720
+The moving crew is full on Friday.
+
+17
+00:00:42,760 --> 00:00:45,320
+Only three of six bookings are affected.
+
+18
+00:00:45,320 --> 00:00:48,840
+Four providers are asked, two are never contacted.
+
+19
+00:00:48,840 --> 00:00:51,800
+The crew is recovered through an overflow partner and
+
+20
+00:00:51,800 --> 00:00:55,620
+replacements are held, while my originals stay active.
+
+21
+00:00:55,660 --> 00:00:57,820
+Three plans compared on changes,
+
+22
+00:00:57,820 --> 00:00:59,180
+cost, and speed.
+
+23
+00:00:59,180 --> 00:01:03,700
+The winner moves the fewest bookings for €659
+
+24
+00:01:03,740 --> 00:01:05,450
+under my cap.
+
+25
+00:01:05,490 --> 00:01:07,330
+Nothing happens without me.
+
+26
+00:01:07,330 --> 00:01:10,370
+My approval is bound to the exact operations,
+
+27
+00:01:10,370 --> 00:01:12,130
+prices, and providers.
+
+28
+00:01:12,130 --> 00:01:15,570
+Change one fee, and it no longer matches.
+
+29
+00:01:15,610 --> 00:01:18,730
+I approve. These are the providers' own pages,
+
+30
+00:01:18,730 --> 00:01:20,410
+loaded cross-origin.
+
+31
+00:01:20,410 --> 00:01:22,570
+Each one receives a signed receipt,
+
+32
+00:01:22,570 --> 00:01:25,930
+checks it itself, and only then moves my booking.
+
+33
+00:01:25,930 --> 00:01:29,950
+PowerFlow was consulted and correctly left alone.
+
+34
+00:01:30,410 --> 00:01:32,170
+And every step is auditable.
+
+35
+00:01:32,170 --> 00:01:35,930
+A hash-chained log, exactly what each provider saw,
+
+36
+00:01:35,930 --> 00:01:38,730
+and 15 failure scenarios you can replay in the
+
+37
+00:01:38,730 --> 00:01:43,710
+browser. Zero cancel calls in 60 benchmark runs.
+
+38
+00:01:43,870 --> 00:01:48,210
+CONTINUITY, one change, every commitment re-aligned.
+

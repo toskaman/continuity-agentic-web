@@ -1,0 +1,569 @@
+{
+ "end": 110.75,
+ "vo": {
+  "s01": 0.6,
+  "s02": 11.71,
+  "s03": 17.36,
+  "s04": 31.41,
+  "s05": 42.76,
+  "s06": 55.66,
+  "s07": 65.49,
+  "s08": 75.61,
+  "s09": 90.41,
+  "s10": 103.87
+ },
+ "sfx": [
+  [
+   1.9,
+   "sfx_flip.wav",
+   0.5
+  ],
+  [
+   2.74,
+   "sfx_tick.wav",
+   0.18
+  ],
+  [
+   2.83,
+   "sfx_tick.wav",
+   0.18
+  ],
+  [
+   2.92,
+   "sfx_tick.wav",
+   0.18
+  ],
+  [
+   3.01,
+   "sfx_tick.wav",
+   0.18
+  ],
+  [
+   3.1,
+   "sfx_tick.wav",
+   0.18
+  ],
+  [
+   3.19,
+   "sfx_tick.wav",
+   0.18
+  ],
+  [
+   3.72,
+   "sfx_error.wav",
+   0.26
+  ],
+  [
+   6.09,
+   "sfx_tick_low.wav",
+   0.12
+  ],
+  [
+   6.19,
+   "sfx_tick_low.wav",
+   0.12
+  ],
+  [
+   6.29,
+   "sfx_tick_low.wav",
+   0.12
+  ],
+  [
+   6.39,
+   "sfx_tick_low.wav",
+   0.12
+  ],
+  [
+   6.49,
+   "sfx_tick_low.wav",
+   0.12
+  ],
+  [
+   6.59,
+   "sfx_tick_low.wav",
+   0.12
+  ],
+  [
+   10.47,
+   "sfx_thud.wav",
+   0.6
+  ],
+  [
+   12.99,
+   "sfx_resolve.wav",
+   0.24
+  ],
+  [
+   17.01,
+   "sfx_whoosh.wav",
+   0.4
+  ],
+  [
+   17.48,
+   "sfx_whoosh_soft.wav",
+   0.25
+  ],
+  [
+   22.72,
+   "sfx_tick.wav",
+   0.16
+  ],
+  [
+   23,
+   "sfx_tick.wav",
+   0.16
+  ],
+  [
+   23.28,
+   "sfx_tick.wav",
+   0.16
+  ],
+  [
+   23.56,
+   "sfx_tick.wav",
+   0.16
+  ],
+  [
+   26.32,
+   "sfx_pulse.wav",
+   0.14
+  ],
+  [
+   27.67,
+   "sfx_pulse.wav",
+   0.14
+  ],
+  [
+   27.87,
+   "sfx_tick_low.wav",
+   0.3
+  ],
+  [
+   29.95,
+   "sfx_tick_low.wav",
+   0.3
+  ],
+  [
+   30.91,
+   "sfx_whoosh.wav",
+   0.35
+  ],
+  [
+   33.02,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   39.04,
+   "sfx_click.wav",
+   0.45
+  ],
+  [
+   39.92,
+   "sfx_error.wav",
+   0.18
+  ],
+  [
+   42.63,
+   "sfx_click.wav",
+   0.45
+  ],
+  [
+   43.16,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   49.94,
+   "sfx_tick.wav",
+   0.25
+  ],
+  [
+   51.6,
+   "sfx_tick.wav",
+   0.25
+  ],
+  [
+   55.29,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   63.64,
+   "sfx_tick.wav",
+   0.28
+  ],
+  [
+   65.19,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   65.64,
+   "sfx_click.wav",
+   0.45
+  ],
+  [
+   72.93,
+   "sfx_tick.wav",
+   0.25
+  ],
+  [
+   73.43,
+   "sfx_error.wav",
+   0.22
+  ],
+  [
+   75.8,
+   "sfx_click.wav",
+   0.45
+  ],
+  [
+   75.88,
+   "sfx_whoosh_soft.wav",
+   0.3
+  ],
+  [
+   77.47,
+   "sfx_tick_low.wav",
+   0.14
+  ],
+  [
+   77.65,
+   "sfx_tick_low.wav",
+   0.14
+  ],
+  [
+   77.83,
+   "sfx_tick_low.wav",
+   0.14
+  ],
+  [
+   78.01,
+   "sfx_tick_low.wav",
+   0.14
+  ],
+  [
+   80.77,
+   "sfx_pulse.wav",
+   0.12
+  ],
+  [
+   82.42,
+   "sfx_verify_1.wav",
+   0.22
+  ],
+  [
+   83.08,
+   "sfx_verify_2.wav",
+   0.22
+  ],
+  [
+   83.79,
+   "sfx_verify_3.wav",
+   0.22
+  ],
+  [
+   87.45,
+   "sfx_tick.wav",
+   0.3
+  ],
+  [
+   93.46,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   95.83,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   96.62,
+   "sfx_click.wav",
+   0.45
+  ],
+  [
+   97.92,
+   "sfx_verify_2.wav",
+   0.16
+  ],
+  [
+   99.27,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   103.85,
+   "sfx_final.wav",
+   0.34
+  ]
+ ],
+ "captions": [
+  {
+   "s": 0.6,
+   "e": 2.68,
+   "text": "Move one date, Tuesday to Friday,"
+  },
+  {
+   "s": 2.68,
+   "e": 4.76,
+   "text": "and six bookings break at once."
+  },
+  {
+   "s": 4.76,
+   "e": 8.28,
+   "text": "By hand, that's about 18 steps on six websites."
+  },
+  {
+   "s": 8.28,
+   "e": 11.67,
+   "text": "Cancel one too early and you're left with nothing."
+  },
+  {
+   "s": 11.71,
+   "e": 13.71,
+   "text": "CONTINUITY makes it two decisions."
+  },
+  {
+   "s": 13.71,
+   "e": 17.32,
+   "text": "Say what changed, then approve the exact plan."
+  },
+  {
+   "s": 17.36,
+   "e": 21,
+   "text": "It's an open agentic website that coordinates other companies'"
+  },
+  {
+   "s": 21.04,
+   "e": 24.96,
+   "text": "agentic websites. Each provider runs its own site and"
+  },
+  {
+   "s": 24.96,
+   "e": 27.6,
+   "text": "agent network on a different origin."
+  },
+  {
+   "s": 27.6,
+   "e": 29.36,
+   "text": "No backend in the middle,"
+  },
+  {
+   "s": 29.36,
+   "e": 31.37,
+   "text": "no shared database."
+  },
+  {
+   "s": 31.41,
+   "e": 32.89,
+   "text": "This is the live site."
+  },
+  {
+   "s": 32.93,
+   "e": 35.25,
+   "text": "I describe the change in plain English,"
+  },
+  {
+   "s": 35.25,
+   "e": 37.65,
+   "text": "and it becomes rules it can't break."
+  },
+  {
+   "s": 37.65,
+   "e": 40.13,
+   "text": "Then I switch on a real-world failure."
+  },
+  {
+   "s": 40.13,
+   "e": 42.72,
+   "text": "The moving crew is full on Friday."
+  },
+  {
+   "s": 42.76,
+   "e": 45.32,
+   "text": "Only three of six bookings are affected."
+  },
+  {
+   "s": 45.32,
+   "e": 48.84,
+   "text": "Four providers are asked, two are never contacted."
+  },
+  {
+   "s": 48.84,
+   "e": 51.8,
+   "text": "The crew is recovered through an overflow partner and"
+  },
+  {
+   "s": 51.8,
+   "e": 55.62,
+   "text": "replacements are held, while my originals stay active."
+  },
+  {
+   "s": 55.66,
+   "e": 57.82,
+   "text": "Three plans compared on changes,"
+  },
+  {
+   "s": 57.82,
+   "e": 59.18,
+   "text": "cost, and speed."
+  },
+  {
+   "s": 59.18,
+   "e": 63.7,
+   "text": "The winner moves the fewest bookings for €659"
+  },
+  {
+   "s": 63.74,
+   "e": 65.45,
+   "text": "under my cap."
+  },
+  {
+   "s": 65.49,
+   "e": 67.33,
+   "text": "Nothing happens without me."
+  },
+  {
+   "s": 67.33,
+   "e": 70.37,
+   "text": "My approval is bound to the exact operations,"
+  },
+  {
+   "s": 70.37,
+   "e": 72.13,
+   "text": "prices, and providers."
+  },
+  {
+   "s": 72.13,
+   "e": 75.57,
+   "text": "Change one fee, and it no longer matches."
+  },
+  {
+   "s": 75.61,
+   "e": 78.73,
+   "text": "I approve. These are the providers' own pages,"
+  },
+  {
+   "s": 78.73,
+   "e": 80.41,
+   "text": "loaded cross-origin."
+  },
+  {
+   "s": 80.41,
+   "e": 82.57,
+   "text": "Each one receives a signed receipt,"
+  },
+  {
+   "s": 82.57,
+   "e": 85.93,
+   "text": "checks it itself, and only then moves my booking."
+  },
+  {
+   "s": 85.93,
+   "e": 89.95,
+   "text": "PowerFlow was consulted and correctly left alone."
+  },
+  {
+   "s": 90.41,
+   "e": 92.17,
+   "text": "And every step is auditable."
+  },
+  {
+   "s": 92.17,
+   "e": 95.93,
+   "text": "A hash-chained log, exactly what each provider saw,"
+  },
+  {
+   "s": 95.93,
+   "e": 98.73,
+   "text": "and 15 failure scenarios you can replay in the"
+  },
+  {
+   "s": 98.73,
+   "e": 103.71,
+   "text": "browser. Zero cancel calls in 60 benchmark runs."
+  },
+  {
+   "s": 103.87,
+   "e": 108.21,
+   "text": "CONTINUITY, one change, every commitment re-aligned."
+  }
+ ],
+ "cues": [
+  "1.90s sfx sfx_flip.wav calendar flip",
+  "3.72s sfx sfx_error.wav bookings break",
+  "10.47s sfx sfx_thud.wav left with nothing",
+  "11.36–17.61 still 02_proof",
+  "12.50s focus 02_proof [913,424,847,344]",
+  "13.66s chip \"1 Say what changed\"",
+  "15.08s chip \"2 Approve the exact plan\"",
+  "12.99s sfx sfx_resolve.wav two decisions",
+  "17.01s sfx sfx_whoosh.wav to 3D",
+  "26.37s chip \"5 separately deployed websites\"",
+  "30.91s sfx sfx_whoosh.wav to live site",
+  "33.12–33.79 video 01_hero_idle @0.4",
+  "33.04–34.64 video 03_scroll_workspace @0.7",
+  "34.54–38.86 still 03_workspace",
+  "34.74s focus 03_workspace [191,673,1539,225]",
+  "35.55s focus→ 03_workspace [1153,620,576,34]",
+  "36.13s chip \"Rules it can’t break\"",
+  "38.61–40.14 video 04_arm_failure @0",
+  "39.04s sfx sfx_click.wav click",
+  "40.04–43.86 still 04_armed",
+  "40.24s focus 04_armed [554,936,1175,29]",
+  "40.22s chip \"Simulated: Friday crew full\"",
+  "39.92s sfx sfx_error.wav failure armed",
+  "42.63s sfx sfx_click.wav click",
+  "42.20–43.88 video 05_analyze @0",
+  "43.18–48.78 still 05b_kpis",
+  "43.85s focus 05b_kpis [160,494,384,118]",
+  "45.17s focus→ 05b_kpis [160,610,384,50]",
+  "45.42s chip \"4 providers asked · 2 never contacted\"",
+  "48.48–50.23 video 06_scroll_mission @0.2",
+  "50.13–56.01 still 06_mission",
+  "50.33s focus 06_mission [1132,795,572,88]",
+  "51.60s focus→ 06_mission [1126,927,601,121]",
+  "53.28s chip \"Originals stay active until you approve\"",
+  "55.31–65.94 still 07_plans",
+  "55.98s focus 07_plans [160,503,941,623]",
+  "59.22s focus→ 07_plans [160,503,461,302]",
+  "63.64s sfx sfx_tick.wav under cap",
+  "65.21–66.59 video 09_open_approval @0",
+  "65.64s sfx sfx_click.wav click",
+  "66.49–75.96 still 09_dialog",
+  "69.06s focus 09_dialog [557,381,822,136]",
+  "70.17s focus→ 09_dialog [557,589,822,84]",
+  "70.97s focus→ 09_dialog [770,383,616,132]",
+  "73.43s sfx sfx_error.wav hash mismatch",
+  "75.80s sfx sfx_click.wav click",
+  "75.37–76.22 video 10_commit_wall @0",
+  "75.98–90.41 still 08_wall_before",
+  "75.88s sfx sfx_whoosh_soft.wav to wall",
+  "77.77s chip \"Each provider’s own page, loaded cross-origin\"",
+  "80.77s sfx sfx_pulse.wav receipts sent",
+  "82.42s sfx sfx_verify_1.wav verify 1",
+  "83.08s sfx sfx_verify_2.wav verify 2",
+  "83.79s sfx sfx_verify_3.wav verify 3",
+  "84.94s chip \"Verified on MoveCo’s own page\"",
+  "87.45s sfx sfx_tick.wav powerflow consulted",
+  "87.65s chip \"Consulted — nothing to change\"",
+  "76.38s chip \"Real before/after states of the live pages · replayed slower\"",
+  "90.01–94.18 still 13_timeline",
+  "92.23s chip \"Tamper-evident chain\"",
+  "92.08s focus 13_timeline [193,752,1533,64]",
+  "93.48–97.12 still 12b_privacy",
+  "94.15s focus 12b_privacy [195,893,1531,123]",
+  "94.18s chip \"MoveCo receives only booking_ref + date\"",
+  "95.85–97.92 video 12_trust_chaos @1.95",
+  "96.62s sfx sfx_click.wav click",
+  "97.82–99.99 still 12_chaos",
+  "98.02s focus 12_chaos [193,898,1533,64]",
+  "97.92s sfx sfx_verify_2.wav 15/15",
+  "99.29–103.82 still 02_proof_b",
+  "99.96s focus 02_proof_b [940,618,392,24]",
+  "103.37–110.75 still 15_hero_after",
+  "103.85s sfx sfx_final.wav final chime"
+ ]
+}

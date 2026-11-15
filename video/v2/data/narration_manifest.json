@@ -1,0 +1,125 @@
+{
+  "voice": "af_heart",
+  "speed": 1,
+  "engine": "Kokoro-82M via HyperFrames 0.9.19 (local, offline)",
+  "generatedAt": "2026-11-15T07:42:39.400Z",
+  "segments": [
+    {
+      "id": "s01",
+      "durationSec": 10.411,
+      "words": 30,
+      "tts": "Move one date, Tuesday to Friday, and six bookings break at once. By hand, that's about eighteen steps on six websites. Cancel one too early, and you're left with nothing.",
+      "caption": "Move one date — Tuesday to Friday — and six bookings break at once. By hand, that's about 18 steps on 6 websites. Cancel one too early, and you're left with nothing.",
+      "claims": [
+        "C01",
+        "C02"
+      ]
+    },
+    {
+      "id": "s02",
+      "durationSec": 4.949,
+      "words": 13,
+      "tts": "Continuity makes it two decisions: say what changed, then approve the exact plan.",
+      "caption": "CONTINUITY makes it two decisions: say what changed, then approve the exact plan.",
+      "claims": [
+        "C03"
+      ]
+    },
+    {
+      "id": "s03",
+      "durationSec": 13.44,
+      "words": 32,
+      "tts": "It's an open agentic website that coordinates other companies' agentic websites. Each provider runs its own site and agent network, on a different origin. No backend in the middle. No shared database.",
+      "caption": "It's an open agentic website that coordinates other companies' agentic websites. Each provider runs its own site and agent network, on a different origin. No backend in the middle. No shared database.",
+      "claims": [
+        "C04",
+        "C05"
+      ]
+    },
+    {
+      "id": "s04",
+      "durationSec": 10.752,
+      "words": 33,
+      "tts": "This is the live site. I describe the change in plain English, and it becomes rules it can't break. Then I switch on a real-world failure: the moving crew is full on Friday.",
+      "caption": "This is the live site. I describe the change in plain English, and it becomes rules it can't break. Then I switch on a real-world failure: the moving crew is full on Friday.",
+      "claims": [
+        "C06",
+        "C07"
+      ]
+    },
+    {
+      "id": "s05",
+      "durationSec": 12.203,
+      "words": 32,
+      "tts": "Only three of six bookings are affected. Four providers are asked; two are never contacted. The crew is recovered through an overflow partner, and replacements are held, while my originals stay active.",
+      "caption": "Only 3 of 6 bookings are affected. 4 providers are asked; 2 are never contacted. The crew is recovered through an overflow partner, and replacements are held while my originals stay active.",
+      "claims": [
+        "C08",
+        "C09",
+        "C10"
+      ]
+    },
+    {
+      "id": "s06",
+      "durationSec": 9.131,
+      "words": 23,
+      "tts": "Three plans, compared on changes, cost, and speed. The winner moves the fewest bookings, for six hundred and fifty-nine euros. Under my cap.",
+      "caption": "Three plans, compared on changes, cost and speed. The winner moves the fewest bookings, for €659 — under my cap.",
+      "claims": [
+        "C11"
+      ]
+    },
+    {
+      "id": "s07",
+      "durationSec": 9.323,
+      "words": 23,
+      "tts": "Nothing happens without me. My approval is bound to the exact operations, prices, and providers. Change one fee, and it no longer matches.",
+      "caption": "Nothing happens without me. My approval is bound to the exact operations, prices and providers. Change one fee, and it no longer matches.",
+      "claims": [
+        "C12"
+      ]
+    },
+    {
+      "id": "s08",
+      "durationSec": 13.547,
+      "words": 32,
+      "tts": "I approve. These are the providers' own pages, loaded cross-origin. Each one receives a signed receipt, checks it itself, and only then moves my booking. PowerFlow was consulted, and correctly left alone.",
+      "caption": "I approve. These are the providers' own pages, loaded cross-origin. Each one receives a signed receipt, checks it itself, and only then moves my booking. PowerFlow was consulted — and correctly left alone.",
+      "claims": [
+        "C13",
+        "C14",
+        "C15"
+      ]
+    },
+    {
+      "id": "s09",
+      "durationSec": 12.459,
+      "words": 30,
+      "tts": "And every step is auditable: a hash-chained log, exactly what each provider saw, and fifteen failure scenarios you can replay in the browser. Zero cancel calls, in sixty benchmark runs.",
+      "caption": "And every step is auditable: a hash-chained log, exactly what each provider saw, and 15 failure scenarios you can replay in the browser. Zero cancel calls in 60 benchmark runs.",
+      "claims": [
+        "C16",
+        "C17",
+        "C18"
+      ]
+    },
+    {
+      "id": "s10",
+      "durationSec": 3.477,
+      "words": 6,
+      "tts": "Continuity. One change. Every commitment, realigned.",
+      "caption": "CONTINUITY. One change. Every commitment re-aligned.",
+      "claims": [
+        "C19"
+      ]
+    },
+    {
+      "id": "brag",
+      "durationSec": 13.803,
+      "words": 33,
+      "tts": "Move one date, and six bookings break. Continuity re-plans across four independent provider websites, holds replacements first, and waits for your approval. Then each provider verifies a signed receipt, on its own site.",
+      "caption": "Move one date, and six bookings break. CONTINUITY re-plans across 4 independent provider websites, holds replacements first, and waits for your approval. Then each provider verifies a signed receipt — on its own site.",
+      "claims": []
+    }
+  ]
+}

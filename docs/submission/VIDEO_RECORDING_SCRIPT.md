@@ -1,5 +1,8 @@
 # CONTINUITY — Human-Narrated Demo Video Script (< 2 minutes)
 
+> **New (2026-11-15): a finished, edited picture is ready for your voice.** Use `CONTINUITY_v2_voice_ready.mp4` (1:51, final edit with live footage, focus outlines, pointer, music and sound effects — no voice) and read `docs/video-production/v2/TELEPROMPTER_voice_ready.md` over it. That replaces screen-recording by hand. The Kokoro-narrated `CONTINUITY_v2_kokoro_reference.mp4` is a timing reference only — do not submit it. Details: `docs/video-production/v2/VIDEO_V2_DELIVERY_REPORT.md`.
+
+
 **Why this file exists.** The Official Rules require a video under two minutes that shows the project running in a browser **and includes the entrant explaining the project (not AI-generated)**. The older `docs/video-production/deliverables/CONTINUITY_JURY_MASTER_OMEGA.mp4` uses a synthetic Kokoro voice and the pre-redesign interface — do **not** submit it. Record a new take with your own voice using this script.
 
 Target length: **1:50** (10 s safety margin). Judges need not watch past 2:00. Speak in English (or add English subtitles).
