@@ -1,0 +1,11 @@
+{
+  "name": "@continuity/zk-budget-attestation",
+  "version": "1.0.0",
+  "description": "Preimage-sound SHA-256 Hash-Ladder Range Attestation proving total mission spend <= pre-committed private budget ceiling without revealing the buyer's ceiling",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  }
+}

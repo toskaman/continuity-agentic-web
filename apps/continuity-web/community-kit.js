@@ -77,8 +77,10 @@ const COMMUNITY_MODULES = [
   ["@continuity/nanda-resolver", "Project NANDA urn:air, AI Catalog, Poppy nandaindex.org/reach v1, draft-raskar-02 POST /resolve, A2A & 9-point SARIF CLI", "AuthorityBoundResolver, auditOpenAgenticSite, resolveAndRouteNandaReach"],
   ["@continuity/peer-firewall", "Pre-execution peer instruction firewall, Unicode Bidi Trojan scanner & TOFU SHA-256 rug-pull re-consent pinning", "inspectPeerNetworkSafety, PeerTofuRegistry, diffPeerNetworks"],
   ["@continuity/openrouter-pkce", "Zero-client-ID RFC 7636 S256 1-click OpenRouter OAuth PKCE onboarding & URL code scrubber", "createOpenRouterPkceAuthRequest, completeOpenRouterPkceCallback"],
+  ["@continuity/toolbox-scoper", "Least-privilege per-agent website_* toolbox compiler, partner zero-action isolator & prompt-token optimizer", "compileScopedToolboxNetwork"],
+  ["@continuity/zk-budget-attestation", "Preimage-sound SHA-256 Hash-Ladder Range Proof verifying spend <= private ceiling with zero ceiling disclosure", "createBlindedBudgetCommitment, proveSpendWithinBlindedCeiling, verifyBlindedBudgetAttestation"],
   ["@continuity/transition-playbook", "Hybrid Open Agentic Web + Legacy Vendor Hold-First Playbook & mailto: reschedule draft generator", "buildHybridTransitionPlaybook"],
-  ["@continuity/chaos-lab", "24 deterministic distributed-failure scenarios in an isolated simulation sandbox", "runAllChaosScenarios, CHAOS_SCENARIOS"],
+  ["@continuity/chaos-lab", "28 deterministic distributed-failure scenarios in an isolated simulation sandbox", "runAllChaosScenarios, CHAOS_SCENARIOS"],
 ];
 
 function esc(s) {

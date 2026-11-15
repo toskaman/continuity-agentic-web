@@ -482,15 +482,22 @@ export class AssistantMount {
       const check = App.page.checkCommitPackage(args);
       if (!check.ok) return { refusal: check.reason };
       const p = check.plan;
+      const pb = App.page.getTransitionPlaybook?.();
+      const mandateShort = App.page.activeMandate?.mandate_sha256
+        ? `sha256:${App.page.activeMandate.mandate_sha256.slice(0, 20)}…`
+        : "bound-to-proposal";
       return {
         "Selected Plan": p.label,
         "Operations to Commit": check.operations
-          .map((o) => `${o.provider_name} (${o.proposed_date} ${o.window})`)
-          .join("; "),
-        "Preserved Untouched": p.preservedCommitments.map((c) => c.title).join(", "),
-        "Projected Total Cost": `€${p.metrics.totalMissionCostEur.toFixed(2)} (Cap €${p.metrics.maxBudgetEur.toFixed(2)})`,
-        "Net Cost Difference": `${p.metrics.netDeltaEur >= 0 ? "+" : ""}€${p.metrics.netDeltaEur.toFixed(2)}`,
-        "Reversibility": "Moving & Fiber bookings are irreversible once committed; PermitFlow draft is reversible.",
+          .map(
+            (o) =>
+              `${o.provider_name}: ${o.proposed_date} (${o.window}) · €${(Number(o.base_price_eur) + Number(o.change_fee_eur || 0) + Number(o.cancellation_penalty_eur || 0)).toFixed(2)}`,
+          )
+          .join(" | "),
+        "Preserved Untouched": `${p.preservedCommitments.map((c) => c.title).join(", ")}${pb?.avoidedPenaltiesTotalEur ? ` (€${pb.avoidedPenaltiesTotalEur.toFixed(2)} cancel fees avoided)` : ""}`,
+        "Projected Total Cost": `€${p.metrics.totalMissionCostEur.toFixed(2)} (Hard ceiling €${p.metrics.maxBudgetEur.toFixed(2)} · ${p.metrics.netDeltaEur >= 0 ? "+" : ""}€${p.metrics.netDeltaEur.toFixed(2)} vs baseline)`,
+        "Cryptographic Binding": `Mandate ${mandateShort} · Version v${args.expectedVersion} (€0.01 drift invalidates)`,
+        "Reversibility": "Moving & Fiber bookings become final Ed25519-signed reservations on confirm; PermitFlow draft remains reversible.",
       };
     }
     return {};

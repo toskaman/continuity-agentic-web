@@ -59,6 +59,11 @@ import {
   SAMPLE_GOOGLE_ADK_CONFIG,
 } from "./vendor/adk-hocon-converter/index.js";
 import { buildHybridTransitionPlaybook } from "./vendor/transition-playbook/index.js";
+import {
+  createBlindedBudgetCommitment,
+  proveSpendWithinBlindedCeiling,
+  verifyBlindedBudgetAttestation,
+} from "./vendor/zk-budget-attestation/index.js";
 import { buildFallbackOffersForRelocationNode } from "./modules/fallback-offers.js";
 import {
   renderChangePackageView,
@@ -142,6 +147,9 @@ export class ContinuityCoordinatorPage {
   }
 
   async ensureProviderClients() {
+    if (this._peerProbePromise) {
+      await this._peerProbePromise;
+    }
     if (!this.isRelocationScenario()) {
       if (!this.providerHarnessPromise) {
         this.providerHarnessPromise = buildScenarioPeerHarness(this.mission, {
@@ -167,36 +175,61 @@ export class ContinuityCoordinatorPage {
     return this.providerHarnessPromise;
   }
 
-  async probeLivePeerOrigins() {
-    if (typeof fetch !== "function") return false;
-    const isGithubPagesPeer = /\.github\.io$/i.test(new URL(this.peerOrigins.moveco).hostname);
+  probeLivePeerOrigins() {
+    if (typeof fetch !== "function") return Promise.resolve(false);
+    const probeGen = (this._probeGen = (this._probeGen || 0) + 1);
+    this._probeAbortController?.abort?.();
 
-    if (!isGithubPagesPeer) {
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 900);
-        const resp = await fetch(`${this.peerOrigins.moveco}/api/public-key`, { signal: controller.signal });
-        clearTimeout(timer);
-        if (resp.ok) {
-          this.livePeersDetected = true;
-          this.crossOriginBridgeConnected = false;
+    const runProbe = async () => {
+      const isGithubPagesPeer = /\.github\.io$/i.test(new URL(this.peerOrigins.moveco).hostname);
+
+      if (!isGithubPagesPeer) {
+        try {
+          const controller = new AbortController();
+          this._probeAbortController = controller;
+          const timer = setTimeout(() => controller.abort(), 900);
+          const resp = await fetch(`${this.peerOrigins.moveco}/api/public-key`, { signal: controller.signal });
+          clearTimeout(timer);
+          if (probeGen !== this._probeGen) return this.livePeersDetected || this.crossOriginBridgeConnected;
+          if (resp.ok) {
+            this.livePeersDetected = true;
+            this.crossOriginBridgeConnected = false;
+            this.crossOriginBridge?.destroy?.();
+            return true;
+          }
+        } catch {
+          if (probeGen !== this._probeGen) return this.livePeersDetected || this.crossOriginBridgeConnected;
+          this.livePeersDetected = false;
+        }
+      }
+
+      if (probeGen !== this._probeGen) return this.livePeersDetected || this.crossOriginBridgeConnected;
+
+      // Zero-server static HTTPS / browser mode: connect live Cross-Origin `postMessage` Bridge iframes!
+      if (typeof document !== "undefined" && typeof window !== "undefined") {
+        this.crossOriginBridge?.destroy?.();
+        const bridge = new CrossOriginBridgeClient(this.peerOrigins);
+        this.crossOriginBridge = bridge;
+        const connected = await bridge.connectAll();
+        if (probeGen !== this._probeGen) {
+          bridge.destroy?.();
+          return this.livePeersDetected || this.crossOriginBridgeConnected;
+        }
+        this.crossOriginBridgeConnected = connected;
+        if (this.crossOriginBridgeConnected) {
           return true;
         }
-      } catch {
-        this.livePeersDetected = false;
       }
-    }
+      return false;
+    };
 
-    // Zero-server static HTTPS / browser mode: connect live Cross-Origin `postMessage` Bridge iframes!
-    if (typeof document !== "undefined" && typeof window !== "undefined") {
-      this.crossOriginBridge?.destroy?.();
-      this.crossOriginBridge = new CrossOriginBridgeClient(this.peerOrigins);
-      this.crossOriginBridgeConnected = await this.crossOriginBridge.connectAll();
-      if (this.crossOriginBridgeConnected) {
-        return true;
+    const p = runProbe().finally(() => {
+      if (this._peerProbePromise === p) {
+        this._peerProbePromise = null;
       }
-    }
-    return false;
+    });
+    this._peerProbePromise = p;
+    return p;
   }
 
   async buildLiveHttpProviderClients() {
@@ -310,7 +343,7 @@ export class ContinuityCoordinatorPage {
           : this.crossOriginBridgeConnected
             ? "LIVE_CROSS_ORIGIN_BROWSER_BRIDGE"
             : "BROWSER_DETERMINISTIC_SIMULATION_FALLBACK",
-        webMcpToolsExposed: 6,
+        webMcpToolsExposed: 8,
         rippleFailureInjected: this.rippleFailureInjected,
         mission: {
           mission_id: this.mission.mission_id,
@@ -708,8 +741,28 @@ export class ContinuityCoordinatorPage {
     this.selectedPlanId = this.solverResult.recommendedPlanId;
     await this.prepareSelectedPlan(this.selectedPlanId, { clients, verifier });
 
-    this.version += 1;
     const selected = this.getSelectedPlan();
+    try {
+      const capEur = Math.max(1, Math.floor(Number(this.compiledProposal.invariants.maximum_budget_eur)));
+      const zkCom = await createBlindedBudgetCommitment({
+        ceilingEur: capEur,
+        missionId: this.mission.mission_id,
+      });
+      const zkPrf = await proveSpendWithinBlindedCeiling({
+        publicCommitment: zkCom.publicCommitment,
+        privateOpening: zkCom.privateOpening,
+        spentEur: selected.metrics.totalMissionCostEur,
+      });
+      this.zkBudgetAttestation = zkPrf.ok ? zkPrf.attestation : null;
+      this.zkBudgetVerification = this.zkBudgetAttestation
+        ? await verifyBlindedBudgetAttestation(this.zkBudgetAttestation)
+        : null;
+    } catch {
+      this.zkBudgetAttestation = null;
+      this.zkBudgetVerification = null;
+    }
+
+    this.version += 1;
     const targetDate = this.compiledProposal.requested_change.new_value;
     this.render(
       `Prepared ${selected.label}: ${selected.metrics.changedCount} modifications prepared, ${selected.metrics.unchangedCount} commitments preserved untouched, total €${selected.metrics.totalMissionCostEur.toFixed(2)} (<= €${selected.metrics.maxBudgetEur.toFixed(2)}).`,
@@ -834,6 +887,9 @@ export class ContinuityCoordinatorPage {
   }
 
   async runGuidedInteractiveDemo() {
+    if (this._peerProbePromise) {
+      await this._peerProbePromise;
+    }
     await this.switchScenario("home_relocation");
     await this.resetMission({ rippleFailureInjected: true });
     await new Promise((r) => setTimeout(r, 380));
@@ -1152,11 +1208,13 @@ export class ContinuityCoordinatorPage {
 
     const badge = document.querySelector("#transport-badge");
     if (badge) {
-      badge.textContent = this.livePeersDetected
-        ? "Live Independent Peer Origins (4 HTTP/MCP)"
-        : this.crossOriginBridgeConnected
-          ? "Live Cross-Origin Browser Mesh (4 Peers · Ed25519)"
-          : "Browser Deterministic Saga Engine";
+      badge.textContent = this._peerProbePromise
+        ? "Detecting peer origins…"
+        : this.livePeersDetected
+          ? "Live Independent Peer Origins (4 HTTP/MCP)"
+          : this.crossOriginBridgeConnected
+            ? "Live Cross-Origin Browser Mesh (4 Peers · Ed25519)"
+            : "Browser Deterministic Saga Engine";
       badge.classList.toggle("live", this.livePeersDetected || this.crossOriginBridgeConnected);
     }
 
@@ -1291,20 +1349,8 @@ export class ContinuityCoordinatorPage {
 
   async bindDom() {
     if (typeof document === "undefined") return;
-    await this.probeLivePeerOrigins();
-
-    // Safe deep-link scenario/ripple presets (never reads key, router, or model)
-    if (typeof location !== "undefined" && location.search) {
-      const sp = new URLSearchParams(location.search);
-      const reqScenario = sp.get("scenario");
-      if (reqScenario && ["home_relocation", "outpatient_surgery", "product_launch_expo"].includes(reqScenario)) {
-        await this.switchScenario(reqScenario);
-      }
-      if (sp.get("ripple") === "1" || sp.get("ripple") === "true") {
-        await this.resetMission({ rippleFailureInjected: true });
-      }
-    }
-
+    // Start probing cross-origin peers immediately WITHOUT blocking synchronous DOM listener registration!
+    const initialProbe = this.probeLivePeerOrigins();
     this.render();
 
     document.querySelector("#theme-toggle-btn")?.addEventListener("click", () => {
@@ -1593,6 +1639,22 @@ export class ContinuityCoordinatorPage {
       const custom = document.querySelector("#custom-audit-url")?.value?.trim();
       if (custom) void this.runConformanceAudit(custom);
     });
+
+    await this._peerProbePromise;
+
+    // Safe deep-link scenario/ripple presets (never reads key, router, or model)
+    if (typeof location !== "undefined" && location.search) {
+      const sp = new URLSearchParams(location.search);
+      const reqScenario = sp.get("scenario");
+      if (reqScenario && ["home_relocation", "outpatient_surgery", "product_launch_expo"].includes(reqScenario)) {
+        await this.switchScenario(reqScenario);
+      }
+      if (sp.get("ripple") === "1" || sp.get("ripple") === "true") {
+        await this.resetMission({ rippleFailureInjected: true });
+      }
+    }
+
+    this.render();
   }
 }
 

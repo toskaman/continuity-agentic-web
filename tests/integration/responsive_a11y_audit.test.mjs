@@ -186,7 +186,7 @@ test("Cycle 19 — Real Headless Chromium audits mobile (390x844), dark theme, k
     await cdp.send("Page.navigate", { url: `${eco.coordinator.origin()}/community-kit.html` });
     const kitMobile = await cdp.evalJson(`(async () => {
       for (let i = 0; i < 30; i++) {
-        if (document.querySelectorAll("#kit-modules-tbody tr").length === 22) break;
+        if (document.querySelectorAll("#kit-modules-tbody tr").length === 24) break;
         await new Promise((r) => setTimeout(r, 100));
       }
       const overflowPx = document.documentElement.scrollWidth - document.documentElement.clientWidth;

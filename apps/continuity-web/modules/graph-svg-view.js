@@ -4,7 +4,7 @@
  * and non-color state encoding (icon + badge + label).
  */
 
-import { formatDateWithWeekday } from "../vendor/mission-core/index.js";
+import { addDaysIso, formatDateWithWeekday } from "../vendor/mission-core/index.js";
 import { GRAPH_VISUAL_STATES, MissionGraph } from "../vendor/mission-graph/index.js";
 
 export const RELOCATION_PRESET_COORDS = Object.freeze({
@@ -43,24 +43,50 @@ export function renderMissionGraphSvg(page) {
       <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
         <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b" />
       </marker>
+      <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#f59e0b" />
+      </marker>
+      <marker id="arrow-emerald" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981" />
+      </marker>
     </defs>`,
   ];
+
+  const nodesById = new Map(snap.nodes.map((n) => [n.id, n]));
 
   for (const edge of snap.edges) {
     const src = coordsMap[edge.from];
     const dst = coordsMap[edge.to];
     if (!src || !dst) continue;
+    const dstNode = nodesById.get(edge.to);
+    const dstState = dstNode?.visual_state || "UNCHANGED";
+    const isCommittedEdge = dstState === "COMMITTED";
+    const isRippleEdge = ["AFFECTED", "EVALUATING", "PROPOSED", "PREPARED", "AWAITING_APPROVAL"].includes(dstState);
+    const isShieldedEdge = Boolean(page.compiledProposal) && dstState === "UNCHANGED";
+
+    const strokeColor = isCommittedEdge ? "#10b981" : isRippleEdge ? "#f59e0b" : "#64748b";
+    const markerRef = isCommittedEdge ? "url(#arrow-emerald)" : isRippleEdge ? "url(#arrow-amber)" : "url(#arrow)";
+    const dashAttr = isRippleEdge ? ' stroke-dasharray="6 4" class="edge-ripple-path"' : "";
+    const statusSuffix = isCommittedEdge
+      ? " · ✓ ALIGNED"
+      : isRippleEdge
+        ? " · ⚡ RIPPLE"
+        : isShieldedEdge
+          ? " · 🛡 PROTECTED"
+          : "";
+    const labelColor = isCommittedEdge ? "#6ee7b7" : isRippleEdge ? "#fde68a" : "#cbd5e1";
+
     const x1 = src.x + 225;
     const y1 = src.y + 44;
     const x2 = dst.x;
     const y2 = dst.y + 44;
     const midX = (x1 + x2) / 2;
     const midY = (y1 + y2) / 2 - 6;
-    const shortEdgeLabel = edge.type.replace(/_/g, " ");
+    const shortEdgeLabel = `${edge.type.replace(/_/g, " ")}${statusSuffix}`;
     parts.push(
       `<g class="graph-edge">
-        <path d="M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow)" />
-        <text x="${midX}" y="${midY}" text-anchor="middle" fill="#cbd5e1" font-size="9.5" font-family="system-ui, sans-serif">${page.escapeXml(shortEdgeLabel)}</text>
+        <path d="M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}" fill="none" stroke="${strokeColor}" stroke-width="${isCommittedEdge || isRippleEdge ? "2.3" : "1.7"}"${dashAttr} marker-end="${markerRef}" />
+        <text x="${midX}" y="${midY}" text-anchor="middle" fill="${labelColor}" font-size="9.2" font-weight="${isCommittedEdge || isRippleEdge ? "700" : "500"}" font-family="system-ui, sans-serif">${page.escapeXml(shortEdgeLabel)}</text>
       </g>`,
     );
   }
@@ -147,6 +173,20 @@ export function renderMissionNodeInspector(page, nodeId) {
     ? `<details class="receipt-drawer"><summary>Inspect Signed Ed25519 Receipt JSON</summary><pre class="receipt-pre">${page.escapeXml(JSON.stringify(matchingOp.receipt_envelope, null, 2))}</pre></details>`
     : "";
 
+  const isAnchor = node.id === page.mission.anchor_commitment_id && !page.lastSagaExecution;
+  const quickShiftHtml = isAnchor
+    ? `<div class="draft-actions-row" role="group" aria-label="Direct anchor quick-shift">
+         <span class="strip-label" style="font-size:0.74rem">Quick-shift anchor:</span>
+         ${[1, 2, 3, 4]
+           .map((d) => {
+             const dt = addDaysIso(page.mission.anchor_date, d);
+             const lbl = formatDateWithWeekday(dt).replace(/,\s*202\d$/, "");
+             return `<button type="button" class="mini-btn" data-quick-shift="${page.escapeXml(dt)}">→ ${page.escapeXml(lbl)}</button>`;
+           })
+           .join("")}
+       </div>`
+    : "";
+
   box.innerHTML = `
     <div class="inspector-head-row">
       <div><strong>${page.escapeXml(node.title)}</strong> — <span>[${page.escapeXml(`${meta.icon} ${meta.label}`)}]</span></div>
@@ -159,10 +199,20 @@ export function renderMissionNodeInspector(page, nodeId) {
     <div>Provider: <code>${page.escapeXml(node.provider_name)}</code> (${page.escapeXml(node.provider_origin)}) · Ref: <code>${page.escapeXml(node.booking_ref)}</code></div>
     <div>Scheduled: <strong>${page.escapeXml(formatDateWithWeekday(node.scheduled_date))}</strong> (${page.escapeXml(node.window)}) · Price: <strong>€${Number(node.price_eur).toFixed(2)}</strong> · Cancel Penalty: €${Number(node.cancellation_fee_eur).toFixed(2)}</div>
     <div>Evidence Trust: <code>${page.escapeXml(node.observed?.evidence_trust || "DEMO_FIXTURE_INITIAL")}</code>${impactInfo ? ` · Impact Rationale: ${page.escapeXml(impactInfo.reasons.join(" "))}` : ""}</div>
+    ${quickShiftHtml}
     ${receiptDetails}
   `;
 
-  box.querySelector("#inspector-pin-btn")?.addEventListener("click", () => {
-    void page.togglePinCommitment(node.id);
-  });
+  box.onclick = (ev) => {
+    const pinBtn = ev.target.closest?.("#inspector-pin-btn");
+    if (pinBtn) {
+      void page.togglePinCommitment(node.id);
+      return;
+    }
+    const shiftBtn = ev.target.closest?.("[data-quick-shift]");
+    if (shiftBtn) {
+      const targetIso = shiftBtn.getAttribute("data-quick-shift");
+      if (targetIso) void page.switchTargetAnchorDate(targetIso);
+    }
+  };
 }

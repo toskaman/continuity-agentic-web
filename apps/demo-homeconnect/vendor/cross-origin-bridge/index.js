@@ -781,6 +781,9 @@ export class CrossOriginBridgeClient {
     }
     for (const [, p] of this.pending.entries()) {
       clearTimeout(p.timer);
+      try {
+        p.reject(new Error("Cross-origin bridge destroyed."));
+      } catch {}
     }
     this.pending.clear();
     for (const [, info] of this.frames.entries()) {
@@ -789,6 +792,9 @@ export class CrossOriginBridgeClient {
       } catch {}
     }
     this.frames.clear();
+    if (typeof document !== "undefined") {
+      document.querySelector("#continuity-peer-bridges")?.replaceChildren();
+    }
     this.connected = false;
   }
 

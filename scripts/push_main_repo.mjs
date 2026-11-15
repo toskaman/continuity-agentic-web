@@ -17,7 +17,7 @@ run(
   [
     "commit",
     "-m",
-    "feat: peer instruction firewall & TOFU pinning, 1-click OpenRouter PKCE, NANDA Reach Poppy v1, 6-day horizon sweep, 6-tool Builder Kit & 76 automated tests",
+    "feat: zero-ceiling-leak hash-ladder budget proof, per-agent toolbox scoper, semantic ripple SVG graph, EN/FR NL compiler, N=120 benchmarks, 28 Chaos & 80 tests",
   ],
   { stdio: "inherit" },
 );

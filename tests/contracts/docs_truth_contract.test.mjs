@@ -24,31 +24,31 @@ test("Cycle 36 — README.md & DEVPOST_SUBMISSION.md counts, relative file links
     await readFile(path.join(ROOT, "apps", "continuity-web", "agent-manifest.json"), "utf8"),
   );
 
-  // 1. Verify exact package count (22)
+  // 1. Verify exact package count (24)
   const pkgDirs = (await readdir(path.join(ROOT, "packages"), { withFileTypes: true })).filter((d) =>
     d.isDirectory(),
   );
-  assert.equal(pkgDirs.length, 22);
-  assert.match(readme, /22 Reusable Open-Source Community Modules/);
-  assert.match(devpost, /22 zero-dependency ES modules/);
+  assert.equal(pkgDirs.length, 24);
+  assert.match(readme, /24 Reusable Open-Source Community Modules/);
+  assert.match(devpost, /24 zero-dependency ES modules/);
 
-  // 2. Verify exact Chaos Lab scenario count (24)
-  assert.equal(CHAOS_SCENARIOS.length, 24);
-  assert.match(readme, /24 Chaos Lab scenarios/);
-  assert.match(devpost, /24 failure scenarios/);
+  // 2. Verify exact Chaos Lab scenario count (28)
+  assert.equal(CHAOS_SCENARIOS.length, 28);
+  assert.match(readme, /28 Chaos Lab scenarios/);
+  assert.match(devpost, /28 failure scenarios/);
 
   // 3. Verify coordinator WebMCP / agentTools count (8) & test suite count claim
   assert.equal(manifest.actions.agentTools.length, 8);
-  assert.match(readme, /76 automated tests in 25 suites/);
-  assert.match(devpost, /76 automated tests in 25 suites/);
+  assert.match(readme, /80 automated tests in 25 suites/);
+  assert.match(devpost, /80 automated tests in 25 suites/);
 
   // 3b. Verify HTML UI pages stay synchronized with benchmark & module counts
   const coordHtml = await readFile(path.join(ROOT, "apps", "continuity-web", "index.html"), "utf8");
   const kitHtml = await readFile(path.join(ROOT, "apps", "continuity-web", "community-kit.html"), "utf8");
   assert.match(coordHtml, /WebMCP · 8 tools/);
-  assert.match(coordHtml, /90 benchmark runs/);
-  assert.match(coordHtml, /24 failure scenarios/);
-  assert.match(kitHtml, /six browser-local developer tools and 22 zero-dependency ES modules/);
+  assert.match(coordHtml, /120 benchmark runs/);
+  assert.match(coordHtml, /28 failure scenarios/);
+  assert.match(kitHtml, /six browser-local developer tools and 24 zero-dependency ES modules/);
 
   // 4. Verify every relative local path linked in README.md exists on disk
   const linkMatches = [...readme.matchAll(/\]\((?!https?:\/\/|mailto:|#)([^)#?]+)(?:[?#][^)]*)?\)/g)];

@@ -208,3 +208,109 @@ test("S8 Oversized HTTP request body (> 64 KB) is rejected without server crash"
     await eco.stopAll();
   }
 });
+
+test("S9 Sub-agent toolbox scoper enforces manifest.actions.agentTools ceiling, saves prompt chars, and isolates remote peers", async () => {
+  const { compileScopedToolboxNetwork } = await import("../../packages/toolbox-scoper/index.js");
+  const manifestJson = {
+    actions: {
+      agentTools: ["get_mission_state", "analyze_and_prepare_change", "commit_prepared_change_package"],
+    },
+  };
+  const actionDefinitions = [
+    { name: "get_mission_state", description: "Read state".repeat(15), inputSchema: { type: "object" } },
+    { name: "analyze_and_prepare_change", description: "Analyze".repeat(20), inputSchema: { type: "object" } },
+    { name: "commit_prepared_change_package", description: "Commit".repeat(20), inputSchema: { type: "object" } },
+  ];
+  const scopedNet = {
+    tools: [
+      { name: "front_router", tools: ["reader_agent", "planner_agent"] },
+      { name: "reader_agent", tools: ["website_get_mission_state"] },
+      { name: "planner_agent", tools: ["website_analyze_and_prepare_change"] },
+      { name: "website_get_mission_state", toolbox: "get_mission_state" },
+      { name: "website_analyze_and_prepare_change", toolbox: "analyze_and_prepare_change" },
+    ],
+  };
+
+  const res = compileScopedToolboxNetwork({
+    networkJson: scopedNet,
+    manifestJson,
+    actionDefinitions,
+    isTopSite: true,
+  });
+  assert.equal(res.ok, true);
+  assert.deepEqual(res.exposedToolsByAgent.front_router, []);
+  assert.deepEqual(res.exposedToolsByAgent.reader_agent, ["website_get_mission_state"]);
+  assert.equal(res.agentsWithWebsiteNote.includes("front_router"), false);
+  assert.ok(res.metrics.savedCharsPerTurn > 500);
+
+  const remoteRes = compileScopedToolboxNetwork({
+    networkJson: scopedNet,
+    manifestJson,
+    actionDefinitions,
+    isTopSite: false,
+  });
+  assert.deepEqual(remoteRes.exposedToolsByAgent.reader_agent, []);
+});
+
+test("S10 Blinded SHA-256 Hash-Ladder Range Attestation proves spend <= private ceiling without leaking ceiling and blocks overspend", async () => {
+  const {
+    createBlindedBudgetCommitment,
+    proveSpendWithinBlindedCeiling,
+    verifyBlindedBudgetAttestation,
+  } = await import("../../packages/zk-budget-attestation/index.js");
+
+  const { publicCommitment, privateOpening } = await createBlindedBudgetCommitment({
+    ceilingEur: 700,
+    missionId: "move_paris_lyon_001",
+  });
+  assert.equal(JSON.stringify(publicCommitment).includes("700"), false);
+
+  const prf = await proveSpendWithinBlindedCeiling({
+    publicCommitment,
+    privateOpening,
+    spentEur: 659,
+  });
+  assert.equal(prf.ok, true);
+  assert.equal(JSON.stringify(prf.attestation).includes("700"), false);
+
+  const ver = await verifyBlindedBudgetAttestation(prf.attestation);
+  assert.equal(ver.valid, true);
+  assert.equal(ver.ceilingRemainsHidden, true);
+
+  const tampered = await verifyBlindedBudgetAttestation({
+    ...prf.attestation,
+    publicSpentUnitsEur: 701,
+  });
+  assert.equal(tampered.valid, false);
+});
+
+test("S11 Multilingual EN/FR + word-number natural-language compiler parses spontaneous expressions while locking hard invariants", async () => {
+  const mission = createSignatureMoveMission();
+  const fr = compileMissionChange(
+    "Décale mon déménagement à vendredi sous 685 euros, le moins cher possible.",
+    mission,
+  );
+  assert.equal(fr.proposal.requested_change.new_value, "2026-11-20");
+  assert.equal(fr.proposal.invariants.maximum_budget_eur, 685);
+  assert.equal(fr.proposal.preferences.priority_mode, "lowest_cost");
+
+  const rel = compileMissionChange("Move everything four days later under €690.", mission);
+  assert.equal(rel.proposal.requested_change.new_value, "2026-11-21");
+  assert.equal(rel.proposal.invariants.maximum_budget_eur, 690);
+});
+
+test("S12 Coordinator awaits pending _peerProbePromise before choosing transport and reports 8 WebMCP tools", async () => {
+  const { ContinuityCoordinatorPage } = await import("../../apps/continuity-web/script.js");
+  const page = new ContinuityCoordinatorPage();
+  assert.equal(page.getState().webMcpToolsExposed, 8);
+
+  let resolvedProbe = false;
+  page._peerProbePromise = new Promise((r) =>
+    setTimeout(() => {
+      resolvedProbe = true;
+      r(false);
+    }, 20),
+  );
+  await page.ensureProviderClients();
+  assert.equal(resolvedProbe, true);
+});

@@ -19,7 +19,13 @@ import { MissionGraph } from "../packages/mission-graph/index.js";
 import { analyzeMissionImpact } from "../packages/impact-engine/index.js";
 import { normalizePeerOffer } from "../packages/capability-adapter/index.js";
 import { solveMinimalChangePlans } from "../packages/constraint-solver/index.js";
-import { buildScenarioPeerHarness, createScenarioMission } from "../packages/intake-compiler/index.js";
+import {
+  buildScenarioPeerHarness,
+  compileUnstructuredIntake,
+  createScenarioMission,
+  SAMPLE_HYBRID_ICS_CALENDAR,
+} from "../packages/intake-compiler/index.js";
+import { buildHybridTransitionPlaybook } from "../packages/transition-playbook/index.js";
 import { ReceiptVerifier } from "../packages/proof-verifier/index.js";
 import { SagaCoordinator } from "../packages/saga-engine/index.js";
 import { startAllEcosystemServers } from "./serve_ecosystem.mjs";
@@ -380,12 +386,87 @@ async function runMultiDomainScenarioTrial(scenarioId, requestText) {
   };
 }
 
+async function runHybridColdStartIcsTrial() {
+  const tStart = performance.now();
+  const compiled = compileUnstructuredIntake(SAMPLE_HYBRID_ICS_CALENDAR);
+  const mission = compiled.mission;
+  const graph = MissionGraph.fromMission(mission);
+  const tCompile0 = performance.now();
+  const { proposal } = compileMissionChange(compiled.suggestedPrompt, mission);
+  const compileMs = performance.now() - tCompile0;
+
+  const tImpact0 = performance.now();
+  const impact = analyzeMissionImpact(graph, proposal);
+  const impactMs = performance.now() - tImpact0;
+
+  const harness = await buildScenarioPeerHarness(mission);
+  const tQuote0 = performance.now();
+  const offers = [];
+  for (const contact of impact.providersToContact) {
+    const node = graph.nodes.get(contact.commitmentId);
+    for (const o of harness.buildOffersForNode(node, proposal.requested_change.new_value, graph)) {
+      offers.push(o);
+    }
+  }
+  const quoteLatencyMs = performance.now() - tQuote0;
+
+  const tSolve0 = performance.now();
+  const solved = solveMinimalChangePlans({ graph, proposal, impact, normalizedOffers: offers });
+  const solveMs = performance.now() - tSolve0;
+
+  const saga = new SagaCoordinator({ graph, receiptVerifier: harness.verifier });
+  const chosenPlan = solved.plans[0];
+  const prep = await saga.preparePlan({
+    missionId: mission.mission_id,
+    plan: chosenPlan,
+    maximumBudgetEur: proposal.invariants.maximum_budget_eur,
+    providerClients: harness.clients,
+  });
+  const playbook = buildHybridTransitionPlaybook({
+    mission,
+    plan: chosenPlan,
+    preparedOps: prep.operations,
+  });
+  const approvals = await saga.approvePreparedOperations(prep.operations.map((o) => o.operation_id));
+  const exec = await saga.executeApprovedSaga({
+    approvedItems: approvals.map((a) => ({ operationId: a.operation_id, approvalId: a.approval_id })),
+    providerClients: harness.clients,
+  });
+
+  const totalEndToEndMs = performance.now() - tStart;
+  const baselineTotalEur = mission.commitments.reduce((sum, c) => sum + Number(c.price_eur || 0), 0);
+  return {
+    scenarioId: "hybrid_cold_start_ics",
+    compileMs,
+    impactMs,
+    quoteLatencyMs,
+    solveMs,
+    totalEndToEndMs,
+    httpRequests: playbook.agenticStepsCount * 3,
+    providersContacted: impact.metrics.providersContactedCount,
+    unnecessaryProvidersAvoided: impact.metrics.unnecessaryOperationsAvoided,
+    changedCommitments: chosenPlan.metrics.changedCount,
+    preservedCommitments: chosenPlan.metrics.unchangedCount,
+    totalCostEur: chosenPlan.metrics.totalMissionCostEur,
+    committedVerifiedCount: exec.committedOperationIds.length,
+    verifiedReceipts: (exec.operations || []).filter(
+      (o) => o.state === "COMMITTED" && o.proof_verification?.level === "VERIFIED_ED25519_DEMO_PROVIDER_SIGNATURE",
+    ).length,
+    agenticStepsCount: playbook.agenticStepsCount,
+    legacyDraftsCount: playbook.legacyStepsCount,
+    cancelToolCalls: 0,
+    baselineTotalEur,
+    sagaStatus: exec.status,
+  };
+}
+
 try {
   const uncoordinatedProbe = await measureUncoordinatedSequentialFailure();
   const normalRuns = [];
   const rippleRuns = [];
   const surgeryRuns = [];
   const expoRuns = [];
+  const hybridIcsRuns = [];
 
   for (let i = 0; i < WARMUP; i++) {
     await runSingleLiveTrial(false);
@@ -395,7 +476,7 @@ try {
     normalRuns.push(await runSingleLiveTrial(false));
     rippleRuns.push(await runSingleLiveTrial(true));
   }
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 20; i++) {
     surgeryRuns.push(
       await runMultiDomainScenarioTrial(
         "outpatient_surgery",
@@ -408,9 +489,11 @@ try {
         "Move expo freight arrival from Tuesday to Friday under €2600.",
       ),
     );
+    hybridIcsRuns.push(await runHybridColdStartIcsTrial());
   }
 
-  const totalMeasuredSagas = normalRuns.length + rippleRuns.length + surgeryRuns.length + expoRuns.length;
+  const totalMeasuredSagas =
+    normalRuns.length + rippleRuns.length + surgeryRuns.length + expoRuns.length + hybridIcsRuns.length;
 
   const benchmarkData = {
     measuredAtIso: new Date().toISOString(),
@@ -434,6 +517,7 @@ try {
     continuityMeasuredRippleRecoveryScenario: summarize(rippleRuns),
     continuityMeasuredOutpatientSurgeryScenario: summarize(surgeryRuns),
     continuityMeasuredExpoFreightScenario: summarize(expoRuns),
+    continuityMeasuredHybridIcsScenario: summarize(hybridIcsRuns),
   };
 
   const jsonPath = path.join(ROOT, "docs", "benchmarks", "benchmark_results.json");
@@ -443,12 +527,13 @@ try {
   const r = benchmarkData.continuityMeasuredRippleRecoveryScenario;
   const sg = benchmarkData.continuityMeasuredOutpatientSurgeryScenario;
   const ex = benchmarkData.continuityMeasuredExpoFreightScenario;
+  const hy = benchmarkData.continuityMeasuredHybridIcsScenario;
 
   const md = `# Reproducible Benchmarks — Before vs. After CONTINUITY
 
 **Date measured:** ${benchmarkData.measuredAtIso}
 **Hardware / runtime:** Node.js \`${benchmarkData.environment.nodeVersion}\` on \`${benchmarkData.environment.platform}\` (${benchmarkData.environment.cpuModel.trim()}, ${benchmarkData.environment.cpuCores} logical cores)
-**Sample size:** \`N = ${totalMeasuredSagas}\` measured end-to-end sagas (\`30\` Normal Relocation + \`30\` Ripple Failure Recovery over 5 live HTTP origins, plus \`15\` Outpatient Surgery + \`15\` International Expo Freight multi-domain runs, after \`${WARMUP}\` excluded JIT warm-up runs).
+**Sample size:** \`N = ${totalMeasuredSagas}\` measured end-to-end sagas (\`30\` Normal Relocation + \`30\` Ripple Failure Recovery over 5 live HTTP origins, plus \`20\` Outpatient Surgery + \`20\` International Expo Freight + \`20\` Hybrid Cold-Start \`.ics\` Agentic+Legacy runs, after \`${WARMUP}\` excluded JIT warm-up runs).
 **Raw data:** [\`docs/benchmarks/benchmark_results.json\`](./benchmark_results.json) · **Reproduce:** \`node scripts/run_benchmarks.mjs\`
 
 Every number in sections 1, 2, and 3 is computed by the script in this run, except the action-count row explicitly labeled **Estimate (task model)**.
@@ -487,12 +572,13 @@ ${[
 
 ---
 
-## 3. Multi-domain generality (\`N = 15\` sagas per domain)
+## 3. Multi-domain & Cold-Start Hybrid \`.ics\` generality (\`N = 20\` sagas per domain)
 
 | Scenario | Commitments | Changed / Preserved | Baseline → Committed Total | Verified Ed25519 Receipts | Median Full Saga (ms) | Completion |
 | --- | --- | --- | --- | --- | --- | --- |
 | **Outpatient Surgery & Care** (\`outpatient_surgery\`) | 5 | **${sg.changedCommitments} changed · ${sg.preservedCommitments} kept** | €${sg.baselineTotalEur.toFixed(2)} → **€${sg.totalCostEur.toFixed(2)}** | **${sg.verifiedReceiptsPerRun} / ${sg.committedPerRun}** | ${sg.totalEndToEndMs.median} ms | **${sg.allSucceededRatePct}%** |
 | **International Expo Freight** (\`product_launch_expo\`) | 6 | **${ex.changedCommitments} changed · ${ex.preservedCommitments} kept** | €${ex.baselineTotalEur.toFixed(2)} → **€${ex.totalCostEur.toFixed(2)}** | **${ex.verifiedReceiptsPerRun} / ${ex.committedPerRun}** | ${ex.totalEndToEndMs.median} ms | **${ex.allSucceededRatePct}%** |
+| **Hybrid Cold-Start \`.ics\` (2 Agentic + 1 Legacy + 1 Storage)** | 4 | **${hy.changedCommitments} changed · ${hy.preservedCommitments} kept** | €${hy.baselineTotalEur.toFixed(2)} → **€${hy.totalCostEur.toFixed(2)}** | **${hy.verifiedReceiptsPerRun} / ${hy.committedPerRun}** (+ 1 Hold-First \`mailto:\` draft) | ${hy.totalEndToEndMs.median} ms | **${hy.allSucceededRatePct}%** |
 
 Means are kept in \`benchmark_results.json\` for completeness; medians and p95 are reported here because single garbage-collection pauses dominate means at sub-millisecond scale.
 

@@ -86,7 +86,10 @@ export function renderMandateTableView(page) {
   }
 
   if (page.activeMandate) {
-    summary.innerHTML = `<strong>Issued Immutable Policy Mandate:</strong> <code>${page.escapeXml(page.activeMandate.mandate_id)}</code> · Ceiling: <strong>€${(page.activeMandate.ceiling_cents / 100).toFixed(2)}</strong> (withheld from all peer requests) · Digest: <code>sha256:${page.escapeXml(page.activeMandate.mandate_sha256.slice(0, 20))}…</code> · Mechanism: <code>${ARBITER_MECHANISM_VERSION}</code>`;
+    const zkBadge = page.zkBudgetVerification?.valid
+      ? ` · <strong>Zero-Ceiling-Leak Ladder Proof:</strong> <code>VERIFIED (H^S == ${page.escapeXml(page.zkBudgetVerification.recomputedAnchorSha256.slice(0, 12))}…)</code>`
+      : "";
+    summary.innerHTML = `<strong>Issued Immutable Policy Mandate:</strong> <code>${page.escapeXml(page.activeMandate.mandate_id)}</code> · Ceiling: <strong>€${(page.activeMandate.ceiling_cents / 100).toFixed(2)}</strong> (withheld from all peer requests) · Digest: <code>sha256:${page.escapeXml(page.activeMandate.mandate_sha256.slice(0, 20))}…</code> · Mechanism: <code>${ARBITER_MECHANISM_VERSION}</code>${zkBadge}`;
   }
 
   const rows = [];

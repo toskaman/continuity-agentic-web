@@ -1,0 +1,11 @@
+{
+  "name": "@continuity/toolbox-scoper",
+  "version": "1.0.0",
+  "description": "Least-privilege per-agent website_* toolbox compiler & prompt-token optimizer for multi-agent Open Agentic Web HOCON networks (implements cognizant-ai-labs/agentic-web Issue #28 & #21)",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  }
+}

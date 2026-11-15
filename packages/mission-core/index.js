@@ -304,13 +304,54 @@ export function compileMissionChange(input, mission) {
   }
 
   // Case 2: Natural-language request compilation
-  const rawText = String(input || "").trim();
-  if (!rawText) {
+  const rawOriginal = String(input || "").trim();
+  if (!rawOriginal) {
     throw new Error("Change request cannot be empty.");
   }
-  if (rawText.length > 4000) {
+  if (rawOriginal.length > 4000) {
     throw new Error("Change request exceeds maximum length of 4,000 characters.");
   }
+
+  // Normalize common French & word-number date/budget phrases into canonical English equivalents
+  const WORD_NUMS = {
+    one: "1", un: "1", une: "1",
+    two: "2", deux: "2",
+    three: "3", trois: "3",
+    four: "4", quatre: "4",
+    five: "5", cinq: "5",
+    six: "6",
+    seven: "7", sept: "7",
+    eight: "8", huit: "8",
+    nine: "9", neuf: "9",
+    ten: "10", dix: "10",
+  };
+  const rawText = rawOriginal
+    .replace(/\b(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\b/gi, (m) => ({
+      lundi: "Monday",
+      mardi: "Tuesday",
+      mercredi: "Wednesday",
+      jeudi: "Thursday",
+      vendredi: "Friday",
+      samedi: "Saturday",
+      dimanche: "Sunday",
+    })[m.toLowerCase()] || m)
+    .replace(/\b(janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[ûu]t|septembre|octobre|novembre|d[ée]cembre)\b/gi, (m) => {
+      const k = m.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return ({
+        janvier: "January", fevrier: "February", mars: "March", avril: "April",
+        mai: "May", juin: "June", juillet: "July", aout: "August",
+        septembre: "September", octobre: "October", novembre: "November", decembre: "December",
+      })[k] || m;
+    })
+    .replace(/\b(?:apr[èe]s[- ]demain|day\s+after\s+tomorrow)\b/gi, "+2 days")
+    .replace(/\b(?:demain|tomorrow)\b/gi, "+1 day")
+    .replace(/\b(?:une\s+semaine\s+plus\s+tard|a\s+week\s+later|\+1\s*week)\b/gi, "+7 days")
+    .replace(/\b(?:à|a|pour|jusqu'à|jusqu'a|vers)\s+(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/gi, "to $1")
+    .replace(/\b(?:dans|in)\s+(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|un|deux|trois|quatre|cinq|sept|huit|neuf|dix)\s+(?:jours?|days?)\b/gi, (_m, n) => `+${WORD_NUMS[n.toLowerCase()] || n} days`)
+    .replace(/\b(one|two|three|four|five|six|seven|eight|nine|ten|un|deux|trois|quatre|cinq|sept|huit|neuf|dix)\s+(?:jours?|days?)\s+(?:later|plus\s+tard)\b/gi, (_m, n) => `${WORD_NUMS[n.toLowerCase()] || n} days later`)
+    .replace(/\b(?:sous|moins\s+de|plafond(?:\s+de)?)\s*(\d{2,5}(?:\.\d{1,2})?)\s*(?:€|euros?|eur)?/gi, "below €$1")
+    .replace(/\b(?:le\s+moins\s+cher|[ée]conomique)\b/gi, "lowest cost")
+    .replace(/\b(?:au\s+plus\s+vite|le\s+plus\s+rapide)\b/gi, "fastest");
 
   // Detect prompt injection patterns trying to override budget or auto-cancel
   if (/ignore\s+(all\s+)?previous\s+(instructions|constraints)|bypass\s+approval|auto[- ]?cancel\s+without\s+asking/i.test(rawText)) {

@@ -355,6 +355,10 @@
 .horizon-pill.active { border-color: #34d399; background: rgba(16, 185, 129, 0.22); color: #ecfdf5; font-weight: 700; }
 .horizon-pill.best-day:not(.active) { border-color: #fbbf24; }
 .horizon-pill:disabled { opacity: 0.45; cursor: not-allowed; }
+@keyframes rippleDash { to { stroke-dashoffset: -20; } }
+@media (prefers-reduced-motion: no-preference) {
+  .edge-ripple-path { animation: rippleDash 1.1s linear infinite; }
+}
 
 /* Completion panel (after a commit) */
 .outcome-panel {
