@@ -23,8 +23,11 @@ Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agentic
 ## Live Public HTTPS Deployments (Verified Cross-Origin Ecosystem)
 
 - **Primary Coordinator (`CONTINUITY`):** `https://toskaman.github.io/continuity-agentic-web/`
+  - **Community Builder Kit (5 Zero-Backend Tools):** `https://toskaman.github.io/continuity-agentic-web/community-kit.html`
   - Public Manifest: `https://toskaman.github.io/continuity-agentic-web/agent-manifest.json`
   - Public Network JSON: `https://toskaman.github.io/continuity-agentic-web/continuity_coordinator.network.json`
+  - Public Single-Turn Facts Network: `https://toskaman.github.io/continuity-agentic-web/facts/continuity_coordinator_facts.network.json`
+  - Public NANDA AI Catalog: `https://toskaman.github.io/continuity-agentic-web/.well-known/ai-catalog.json`
   - Public A2A v1.0 Agent Card: `https://toskaman.github.io/continuity-agentic-web/.well-known/agent-card.json`
 - **4 Independent Peer Websites (Distinct Origin `https://gpaschercher-sudo.github.io`):**
   - **Peer A — MoveCo Express:** `https://gpaschercher-sudo.github.io/moveco-agentic-peer/` (`moveco_dispatch`)
@@ -41,9 +44,9 @@ When a real-world commitment changes (such as shifting a home relocation, an out
 1. **Compiles Any Schedule (`.ics` Calendar, Raw Confirmation Emails, or Plain English)** via `@continuity/intake-compiler` and `@continuity/mission-core`, inferring typed semantic dependency edges while locking hard invariants (`maximum_budget_eur`, `preserve_existing_commitments = true`, `unauthorized_cancellation = false`).
 2. **Analyzes Bounded Impact** over a typed dependency DAG — excluding unaffected commitments (`CityVault Pod` and `NordicLoom Saturday Delivery` receive zero unnecessary calls).
 3. **Executes Across a Zero-Server Cross-Origin Browser Mesh (`@continuity/cross-origin-bridge`) + Dual WebMCP (`@continuity/webmcp-adapter`)** — connecting `toskaman.github.io` and `gpaschercher-sudo.github.io` in the visitor's browser via origin-verified `postMessage` capability bridges, WebCrypto Ed25519 signing, Cognizant Neuro SAN HOCON networks, W3C `navigator.modelContext` WebMCP tools, consent cards, and Hosted **Mozilla Otari** BYOK inference (`https://api.otari.ai/api/v1`).
-4. **Solves Pareto-Optimal Minimal-Change Plans & Counterfactual Budgets** (`Plan A — Minimum Changes`, `Plan B — Lowest Cost`, `Plan C — Fastest Alignment` + interactive What-If budget threshold sweep), recovering automatically from injected ripple failures (e.g., MoveCo's primary Friday crew full).
-5. **Prepares First, Commits Last, and Exports Verifiable Artifacts** — placing reversible slot holds while keeping original bookings active, binding approvals with canonical SHA-256 digests (`€0.01` drift invalidates approval), reconciling `UNKNOWN` timeouts, verifying **Ed25519 provider receipts**, syncing top-level peer tabs via signed `#continuity_receipt` handoff tokens, and exporting updated **RFC 5545 `.ics` calendars** + **Signed Cryptographic Audit Bundles (`.json`)**.
-6. **Audits Any Open Agentic Website Live** — built-in **MVP Profile 0.2 & Project NANDA / A2A v1.0 Conformance Verifier** (`auditOpenAgenticSite`).
+4. **Solves Pareto-Optimal Minimal-Change Plans & Counterfactual Relaxations** (`Plan A — Minimum Changes`, `Plan B — Lowest Cost`, `Plan C — Fastest Alignment` + NSGA-II crowding distances, interactive What-If budget sweep, and **1-click Minimal Unsatisfiable Core counterfactual relaxation** when constraints conflict), recovering automatically from injected ripple failures (e.g., MoveCo's primary Friday crew full).
+5. **Prepares First, Releases Safely, Commits Last, and Verifies Offline** — placing reversible slot holds (`Release holds (€0)` keeps originals intact at zero cost), binding approvals with canonical SHA-256 digests (`€0.01` drift invalidates approval), reconciling `UNKNOWN` timeouts, verifying **Ed25519 provider receipts**, syncing top-level peer tabs via signed `#continuity_receipt` handoff tokens, and exporting + verifying **RFC 5545 `.ics` calendars** & **Zero-Trust Cryptographic Audit Bundles (`.json`)**.
+6. **Publishes Single-Turn Public Facts (`facts/`) & Audits Any Open Agentic Website Live** — built-in **9-Point MVP Profile 0.2, Public Facts Network, & Project NANDA (`urn:air`, `ai-catalog.json`, `POST /resolve` `draft-raskar-02`, `agent-card.json`) Verifier** (`auditOpenAgenticSite` + `continuity-audit` CLI with `--json`, `--sarif`, and `--verify-bundle`), plus optional **Zero-Key On-Device AI (`@continuity/local-browser-router` — Chrome `LanguageModel` Gemini Nano & local Ollama)**.
 
 ---
 
@@ -72,10 +75,10 @@ node scripts/run_all_tests.mjs
 
 This single command executes:
 1. Official Cognizant `build_network.mjs --check` across all 5 websites (**0 errors, 0 warnings**).
-2. Official Cognizant `check_partner.mjs` across all 5 live origins (**CORS, manifests, networks, and `bridge/action-bridge.html` verified**).
-3. All **42 automated tests in 13 suites** (unit, Google ADK → HOCON converter & cycle/secret guards, mandate & Nash bargaining bypasses, SHA-256 hash-chained ledger tamper detection, multi-domain intake & `.ics` round-trip, cross-origin browser bridge & signed receipt handoffs, WebMCP guardrails, live 7-point MVP 0.2 + NANDA conformance auditor, provider MCP contracts, cross-origin runtime composition & key isolation, adversarial security boundaries, and all **15 Chaos Lab scenarios**).
+2. Official Cognizant `check_partner.mjs` across all **9 bidirectional cross-origin directions** (`CONTINUITY -> 4 Peers`, `All 4 Peers -> CONTINUITY`, and external open callability — **CORS, manifests, networks, and `bridge/action-bridge.html` verified**).
+3. All **66 automated tests in 23 suites** (unit, runtime multi-provider SSE parallel tool calls & EU/US Otari + Gemini `AQ.` routing, zero-key on-device `LanguageModel` & loopback Ollama router, visible `data-agent-facts` anti-injection & `facts/` partner checks, Project NANDA `urn:air` + AI Catalog + `POST /resolve` `draft-raskar-02`, NSGA-II Pareto + counterfactual relaxation, NL `Month Day` / `+N days` & JSON/`.ics` intake, zero-trust audit bundle verifier & `€0.01` tamper detection, `€0` pre-commit hold release, Google ADK → HOCON converter, mandate & Nash bargaining bypasses, SHA-256 hash-chained ledger, cross-origin browser bridge, peer zero-key replay, WebMCP guardrails, bidirectional `Engine` composition `I1–I3`, live 9-point MVP 0.2 + NANDA conformance auditor & SARIF CLI, production `--dry-run` bundle staging, docs-vs-code truth contract, provider MCP contracts, adversarial security boundaries, **real Headless Chromium CDP Desktop + `390x844` Mobile + `?demo=1` + Builder Kit E2E**, and all **20 Chaos Lab scenarios**).
 
-### 3. Reproduce Before/After Benchmarks (`N = 60` Live Cross-Origin Runs)
+### 3. Reproduce Before/After & Multi-Domain Benchmarks (`N = 90` Measured Sagas)
 
 ```bash
 node scripts/run_benchmarks.mjs
@@ -93,24 +96,26 @@ continuity/
 │   ├── demo-permitflow/       # Peer B: Public curbside bay notice check & demo dossier drafts
 │   ├── demo-homeconnect/      # Peer C: Fiber ONT technician scheduling & 10-min holds
 │   └── demo-powerflow/        # Peer D: Remote smart-meter electricity energization
-├── packages/                  # 17 Reusable Open-Source Community Modules (Apache-2.0)
+├── packages/                  # 19 Reusable Open-Source Community Modules (Apache-2.0)
 │   ├── shared-schemas/        # Canonical JSON (JCS), SHA-256 Web Crypto, strict JSON Schema
 │   ├── mission-core/          # Mission compiler & hard-invariant guard
-│   ├── intake-compiler/       # Raw confirmation email + RFC 5545 .ics compiler & .ics/Audit exporter
+│   ├── intake-compiler/       # Email + RFC 5545 .ics compiler & zero-trust Audit Bundle verifier
 │   ├── adk-hocon-converter/   # Google ADK / OpenAI Agents -> Portable Neuro SAN HOCON converter
+│   ├── local-browser-router/  # Zero-key Chrome LanguageModel (Gemini Nano) & loopback Ollama router
+│   ├── facts-publisher/       # Visible data-agent-facts extractor & 1-turn facts/<network>_facts builder
 │   ├── mission-graph/         # Open Mission Graph with 3-color DFS cycle rejection & DAG layout
 │   ├── impact-engine/         # Bounded incremental dependency impact analyzer
 │   ├── capability-adapter/    # Peer semantic normalization & untrusted response validation
-│   ├── constraint-solver/     # Pareto-optimal Minimal-Change Optimizer & budget sensitivity sweep
+│   ├── constraint-solver/     # Pareto optimizer, NSGA-II crowding & counterfactual MUS relaxation
 │   ├── mandate-arbiter/       # Policy-bound SHA-256 mandates & sealed-bid integer-cent Nash arbiter
 │   ├── cross-origin-bridge/   # Zero-server cross-origin postMessage RPC & signed Ed25519 handoff
 │   ├── webmcp-adapter/        # Dual Cognizant website_* + W3C navigator.modelContext WebMCP bridge
 │   ├── approval-engine/       # Canonical SHA-256 bound approvals & TOCTOU replay guard
 │   ├── outcome-reconciliation/# 14-state SHA-256 hash-chained ledger & UNKNOWN timeout reconciler
-│   ├── saga-engine/           # Prepare-first, commit-last Saga coordinator
+│   ├── saga-engine/           # Prepare-first, €0 hold-release, commit-last Saga coordinator
 │   ├── proof-verifier/        # Ed25519 receipt verification & explicit trust classification
-│   ├── nanda-resolver/        # Project NANDA verifier, A2A v1.0 validator & live MVP 0.2 site auditor
-│   └── chaos-lab/             # 15 deterministic failure-injection scenarios
+│   ├── nanda-resolver/        # Project NANDA AI Catalog, POST /resolve, A2A & 9-point CLI/SARIF auditor
+│   └── chaos-lab/             # 20 deterministic failure-injection scenarios
 ├── providers/                 # Standalone CORS + MCP (2025-06-18) servers for each peer
 ├── skills/agentify-website/   # Official Cognizant runtime & compliance validators
 ├── design-system/             # Shared tokens, components, per-site themes (built by scripts/write_peer_styles.mjs)
@@ -140,7 +145,7 @@ When deploying any `apps/*` bundle to a public HTTPS host (Netlify, Cloudflare P
 - [Initial Reconnaissance & Spec Analysis](docs/architecture/INITIAL_RECONNAISSANCE.md)
 - [Competitive Landscape Analysis](docs/research/COMPETITIVE_ANALYSIS.md)
 - [Threat Model, Security & Privacy](docs/security/THREAT_MODEL.md)
-- [Chaos Lab Catalog (15 Scenarios)](docs/CHAOS_TEST_CATALOG.md)
+- [Chaos Lab Catalog (20 Scenarios)](docs/CHAOS_TEST_CATALOG.md)
 - [Measured Before/After Benchmarks](docs/benchmarks/BEFORE_AFTER.md)
 - [Live-Model Check (real Otari model, nothing mocked)](docs/benchmarks/LIVE_MODEL_CHECK.md)
 - [Chromium Performance Trace & V8 Heap Audit](docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md)

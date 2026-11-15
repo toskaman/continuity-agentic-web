@@ -49,7 +49,7 @@
         <div class="reveal">
           <span class="eyebrow">HomeConnect · 2 Gbps symmetric fiber</span>
           <h1>Your connection <em>starts here.</em></h1>
-          <p class="lead">Get your fiber installation scheduled, effortlessly. Hold a technician window for ten minutes, then confirm — rescheduling is free.</p>
+          <p class="lead" data-agent-facts="service_overview">Get your fiber installation scheduled, effortlessly. Hold a technician window for ten minutes, then confirm — rescheduling is free.</p>
           <div class="btn-row">
             <a href="#availability" class="btn btn-primary btn-lg">Pick an installation window <span class="arrow" aria-hidden="true">→</span></a>
             <a href="#assistant" class="btn btn-lg">Ask the assistant</a>
@@ -91,7 +91,7 @@
           <div class="card-head">
             <div>
               <h2 id="win-heading">Available technician windows</h2>
-              <p class="card-sub">Arrival windows for the optical splice and ONT activation. Rescheduling is free.</p>
+              <p class="card-sub" data-agent-facts="windows_and_fees">Arrival windows for the optical splice and ONT activation. Rescheduling is free.</p>
             </div>
             <span class="badge badge-info">10-min hold</span>
           </div>
@@ -154,6 +154,8 @@
             <a href="./agent-manifest.json" target="_blank" rel="noopener">agent-manifest.json</a>
             <a href="./homeconnect_scheduler.network.json" target="_blank" rel="noopener">homeconnect_scheduler.network.json</a>
             <a href="./.well-known/agent-card.json" target="_blank" rel="noopener">agent-card.json</a>
+            <a href="./.well-known/ai-catalog.json" target="_blank" rel="noopener">ai-catalog.json</a>
+            <a href="./facts/agent-manifest.json" target="_blank" rel="noopener">facts/</a>
           </div>
         </section>
       </div>
@@ -166,9 +168,17 @@
             <div>
               <span class="eyebrow">HomeConnect assistant</span>
               <h2 id="assistant-heading">Ask HomeConnect Fiber</h2>
-              <p class="sub-copy">Check technician windows, hold one, or move appointment HC-5510 — using your own AI provider key.</p>
+              <p class="sub-copy">Check technician windows, hold one, move appointment HC-5510, or consult CONTINUITY — with your own key or zero-key replay.</p>
             </div>
-            <span class="mono-tag">homeconnect_scheduler</span>
+            <div class="peer-assistant-actions">
+              <span class="mono-tag">homeconnect_scheduler</span>
+              <button id="peer-zero-key-btn" type="button" class="btn btn-primary btn-sm">Try without a key</button>
+            </div>
+          </div>
+          <div class="peer-prompts-row" role="group" aria-label="Suggested prompts">
+            <button type="button" class="peer-prompt-chip" data-prompt="What technician windows and fees are available to reschedule fiber appointment HC-5510?">Check windows &amp; €0 fee</button>
+            <button type="button" class="peer-prompt-chip" data-prompt="Hold the Friday 2026-11-20 technician window without changing my current appointment.">Hold Friday 10 min</button>
+            <button type="button" class="peer-prompt-chip" data-prompt="How do I coordinate my moving van, parking, and electricity alongside my fiber visit? Ask CONTINUITY.">Ask CONTINUITY (cross-origin)</button>
           </div>
           <p class="assistant-note">Your messages and this page's data go to the LLM provider you choose in the settings below. You confirm anything that cannot be undone before it happens.</p>
           <p id="assistant-status" role="status" class="status-line">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>

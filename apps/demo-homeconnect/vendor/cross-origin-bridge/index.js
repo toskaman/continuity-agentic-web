@@ -59,22 +59,45 @@ export function encodeSignedReceiptHandoff(signedEnvelope, keyMeta, peerOrigin) 
 
 /**
  * Verify a `#continuity_receipt=...` handoff token for `expectedProviderId`.
- * Rejects tampered payloads, mismatched provider IDs, or forged Ed25519 signatures.
+ * Rejects tampered payloads, mismatched provider IDs, invalid ISO dates, HTML/script strings,
+ * mismatched origins, or forged Ed25519 signatures.
  *
  * @param {string} expectedProviderId
  * @param {string} rawToken
+ * @param {object} [options]
+ * @param {string} [options.expectedOrigin]
+ * @param {{ keyId: string, publicJwk: JsonWebKey }} [options.pinnedKey]
  */
-export async function verifySignedReceiptHandoff(expectedProviderId, rawToken) {
+export async function verifySignedReceiptHandoff(expectedProviderId, rawToken, options = {}) {
   try {
     const parsed = decodeBase64UrlJson(rawToken);
     if (!parsed || parsed.v !== 1 || !parsed.publicJwk || !parsed.envelope) {
       return { valid: false, reason: "Malformed handoff token." };
     }
+    if (options.expectedOrigin && parsed.peerOrigin) {
+      const cleanExpected = String(options.expectedOrigin).replace(/\/+$/, "");
+      const cleanTokenOrigin = String(parsed.peerOrigin).replace(/\/+$/, "");
+      if (cleanExpected !== cleanTokenOrigin) {
+        return { valid: false, reason: `Handoff token origin "${cleanTokenOrigin}" does not match "${cleanExpected}".` };
+      }
+    }
+    const rb = parsed.envelope?.receipt_body;
+    if (!rb || !isValidIsoDate(rb.scheduled_date)) {
+      return { valid: false, reason: "Handoff receipt scheduled_date must be a valid YYYY-MM-DD calendar date." };
+    }
+    if (typeof rb.receipt_id !== "string" || !/^[A-Za-z0-9_.:-]{3,96}$/.test(rb.receipt_id)) {
+      return { valid: false, reason: "Invalid receipt_id format in handoff token." };
+    }
+    if (rb.booking_ref !== undefined && !/^[A-Za-z0-9_-]{2,48}$/.test(String(rb.booking_ref))) {
+      return { valid: false, reason: "Invalid booking_ref format in handoff token." };
+    }
+
+    const activeKey = options.pinnedKey || {
+      keyId: parsed.keyId,
+      publicJwk: parsed.publicJwk,
+    };
     const verifier = new ReceiptVerifier({
-      [expectedProviderId]: {
-        keyId: parsed.keyId,
-        publicJwk: parsed.publicJwk,
-      },
+      [expectedProviderId]: activeKey,
     });
     const check = await verifier.verifyReceipt(expectedProviderId, parsed.envelope);
     if (!check.valid) {
@@ -82,6 +105,7 @@ export async function verifySignedReceiptHandoff(expectedProviderId, rawToken) {
     }
     return {
       valid: true,
+      trustSource: options.pinnedKey ? "PINNED_PROVIDER_KEY" : "CROSS_PARTITION_HANDOFF_ENVELOPE",
       peerOrigin: parsed.peerOrigin,
       receiptBody: parsed.envelope.receipt_body,
       proof: parsed.envelope.proof,
@@ -535,14 +559,28 @@ export function mountPeerRpcBridgeServer({ providerId, allowedCallerOrigins = []
     ...allowedCallerOrigins,
   ]);
 
+  const isLoopbackHost = ["127.0.0.1", "localhost", "[::1]"].includes(window.location.hostname);
+  const isAllowedOrigin = (origin) => {
+    if (allowSet.has(origin)) return true;
+    if (isLoopbackHost && /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(String(origin || ""))) {
+      return true;
+    }
+    return false;
+  };
+
   const engine = createPeerBrowserDomainEngine(providerId);
   const channel =
     typeof BroadcastChannel === "function" ? new BroadcastChannel(`continuity-peer-${providerId}`) : null;
 
   const onMessage = async (event) => {
-    if (!allowSet.has(event.origin)) return;
+    if (!isAllowedOrigin(event.origin)) return;
     const msg = event.data;
     if (!msg || typeof msg !== "object" || msg.protocol !== BRIDGE_PROTOCOL || !msg.requestId) return;
+    try {
+      if (JSON.stringify(msg).length > 16_384) return;
+    } catch {
+      return;
+    }
 
     const reply = (payload) => {
       event.source?.postMessage(
@@ -735,6 +773,23 @@ export class CrossOriginBridgeClient {
       this.connected = false;
       return false;
     }
+  }
+
+  destroy() {
+    if (typeof window !== "undefined") {
+      window.removeEventListener("message", this._boundOnMessage);
+    }
+    for (const [, p] of this.pending.entries()) {
+      clearTimeout(p.timer);
+    }
+    this.pending.clear();
+    for (const [, info] of this.frames.entries()) {
+      try {
+        info.iframe.remove();
+      } catch {}
+    }
+    this.frames.clear();
+    this.connected = false;
   }
 
   async resetAll({ rippleFailureInjected = false } = {}) {

@@ -20,6 +20,7 @@ test("CONTINUITY site-actions register cleanly and run full analyze -> select ->
       "switch_or_import_mission",
       "analyze_and_prepare_change",
       "select_change_plan",
+      "release_prepared_holds",
       "commit_prepared_change_package",
       "audit_open_agentic_site",
     ],

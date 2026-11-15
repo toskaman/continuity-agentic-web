@@ -15,9 +15,10 @@ import { readFile, realpath } from "node:fs/promises";
 import { once } from "node:events";
 import http from "node:http";
 import path from "node:path";
-import { validateAgainstSchema } from "../../packages/shared-schemas/index.js";
+import { canonicalizeJson, sha256Hex, validateAgainstSchema } from "../../packages/shared-schemas/index.js";
 import { generateDemoProviderKeyPair, signProviderReceipt } from "../../packages/proof-verifier/index.js";
 import { encodeSignedReceiptHandoff } from "../../packages/cross-origin-bridge/index.js";
+import { handleFederatedResolutionRequest } from "../../packages/nanda-resolver/index.js";
 
 const WORKER_CSP = "default-src 'none'; script-src blob:; connect-src 'none'; worker-src 'none'";
 
@@ -57,11 +58,15 @@ export class IndependentProviderHost {
     this.publicFiles = new Set([
       "/agent-manifest.json",
       "/agent-card.json",
+      "/ai-catalog.json",
       "/links.json",
       "/agent-mcp.json",
+      "/facts/agent-manifest.json",
+      "/facts/links.json",
       "/.well-known/nsdeploy.json",
       "/.well-known/nsdeploy-agent.json",
       "/.well-known/agent-card.json",
+      "/.well-known/ai-catalog.json",
     ]);
   }
 
@@ -77,6 +82,9 @@ export class IndependentProviderHost {
         if (net.hocon) {
           const clean = "/" + String(net.hocon).replace(/^\.\//, "");
           this.publicFiles.add(clean);
+        }
+        if (net.name) {
+          this.publicFiles.add(`/facts/${net.name}_facts.network.json`);
         }
       }
     } catch {
@@ -108,10 +116,39 @@ export class IndependentProviderHost {
     });
     this.server.listen(this.config.port, this.config.host || "127.0.0.1");
     await once(this.server, "listening");
-    return this.server.address().port;
+    const boundPort = this.server.address().port;
+
+    // On Windows/macOS, `localhost` resolves to IPv6 `::1` before IPv4 `127.0.0.1`.
+    // When `openAs === "localhost"`, mirror the listener strictly onto IPv6 loopback `::1`
+    // (never `::` wildcard) so browsers hit zero TCP fallback latency while staying loopback-only.
+    this.ipv6Server = null;
+    if (this.config.openAs === "localhost") {
+      try {
+        const v6 = http.createServer((req, res) => {
+          this.handleRequest(req, res).catch((err) => {
+            res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+            res.end(JSON.stringify({ ok: false, error: err.message }));
+          });
+        });
+        v6.on("error", () => {});
+        v6.listen(boundPort, "::1");
+        await Promise.race([
+          once(v6, "listening"),
+          new Promise((r) => setTimeout(r, 80)),
+        ]);
+        if (v6.listening) this.ipv6Server = v6;
+      } catch {
+        this.ipv6Server = null;
+      }
+    }
+    return boundPort;
   }
 
   async stop() {
+    if (this.ipv6Server) {
+      await new Promise((resolve) => this.ipv6Server.close(resolve));
+      this.ipv6Server = null;
+    }
     if (!this.server) return;
     await new Promise((resolve) => this.server.close(resolve));
     this.server = null;
@@ -154,8 +191,8 @@ export class IndependentProviderHost {
     const url = new URL(req.url || "/", "http://127.0.0.1");
     const pathname = url.pathname;
 
-    // Handle CORS preflight on /mcp and /api/*
-    if (req.method === "OPTIONS" && (pathname === "/mcp" || pathname.startsWith("/api/"))) {
+    // Handle CORS preflight on /mcp, /resolve, and /api/*
+    if (req.method === "OPTIONS" && (pathname === "/mcp" || pathname === "/resolve" || pathname.startsWith("/api/"))) {
       res.writeHead(204, {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -164,6 +201,55 @@ export class IndependentProviderHost {
         "Access-Control-Max-Age": "600",
       });
       res.end();
+      return;
+    }
+
+    // 0. Experimental Federated Known-Subject Resolution Endpoint (`draft-raskar-02` §6 `POST /resolve`)
+    if (req.method === "POST" && pathname === "/resolve") {
+      const body = await this.readJsonBody(req);
+      const baseOrigin = this.origin();
+      const host = new URL(baseOrigin).hostname;
+      let bindings = [];
+      try {
+        const cardRaw = await readFile(path.join(this.root, "agent-card.json"), "utf8");
+        const cardJson = JSON.parse(cardRaw);
+        const manifestRaw = await readFile(path.join(this.root, "agent-manifest.json"), "utf8");
+        const manifestJson = JSON.parse(manifestRaw);
+        const netName = manifestJson?.networks?.[0]?.name || this.config.providerId;
+        const cardDigest = `sha256:${await sha256Hex(canonicalizeJson(cardJson))}`;
+        const nowMs = Date.now();
+        bindings = [
+          {
+            subject: `urn:air:${host}:agent:${netName}`,
+            subjectType: "urn",
+            method: "artifact",
+            targetType: "application/a2a-agent-card+json",
+            targetUrl: `${baseOrigin}/agent-card.json`,
+            targetDigest: cardDigest,
+            sequence: 1,
+            issuedAt: new Date(nowMs - 60_000).toISOString(),
+            expiresAt: new Date(nowMs + 86_400_000).toISOString(),
+            authority: {
+              type: "origin-self-published",
+              issuer: baseOrigin,
+              evidenceUrl: `${baseOrigin}/.well-known/ai-catalog.json`,
+              targetDigest: cardDigest,
+            },
+          },
+        ];
+      } catch {
+        bindings = [];
+      }
+      const outcome = handleFederatedResolutionRequest(body, {
+        registryId: baseOrigin,
+        bindings,
+      });
+      res.writeHead(outcome.httpStatus, {
+        "Content-Type": outcome.contentType,
+        "Cache-Control": "no-store",
+        "Access-Control-Allow-Origin": "*",
+      });
+      res.end(JSON.stringify(outcome.body));
       return;
     }
 

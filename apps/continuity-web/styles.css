@@ -815,6 +815,14 @@ body > dialog button { margin-right: 8px; }
 .plans-note { margin: 0 0 var(--s-4); font-size: var(--fs-sm); color: var(--ink-2); padding: 12px 16px; border-radius: var(--r-md); background: var(--info-bg); border: 1px solid var(--info-line); }
 .plans-note::before { content: "ℹ "; color: var(--info); font-weight: 700; }
 
+/* Counterfactual relaxation prescription & inline Ed25519 receipt inspection drawers */
+.rx-prescription { margin-top: 10px; padding: 12px 14px; border-radius: var(--r-md); background: var(--accent-soft); border: 1px solid var(--accent-line); display: grid; gap: 8px; justify-items: start; }
+.provider-alerts-banner { margin-top: 8px; color: var(--warn); font-weight: 600; }
+.receipt-drawer { margin-top: 8px; }
+.receipt-drawer > summary { cursor: pointer; font-weight: 650; font-size: var(--fs-xs); color: var(--accent-strong); }
+.receipt-pre { margin: 6px 0 0; padding: 10px; border-radius: var(--r-sm); background: var(--navy); color: #D5DEF0; overflow: auto; font-family: var(--mono); font-size: 0.74rem; max-height: 220px; }
+.inspector-head-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+
 /* Completion panel (after a commit) */
 .outcome-panel {
   position: fixed; right: 24px; bottom: 24px; z-index: 60; width: min(440px, calc(100vw - 32px));

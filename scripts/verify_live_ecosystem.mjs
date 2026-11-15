@@ -22,6 +22,10 @@ const checks = [
   { label: "PermitFlow as partner of CONTINUITY", args: [`${eco.peers.permitflow.origin()}/permitflow_advisor`, "--origin", callerOrigin] },
   { label: "HomeConnect as partner of CONTINUITY", args: [`${eco.peers.homeconnect.origin()}/homeconnect_scheduler`, "--origin", callerOrigin] },
   { label: "PowerFlow as partner of CONTINUITY", args: [`${eco.peers.powerflow.origin()}/powerflow_grid`, "--origin", callerOrigin] },
+  { label: "CONTINUITY as bidirectional partner of MoveCo", args: [`${callerOrigin}/continuity_coordinator`, "--origin", eco.peers.moveco.origin()] },
+  { label: "CONTINUITY as bidirectional partner of PermitFlow", args: [`${callerOrigin}/continuity_coordinator`, "--origin", eco.peers.permitflow.origin()] },
+  { label: "CONTINUITY as bidirectional partner of HomeConnect", args: [`${callerOrigin}/continuity_coordinator`, "--origin", eco.peers.homeconnect.origin()] },
+  { label: "CONTINUITY as bidirectional partner of PowerFlow", args: [`${callerOrigin}/continuity_coordinator`, "--origin", eco.peers.powerflow.origin()] },
   { label: "CONTINUITY callable by any external agentic site", args: [`${callerOrigin}/continuity_coordinator`] },
 ];
 

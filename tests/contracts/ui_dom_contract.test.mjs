@@ -20,7 +20,17 @@ test("every #id looked up by site scripts exists in that site's index.html", asy
   for (const app of APPS) {
     const html = await read(app, "index.html");
     const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
-    for (const file of ["script.js", "site.js", "ui.js", "peer-sync.js"]) {
+    for (const file of [
+      "script.js",
+      "site.js",
+      "ui.js",
+      "peer-sync.js",
+      "modules/fallback-offers.js",
+      "modules/change-package-view.js",
+      "modules/graph-svg-view.js",
+      "modules/pareto-svg-view.js",
+      "modules/trust-tables-view.js",
+    ]) {
       const src = await read(app, file);
       const wanted = [...src.matchAll(/(?:querySelector|querySelectorAll)\(\s*["'`]#([A-Za-z][\w-]*)["'`]\s*\)/g)].map((m) => m[1]);
       for (const id of wanted) {
@@ -28,6 +38,17 @@ test("every #id looked up by site scripts exists in that site's index.html", asy
         assert.ok(ids.has(id), `${app}/${file} looks up #${id}, missing from ${app}/index.html`);
       }
     }
+  }
+
+  // Also enforce UI <-> JS contract on the standalone Community Builder Kit page
+  const kitHtml = await read("continuity-web", "community-kit.html");
+  const kitIds = new Set([...kitHtml.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+  const kitJs = await read("continuity-web", "community-kit.js");
+  const kitWanted = [...kitJs.matchAll(/(?:querySelector|querySelectorAll)\(\s*["'`]#([A-Za-z][\w-]*)["'`]\s*\)/g)].map(
+    (m) => m[1],
+  );
+  for (const id of kitWanted) {
+    assert.ok(kitIds.has(id), `continuity-web/community-kit.js looks up #${id}, missing from community-kit.html`);
   }
 });
 

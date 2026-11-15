@@ -51,11 +51,13 @@ export function browserMockCompletion(messages = [], tools = []) {
 // Authorization.
 
 export class LlmClient {
-  constructor({ baseUrl, apiKey, trace, mock }) {
+  constructor({ baseUrl, apiKey, trace, mock, fetchImpl, retryDelaysMs }) {
     this.baseUrl = (baseUrl || "").replace(/\/$/, "");
     this.apiKey = apiKey || "";
     this.trace = trace;
     this.mock = !!mock;
+    this.fetchImpl = fetchImpl || globalThis.fetch.bind(globalThis);
+    this.retryDelaysMs = Array.isArray(retryDelaysMs) ? retryDelaysMs : [1500, 3500];
   }
 
   // messages: [{role, content, tool_calls?, tool_call_id?, name?}]
@@ -119,12 +121,34 @@ export class LlmClient {
       if (hostOf(this.baseUrl) === "api.anthropic.com") {
         headers["anthropic-dangerous-direct-browser-access"] = "true";
       }
-      const resp = await fetch(`${this.baseUrl}/chat/completions`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-        signal,
-      });
+      const RETRYABLE_STATUSES = new Set([429, 502, 503, 504]);
+      let resp = null;
+      for (let attempt = 0; attempt <= this.retryDelaysMs.length; attempt++) {
+        resp = await this.fetchImpl(`${this.baseUrl}/chat/completions`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(body),
+          signal,
+        });
+        if (resp.ok || !RETRYABLE_STATUSES.has(resp.status) || attempt === this.retryDelaysMs.length) {
+          break;
+        }
+        await resp.text().catch(() => "");
+        const delayMs = this.retryDelaysMs[attempt];
+        if (delayMs > 0) {
+          await new Promise((resolve, reject) => {
+            const timer = setTimeout(resolve, delayMs);
+            signal?.addEventListener(
+              "abort",
+              () => {
+                clearTimeout(timer);
+                reject(signal.reason || new DOMException("Aborted", "AbortError"));
+              },
+              { once: true },
+            );
+          });
+        }
+      }
       if (!resp.ok) {
         const txt = await resp.text().catch(() => "");
         throw new Error(`LLM HTTP ${resp.status}: ${txt.slice(0, 300)}`);
@@ -185,12 +209,32 @@ export class LlmClient {
         }
       }
       if (delta.tool_calls) {
+        const indexMap = handleChunk._indexMap || (handleChunk._indexMap = new Map());
         for (const tc of delta.tool_calls) {
-          const idx = tc.index ?? 0;
-          if (!toolCalls[idx]) toolCalls[idx] = { id: tc.id, type: "function", function: { name: "", arguments: "" } };
-          if (tc.id) toolCalls[idx].id = tc.id;
-          if (tc.function?.name) toolCalls[idx].function.name += tc.function.name;
-          if (tc.function?.arguments) toolCalls[idx].function.arguments += tc.function.arguments;
+          const streamIdx = tc.index ?? 0;
+          let slotIdx = indexMap.get(streamIdx);
+          // Gemini's OpenAI-compatible SSE stream emits parallel tool calls with the same
+          // `index: 0` but distinct non-empty `id` values. Start a fresh slot whenever a
+          // new non-empty `id` disagrees with the existing slot's `id`, while keeping
+          // OpenAI-style split argument chunks (omitted `id` or identical `id`) together.
+          if (
+            slotIdx === undefined
+            || (tc.id && toolCalls[slotIdx]?.id && toolCalls[slotIdx].id !== tc.id)
+          ) {
+            slotIdx = toolCalls.length;
+            toolCalls.push({ id: tc.id || `call_${slotIdx}`, type: "function", function: { name: "", arguments: "" } });
+            indexMap.set(streamIdx, slotIdx);
+          }
+          const target = toolCalls[slotIdx];
+          if (tc.id) target.id = tc.id;
+          if (tc.function?.name) target.function.name += tc.function.name;
+          if (tc.function?.arguments) target.function.arguments += tc.function.arguments;
+          if (tc.extra_content) {
+            target.extra_content = {
+              ...(target.extra_content || {}),
+              ...tc.extra_content,
+            };
+          }
         }
       }
       if (choice.finish_reason) finishReason = choice.finish_reason;

@@ -1,0 +1,43 @@
+{
+  "mediaType": "application/ai-catalog+json",
+  "version": "1.0",
+  "publisher": {
+    "identifier": "localhost",
+    "displayName": "PowerFlow Energy Assistant",
+    "identityType": "loopback-dev"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:localhost:agent:powerflow_grid",
+      "displayName": "PowerFlow Energy Assistant",
+      "description": "Check PowerFlow remote smart-meter grid energization schedules, rules, or confirm a date modification.",
+      "type": "application/a2a-agent-card+json",
+      "url": "http://localhost:8084/agent-card.json",
+      "targetDigest": "sha256:1c5a4ea45c279c5267ef72ebe469ec2681e1ce6fbe088e532db1abc379a06a14",
+      "tags": [
+        "open-agentic-web",
+        "a2a",
+        "powerflow"
+      ],
+      "publisher": {
+        "identifier": "localhost",
+        "displayName": "PowerFlow Energy Assistant",
+        "identityType": "dns-or-platform-subpath"
+      },
+      "extensions": {
+        "org.projectnanda": {
+          "resolutionRole": "direct-agent-card",
+          "preferredDiscovery": "agent-manifest-and-a2a",
+          "resolutionProfile": "known-subject-resolution-02"
+        },
+        "org.worldwideagenticweb": {
+          "mvpProfile": "0.2",
+          "manifestUrl": "http://localhost:8084/agent-manifest.json",
+          "networkUrl": "http://localhost:8084/powerflow_grid.network.json",
+          "factsManifestUrl": "http://localhost:8084/facts/agent-manifest.json",
+          "factsNetworkDigest": "sha256:a1074c7798b60e798f4c484e102c689a481f214b4de9d2cbf938ddc7c7648395"
+        }
+      }
+    }
+  ]
+}

@@ -120,17 +120,51 @@ await writeFile(indexHtmlPath, html, "utf8");
 
 const scriptJsPath = path.join(ROOT, "apps", "continuity-web", "script.js");
 let sjs = await readFile(scriptJsPath, "utf8");
-sjs = sjs.replace(
-  /this\.peerOrigins = \{[\s\S]*?\};/,
-  `this.peerOrigins = {\n      moveco: "${targets.moveco}",\n      permitflow: "${targets.permitflow}",\n      homeconnect: "${targets.homeconnect}",\n      powerflow: "${targets.powerflow}",\n    };`,
-);
-await writeFile(scriptJsPath, sjs, "utf8");
+if (opts.mode !== "local") {
+  sjs = sjs.replace(
+    /this\.peerOrigins = isHttpsHosted\s*\?\s*\{[\s\S]*?\}\s*:\s*\{/,
+    `this.peerOrigins = isHttpsHosted\n      ? {\n          moveco: "${targets.moveco}",\n          permitflow: "${targets.permitflow}",\n          homeconnect: "${targets.homeconnect}",\n          powerflow: "${targets.powerflow}",\n        }\n      : {`,
+  );
+  await writeFile(scriptJsPath, sjs, "utf8");
+}
 
 for (const peerDir of ["demo-moveco", "demo-permitflow", "demo-homeconnect", "demo-powerflow"]) {
   const pHtmlPath = path.join(ROOT, "apps", peerDir, "index.html");
   let pHtml = await readFile(pHtmlPath, "utf8");
   pHtml = pHtml.replace(/id="coordinator-link" href="[^"]+"/, `id="coordinator-link" href="${targets.continuity}/"`);
   await writeFile(pHtmlPath, pHtml, "utf8");
+}
+
+// Keep all 4 peers' bidirectional partner links to CONTINUITY in sync across local & HTTPS origins
+const contNetUrl = `${targets.continuity}/continuity_coordinator`;
+const peerHoconByDir = {
+  "demo-moveco": "moveco_dispatch.hocon",
+  "demo-permitflow": "permitflow_advisor.hocon",
+  "demo-homeconnect": "homeconnect_scheduler.hocon",
+  "demo-powerflow": "powerflow_grid.hocon",
+};
+for (const [peerDir, hoconName] of Object.entries(peerHoconByDir)) {
+  const pManPath = path.join(ROOT, "apps", peerDir, "agent-manifest.json");
+  const pMan = JSON.parse(await readFile(pManPath, "utf8"));
+  pMan.allowed_peers = [originOf(targets.continuity)];
+  await writeFile(pManPath, `${JSON.stringify(pMan, null, 2)}\n`, "utf8");
+
+  const pHoconPath = path.join(ROOT, "apps", peerDir, hoconName);
+  let pHocon = await readFile(pHoconPath, "utf8");
+  pHocon = pHocon
+    .replace(
+      /"link_labels":\s*\{[\s\S]*?\},/,
+      `"link_labels": {\n        "${contNetUrl}": "CONTINUITY Change Coordinator"\n    },`,
+    )
+    .replace(
+      /"tools":\s*\[\s*"http[^"]+"\s*\]/,
+      `"tools": [\n                "${contNetUrl}"\n            ]`,
+    )
+    .replace(
+      /ask [A-Za-z0-9_]+ what multi-provider change coordination/,
+      `ask ${safeToolName(contNetUrl)} what multi-provider change coordination`,
+    );
+  await writeFile(pHoconPath, pHocon, "utf8");
 }
 
 // 4. Rebuild & validate all 5 bundles + regenerate A2A Agent Cards & _headers

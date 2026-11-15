@@ -105,6 +105,37 @@ async function createInMemoryAgenticWeb() {
             },
           },
         ];
+      } else if (
+        !hasToolMsg
+        && sysText.includes("You are the assistant on the MoveCo Express website")
+        && toolNames.includes("continuity_coordinator")
+        && JSON.stringify(body.messages).includes("Ask CONTINUITY")
+      ) {
+        toolCallsDelta = [
+          {
+            index: 0,
+            id: "call_cont_from_peer_1",
+            type: "function",
+            function: {
+              name: "continuity_coordinator",
+              arguments: JSON.stringify({
+                request: "What multi-provider schedule change coordination services does CONTINUITY offer?",
+              }),
+            },
+          },
+        ];
+      } else if (
+        hasToolMsg
+        && sysText.includes("You are the assistant on the MoveCo Express website")
+        && JSON.stringify(body.messages).includes("Ask CONTINUITY")
+      ) {
+        replyContent = "MoveCo consulted CONTINUITY Change Coordinator cross-origin: CONTINUITY aligns parking, fiber, and electricity holds under your budget.";
+      } else if (
+        !hasToolMsg
+        && sysText.includes("You are the assistant on the CONTINUITY website")
+        && JSON.stringify(body.messages).includes("multi-provider schedule change coordination")
+      ) {
+        replyContent = "CONTINUITY coordinates schedule changes across moving, curbside bay prep, fiber, and electricity with hold-before-release safety.";
       } else if (sysText.includes("You are the assistant on the MoveCo Express website")) {
         replyContent = "MoveCo Express offers residential Luton van crews, 15-minute slot holds, and booking rescheduling on its own page.";
       } else if (sysText.includes("You are the assistant on the PermitFlow Civic Prep website")) {
@@ -254,6 +285,46 @@ test("I2 Declining consent contacts zero files on the declined peer origin", asy
     ]);
     const peerRequests = requestLog.filter((r) => peerOrigins.has(r.origin));
     assert.equal(peerRequests.length, 0, "Declined peers must receive zero HTTP requests");
+  } finally {
+    globalThis.fetch = prevFetch;
+  }
+});
+
+test("I3 Bidirectional Open Agentic Web Composition: Peer Website (MoveCo Express) calls CONTINUITY cross-origin with Consent Card & BYOK isolation", async () => {
+  const { stubFetch, requestLog } = await createInMemoryAgenticWeb();
+  const prevFetch = globalThis.fetch;
+  globalThis.fetch = stubFetch;
+
+  try {
+    const moveCoEngine = new Engine({
+      originUrl: "http://127.0.0.1:8081",
+      byokKey: FAKE_BYOK_KEY,
+      routerOverride: ROUTER_URL,
+      modelOverride: "alibaba/qwen-3.5-35b-a3b",
+    });
+
+    const consents = [];
+    moveCoEngine.onConsent = async (info) => {
+      const prematureContHits = requestLog.filter((r) => new URL(r.origin).host === info.peerOrigin);
+      assert.equal(prematureContHits.length, 0, "CONTINUITY must not be contacted before visitor consent on MoveCo");
+      consents.push(info);
+      return "allow";
+    };
+
+    const reply = await moveCoEngine.run(
+      "If my Tuesday van shifts to Friday, how do I align fiber and parking? Ask CONTINUITY.",
+    );
+
+    assert.equal(consents.length, 1);
+    assert.equal(consents[0].peerOrigin, "127.0.0.1:8080");
+    assert.match(reply, /MoveCo consulted CONTINUITY Change Coordinator cross-origin/i);
+
+    // Ensure BYOK key never touched CONTINUITY origin (`127.0.0.1:8080`) either
+    for (const req of requestLog) {
+      if (!req.url.startsWith(ROUTER_URL)) {
+        assert.equal(req.hasAuthHeader, false, `API key leaked to ${req.url}!`);
+      }
+    }
   } finally {
     globalThis.fetch = prevFetch;
   }

@@ -24,11 +24,13 @@
     "mock": false,
     "byok_router": "https://api.otari.ai/api/v1"
   },
-  "allowed_peers": [],
+  "allowed_peers": [
+    "http://127.0.0.1:8080"
+  ],
   "peer_policy": {
     "mode": "closed",
     "deny_origins": [],
-    "note": "Local agents and page-local actions only."
+    "note": "Calls only the CONTINUITY Change Coordinator origin in allowed_peers after visitor consent."
   },
   "agent_mcp": {
     "protocol": "nsdeploy-agent-mcp/v1",

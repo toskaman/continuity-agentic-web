@@ -27,8 +27,8 @@ flowchart TB
     end
 
     RT -->|"HTTPS + Bearer BYOK Key\n(Never sent to Peers)"| OTARI
-    RT -->|"1. User Consent Card\n2. Fetch Manifest + Network JSON\n3. Run Locally in Caller Browser"| P1 & P2 & P3 & P4
-    CORE <-->|"Bounded Impact Quotes, Holds, Idempotent Commits\n& Ed25519 Signed Receipts"| P1 & P2 & P3 & P4
+    RT <-->|"Bidirectional Consent Cards + Manifest/Network/Facts Fetch\n(Runs Locally in Caller Browser — Zero Key Egress)"| P1 & P2 & P3 & P4
+    CORE <-->|"Bounded Impact Quotes, Holds, €0 Hold Release, Idempotent Commits\n& Ed25519 Signed Receipts + POST /resolve (NANDA)"| P1 & P2 & P3 & P4
 ```
 
 ---
@@ -37,17 +37,25 @@ flowchart TB
 
 ### 2.1 Probabilistic Layer vs. Deterministic Safety Kernel
 - **Probabilistic Layer (Neuro SAN HOCON Agents):** Interprets natural-language requests, delegates cross-origin informational queries across partner networks after visitor consent, and renders CRUSE summaries.
-- **Deterministic Safety Kernel (`packages/*`):**
+- **Deterministic Safety Kernel (`packages/*` — 19 Zero-Dependency Apache-2.0 Modules):**
   1. `@continuity/shared-schemas` — Strict JSON Schema validator, prototype-pollution blocker, RFC-8785-style canonical JSON serializer, and Web Crypto SHA-256 digest.
-  2. `@continuity/mission-core` — Validates change proposals and prevents any downgrade of hard invariants (`maximum_budget_eur <= €700`, `preserve_existing_commitments = true`, `unauthorized_cancellation = false`).
-  3. `@continuity/mission-graph` — Acyclic typed commitment graph separating observed provider facts from dependency semantics (`SAME_DAY_REQUIRED`, `ON_OR_AFTER`, `ON_OR_BEFORE`, `WITHIN_COVERAGE_SPAN`).
-  4. `@continuity/impact-engine` — Bounded BFS impact propagation that excludes unaffected commitments (`CityVault Pod` and `NordicLoom Delivery` receive zero network calls).
-  5. `@continuity/capability-adapter` — Normalizes heterogeneous provider schemas while preserving operational flags (`supports_hold`, `reversible`, `creates_final_booking`).
-  6. `@continuity/constraint-solver` — Reproducible weighted multi-objective optimizer generating `PLAN_A_MINIMAL_CHANGE`, `PLAN_B_LOWEST_COST`, and `PLAN_C_FASTEST_RESOLUTION`.
-  7. `@continuity/approval-engine` — Binds human consent to canonical operation parameters via SHA-256 and blocks replay or `€0.01` price drift.
-  8. `@continuity/outcome-reconciliation` & `@continuity/saga-engine` — 14-state explicit state machine (`DRAFT` -> `PREPARED` -> `AWAITING_APPROVAL` -> `APPROVED` -> `DISPATCHED` -> `UNKNOWN` / `RECONCILING` -> `COMMITTED` / `NEEDS_USER`) implementing **Prepare-First, Commit-Last** execution.
-  9. `@continuity/proof-verifier` — Verifies Ed25519 provider receipts against pinned demonstration public JWKs.
-  10. `@continuity/chaos-lab` — 15 deterministic fault-injection scenarios runnable via CLI or browser tab.
+  2. `@continuity/mission-core` — Compiles natural-language requests (ISO dates, weekdays, `Month Day`, `+N days`) and prevents any downgrade of hard invariants (`maximum_budget_eur`, `preserve_existing_commitments = true`, `unauthorized_cancellation = false`).
+  3. `@continuity/intake-compiler` — Compiles folded RFC 5545 `.ics` calendars, confirmation emails, and JSON booking arrays; exports `.ics` and verifies `continuity-verifiable-audit-bundle/v1` offline.
+  4. `@continuity/adk-hocon-converter` — Translates `LlmAgent` / `sub_agents` graphs into portable Neuro SAN `.network.json` + `agent-manifest.json`, scrubbing leaked keys and rejecting cycles.
+  5. `@continuity/local-browser-router` — Zero-key Chrome Built-in `LanguageModel` (Gemini Nano) JSON-Schema tool-calling adapter & safe loopback Ollama probe.
+  6. `@continuity/facts-publisher` — Extracts visitor-visible `data-agent-facts` DOM elements, rejects hidden/folded/form injection vectors, and compiles single-turn `facts/<network>_facts` bundles.
+  7. `@continuity/mission-graph` — Acyclic typed commitment graph separating observed provider facts from dependency semantics (`SAME_DAY_REQUIRED`, `ON_OR_AFTER`, `ON_OR_BEFORE`, `WITHIN_COVERAGE_SPAN`).
+  8. `@continuity/impact-engine` — Bounded BFS impact propagation that excludes unaffected commitments (`CityVault Pod` and `NordicLoom Delivery` receive zero network calls).
+  9. `@continuity/capability-adapter` — Normalizes heterogeneous provider schemas while preserving operational flags (`supports_hold`, `reversible`, `creates_final_booking`).
+  10. `@continuity/constraint-solver` — 4-objective Pareto optimizer with NSGA-II crowding distances and Minimal Unsatisfiable Core counterfactual relaxation (`computeMinimalCounterfactualRelaxation`).
+  11. `@continuity/mandate-arbiter` — Frozen SHA-256 policy mandates, outbound budget redaction, and integer-cent sealed-bid Nash bargaining arbiter.
+  12. `@continuity/cross-origin-bridge` — Zero-server cross-origin `postMessage` RPC, origin-isolated WebCrypto Ed25519 keys, and verified `#continuity_receipt` handoffs.
+  13. `@continuity/webmcp-adapter` — Exposes site actions to both Neuro SAN `website_*` tools and W3C `navigator.modelContext` (WebMCP) with confirmation gates.
+  14. `@continuity/approval-engine` — Binds human consent to canonical operation parameters via SHA-256 and blocks replay or `€0.01` price drift.
+  15. `@continuity/outcome-reconciliation` & 16. `@continuity/saga-engine` — 14-state SHA-256 hash-chained ledger implementing **Prepare-First, `€0` Hold-Release, Commit-Last** execution and `UNKNOWN` reconciliation.
+  17. `@continuity/proof-verifier` — Verifies Ed25519 provider receipts against pinned demonstration public JWKs.
+  18. `@continuity/nanda-resolver` — Project NANDA `urn:air:` validator, `ai-catalog.json` & A2A v1.0 checks, `POST /resolve` (`draft-raskar-02` §6), and 9-point SARIF/bundle-verifier CLI.
+  19. `@continuity/chaos-lab` — 20 deterministic fault-injection scenarios runnable via CLI or browser tab.
 
 ---
 
@@ -56,7 +64,10 @@ flowchart TB
 Every one of the 5 websites (`apps/continuity-web`, `apps/demo-moveco`, `apps/demo-permitflow`, `apps/demo-homeconnect`, `apps/demo-powerflow`) publishes:
 - `/agent-manifest.json` (`Access-Control-Allow-Origin: *`)
 - `/<network>.network.json` (`Access-Control-Allow-Origin: *`)
+- `/facts/agent-manifest.json`, `/facts/<network>_facts.network.json`, `/facts/links.json` (`Access-Control-Allow-Origin: *`)
 - `/links.json` (`Access-Control-Allow-Origin: *`)
 - `/agent-mcp.json`, `/.well-known/nsdeploy.json`, `/.well-known/nsdeploy-agent.json` (`Access-Control-Allow-Origin: *`)
+- `/agent-card.json`, `/.well-known/agent-card.json`, `/ai-catalog.json`, `/.well-known/ai-catalog.json` (`Access-Control-Allow-Origin: *`)
 - `/bridge/action-bridge.html` & `/bridge/agent-manifest.json` (frameable, zero exposed local page code)
 - `/runtime/*` (with strict `Content-Security-Policy` on `/runtime/sandbox-worker.js`)
+- Plus standalone 5-tool Community Builder Kit at `/community-kit.html` on `continuity-web`.

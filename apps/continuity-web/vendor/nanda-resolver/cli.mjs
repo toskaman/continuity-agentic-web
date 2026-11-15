@@ -17,10 +17,42 @@
  *   node packages/nanda-resolver/cli.mjs --json https://toskaman.github.io/continuity-agentic-web/
  */
 
+import { readFile } from "node:fs/promises";
+import { verifyExportedAuditBundle } from "../intake-compiler/index.js";
 import { auditOpenAgenticSite } from "./index.js";
 
 const args = process.argv.slice(2);
 const jsonMode = args.includes("--json");
+const sarifMode = args.includes("--sarif");
+const verifyIdx = args.indexOf("--verify-bundle");
+
+if (verifyIdx !== -1) {
+  const bundlePath = args[verifyIdx + 1];
+  if (!bundlePath) {
+    console.error("Usage: continuity-audit --verify-bundle <audit-bundle.json> [--json]");
+    process.exit(1);
+  }
+  const rawJson = JSON.parse(await readFile(bundlePath, "utf8"));
+  const report = await verifyExportedAuditBundle(rawJson);
+  if (jsonMode) {
+    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+  } else {
+    console.log("\n========================================================================");
+    console.log(" CONTINUITY — Offline Cryptographic Audit Bundle Verifier");
+    console.log("========================================================================");
+    console.log(`Bundle JCS SHA-256 : ${report.bundleSha256Valid ? "PASS" : "FAIL"} (${report.computedBundleSha256})`);
+    console.log(`Saga Hash Chain    : ${report.sagaChainValid ? "PASS" : "FAIL"} (${report.sagaEventsChecked} event(s))`);
+    console.log(
+      `Ed25519 Receipts   : ${report.receiptsVerifiedCount}/${report.receiptsTotalCommitted} verified (trust=${report.keyTrustMode})`,
+    );
+    if (report.errors.length > 0) {
+      for (const e of report.errors) console.log(`  [FAIL] ${e}`);
+    }
+    console.log(`RESULT             : ${report.valid ? "VERIFIED INTACT" : "TAMPERED / INVALID"}\n`);
+  }
+  process.exit(report.valid ? 0 : 1);
+}
+
 const urls = args.filter((a) => !a.startsWith("--"));
 
 const DEFAULT_ECOSYSTEM_URLS = [
@@ -53,6 +85,54 @@ for (const u of targets) {
   };
   reports.push(enriched);
   if (!rep.ok) allPassed = false;
+}
+
+if (sarifMode) {
+  const rulesMap = new Map();
+  const sarifResults = [];
+  for (const r of reports) {
+    for (const c of r.checks) {
+      if (!rulesMap.has(c.id)) {
+        rulesMap.set(c.id, {
+          id: c.id,
+          name: c.check,
+          shortDescription: { text: c.check },
+        });
+      }
+      if (c.status === "PASS") continue;
+      sarifResults.push({
+        ruleId: c.id,
+        level: c.status === "FAIL" ? "error" : "warning",
+        message: { text: `${c.check}: ${c.detail}` },
+        locations: [
+          {
+            physicalLocation: {
+              artifactLocation: { uri: r.siteBaseUrl },
+            },
+          },
+        ],
+      });
+    }
+  }
+  const sarifLog = {
+    $schema: "https://json.schemastore.org/sarif-2.1.0.json",
+    version: "2.1.0",
+    runs: [
+      {
+        tool: {
+          driver: {
+            name: "continuity-audit",
+            version: "2.0.0",
+            informationUri: "https://github.com/toskaman/continuity-agentic-web",
+            rules: Array.from(rulesMap.values()),
+          },
+        },
+        results: sarifResults,
+      },
+    ],
+  };
+  process.stdout.write(`${JSON.stringify(sarifLog, null, 2)}\n`);
+  process.exit(allPassed ? 0 : 1);
 }
 
 if (jsonMode) {

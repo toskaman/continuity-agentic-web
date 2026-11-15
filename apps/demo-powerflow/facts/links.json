@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "networks": {
+    "powerflow_grid_facts": {}
+  }
+}

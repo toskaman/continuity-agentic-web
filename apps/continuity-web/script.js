@@ -39,6 +39,7 @@ import {
   exportVerifiableAuditBundle,
   SAMPLE_RAW_CONFIRMATION_EMAILS,
   SCENARIO_CATALOG,
+  verifyExportedAuditBundle,
 } from "./vendor/intake-compiler/index.js";
 import { auditOpenAgenticSite } from "./vendor/nanda-resolver/index.js";
 import { OperationLedger } from "./vendor/outcome-reconciliation/index.js";
@@ -52,28 +53,23 @@ import {
   convertAgentFrameworkToHoconBundle,
   SAMPLE_GOOGLE_ADK_CONFIG,
 } from "./vendor/adk-hocon-converter/index.js";
-
-const RELOCATION_PRESET_COORDS = {
-  cmt_moveco_van: { x: 40, y: 155 },
-  cmt_permitflow_bay: { x: 355, y: 24 },
-  cmt_homeconnect_fiber: { x: 665, y: 95 },
-  cmt_powerflow_grid: { x: 355, y: 155 },
-  cmt_storage_pod: { x: 355, y: 285 },
-  cmt_furniture_drop: { x: 665, y: 285 },
-};
-
-const STATE_PALETTE = {
-  UNCHANGED: { fill: "#1e293b", stroke: "#94a3b8", badgeBg: "#334155", text: "#f8fafc" },
-  AFFECTED: { fill: "#3b2306", stroke: "#fbbf24", badgeBg: "#92400e", text: "#fef3c7" },
-  EVALUATING: { fill: "#172554", stroke: "#38bdf8", badgeBg: "#075985", text: "#e0f2fe" },
-  PROPOSED: { fill: "#172554", stroke: "#38bdf8", badgeBg: "#075985", text: "#e0f2fe" },
-  PREPARED: { fill: "#1e1b4b", stroke: "#818cf8", badgeBg: "#3730a3", text: "#e0e7ff" },
-  AWAITING_APPROVAL: { fill: "#3b2306", stroke: "#fbbf24", badgeBg: "#92400e", text: "#fffbeb" },
-  COMMITTED: { fill: "#052e16", stroke: "#10b981", badgeBg: "#065f46", text: "#ecfdf5" },
-  FAILED: { fill: "#450a0a", stroke: "#ef4444", badgeBg: "#991b1b", text: "#fef2f2" },
-  UNKNOWN: { fill: "#3b0764", stroke: "#c084fc", badgeBg: "#6b21a8", text: "#faf5ff" },
-  NEEDS_USER: { fill: "#450a0a", stroke: "#f87171", badgeBg: "#991b1b", text: "#fef2f2" },
-};
+import { buildFallbackOffersForRelocationNode } from "./modules/fallback-offers.js";
+import {
+  renderChangePackageView,
+  renderHoldCountdownView,
+  renderKpisView,
+  renderWhatIfSliderView,
+} from "./modules/change-package-view.js";
+import { renderMissionGraphSvg, renderMissionNodeInspector } from "./modules/graph-svg-view.js";
+import { renderParetoFrontierPlot } from "./modules/pareto-svg-view.js";
+import {
+  renderAuditorTableView,
+  renderAuditTimelineView,
+  renderChaosTableView,
+  renderCommitmentsTableView,
+  renderMandateTableView,
+  renderPrivacyTableView,
+} from "./modules/trust-tables-view.js";
 
 export class ContinuityCoordinatorPage {
   constructor() {
@@ -149,7 +145,11 @@ export class ContinuityCoordinatorPage {
     }
 
     if (this.livePeersDetected) {
-      return this.buildLiveHttpProviderClients();
+      try {
+        return await this.buildLiveHttpProviderClients();
+      } catch {
+        this.livePeersDetected = false;
+      }
     }
     if (this.crossOriginBridgeConnected && this.crossOriginBridge) {
       return this.crossOriginBridge.buildSagaHarness();
@@ -182,6 +182,7 @@ export class ContinuityCoordinatorPage {
 
     // Zero-server static HTTPS / browser mode: connect live Cross-Origin `postMessage` Bridge iframes!
     if (typeof document !== "undefined" && typeof window !== "undefined") {
+      this.crossOriginBridge?.destroy?.();
       this.crossOriginBridge = new CrossOriginBridgeClient(this.peerOrigins);
       this.crossOriginBridgeConnected = await this.crossOriginBridge.connectAll();
       if (this.crossOriginBridgeConnected) {
@@ -608,6 +609,33 @@ export class ContinuityCoordinatorPage {
     return { ok: true, pinned: this.pinnedNodeIds.has(nodeId) };
   }
 
+  async applyCounterfactualRelaxation() {
+    const rx = this.solverResult?.counterfactualPrescription;
+    if (!rx?.relaxationFound || !this.compiledProposal || !this.impactReport) {
+      return { ok: false, reason: "No minimal counterfactual relaxation available." };
+    }
+    for (const id of rx.unpinCommitmentIds || []) {
+      this.pinnedNodeIds.delete(id);
+    }
+    if (typeof rx.relaxedBudgetEur === "number" && rx.relaxedBudgetEur > 0) {
+      this.compiledProposal = {
+        ...this.compiledProposal,
+        invariants: {
+          ...this.compiledProposal.invariants,
+          maximum_budget_eur: rx.relaxedBudgetEur,
+        },
+      };
+      if (typeof document !== "undefined") {
+        const slider = document.querySelector("#whatif-budget-slider");
+        const valEl = document.querySelector("#whatif-budget-val");
+        if (slider) slider.value = String(Math.ceil(rx.relaxedBudgetEur));
+        if (valEl) valEl.textContent = `€${rx.relaxedBudgetEur.toFixed(2)}`;
+      }
+    }
+    const harness = await this.ensureProviderClients();
+    return await this._solveAndPrepareFromCachedOffers(harness);
+  }
+
   async _solveAndPrepareFromCachedOffers({ clients, verifier }) {
     this.solverResult = solveMinimalChangePlans({
       graph: this.graph,
@@ -660,175 +688,13 @@ export class ContinuityCoordinatorPage {
   }
 
   buildFallbackOffersForNode(node, targetDate) {
-    if (node.provider_id === "moveco") {
-      if (this.rippleFailureInjected) {
-        this.providerAlerts.push(
-          `MoveCo Alert: Primary 08:00 crew full on ${targetDate}; recovered with MoveCo Partner Overflow Fleet while keeping MC-8841 held.`,
-        );
-        return [
-          normalizePeerOffer({
-            offer_id: "off_moveco_partner_overflow_fri",
-            commitment_id: node.id,
-            provider_id: "moveco",
-            provider_name: "MoveCo Partner Overflow Fleet (Demo)",
-            provider_origin: this.peerOrigins.moveco,
-            raw_capability: "reschedule_van_booking",
-            semantic_kind: "REPLACE_WITH_BACKUP_PROVIDER",
-            proposed_date: targetDate,
-            window: "09:30–14:30",
-            base_price_eur: 405,
-            change_fee_eur: 0,
-            cancellation_penalty_eur: 20,
-            supports_hold: true,
-            hold_ttl_seconds: 900,
-            reversible: false,
-            creates_final_booking: true,
-            requires_user_approval: true,
-            supports_idempotency: true,
-            supports_status_reconciliation: true,
-            is_replacement_provider: true,
-            expires_at: "2027-01-20T23:59:59Z",
-          }),
-        ];
-      }
-      return [
-        normalizePeerOffer({
-          offer_id: "off_moveco_fri_am",
-          commitment_id: node.id,
-          provider_id: "moveco",
-          provider_name: "MoveCo Express (Demo)",
-          provider_origin: this.peerOrigins.moveco,
-          raw_capability: "reschedule_van_booking",
-          semantic_kind: "RESCHEDULE_IN_PLACE",
-          proposed_date: targetDate,
-          window: "08:00–13:00",
-          base_price_eur: 390,
-          change_fee_eur: 25,
-          cancellation_penalty_eur: 0,
-          supports_hold: true,
-          hold_ttl_seconds: 900,
-          reversible: false,
-          creates_final_booking: true,
-          requires_user_approval: true,
-          supports_idempotency: true,
-          supports_status_reconciliation: true,
-          is_replacement_provider: false,
-          expires_at: "2027-01-20T23:59:59Z",
-        }),
-      ];
-    }
-
-    if (node.provider_id === "permitflow") {
-      return [
-        normalizePeerOffer({
-          offer_id: `off_permitflow_${targetDate}`,
-          commitment_id: node.id,
-          provider_id: "permitflow",
-          provider_name: "PermitFlow Civic Prep (Demo)",
-          provider_origin: this.peerOrigins.permitflow,
-          raw_capability: "prepare_permit_date_update",
-          semantic_kind: "PREPARE_PERMIT_DOSSIER",
-          proposed_date: targetDate,
-          window: "07:30–14:00",
-          base_price_eur: 35,
-          change_fee_eur: 10,
-          cancellation_penalty_eur: 0,
-          supports_hold: false,
-          hold_ttl_seconds: 0,
-          reversible: true,
-          creates_final_booking: false,
-          requires_user_approval: true,
-          supports_idempotency: true,
-          supports_status_reconciliation: true,
-          is_replacement_provider: false,
-          expires_at: "2027-01-20T23:59:59Z",
-        }),
-      ];
-    }
-
-    if (node.provider_id === "homeconnect") {
-      const nextDayDate = new Date(Date.parse(`${targetDate}T00:00:00Z`) + 86_400_000)
-        .toISOString()
-        .slice(0, 10);
-      return [
-        normalizePeerOffer({
-          offer_id: "off_homeconnect_fri_pm",
-          commitment_id: node.id,
-          provider_id: "homeconnect",
-          provider_name: "HomeConnect Fiber (Demo)",
-          provider_origin: this.peerOrigins.homeconnect,
-          raw_capability: "change_fiber_appointment",
-          semantic_kind: "RESCHEDULE_IN_PLACE",
-          proposed_date: targetDate,
-          window: "14:00–17:00",
-          base_price_eur: 49,
-          change_fee_eur: 0,
-          cancellation_penalty_eur: 0,
-          supports_hold: true,
-          hold_ttl_seconds: 600,
-          reversible: false,
-          creates_final_booking: true,
-          requires_user_approval: true,
-          supports_idempotency: true,
-          supports_status_reconciliation: true,
-          is_replacement_provider: false,
-          expires_at: "2027-01-20T23:59:59Z",
-        }),
-        normalizePeerOffer({
-          offer_id: "off_homeconnect_sat_am",
-          commitment_id: node.id,
-          provider_id: "homeconnect",
-          provider_name: "HomeConnect Fiber (Demo)",
-          provider_origin: this.peerOrigins.homeconnect,
-          raw_capability: "change_fiber_appointment",
-          semantic_kind: "RESCHEDULE_IN_PLACE",
-          proposed_date: nextDayDate,
-          window: "09:00–12:00",
-          base_price_eur: 39,
-          change_fee_eur: 0,
-          cancellation_penalty_eur: 0,
-          supports_hold: true,
-          hold_ttl_seconds: 600,
-          reversible: false,
-          creates_final_booking: true,
-          requires_user_approval: true,
-          supports_idempotency: true,
-          supports_status_reconciliation: true,
-          is_replacement_provider: false,
-          expires_at: "2027-01-20T23:59:59Z",
-        }),
-      ];
-    }
-
-    if (node.provider_id === "powerflow") {
-      return [
-        normalizePeerOffer({
-          offer_id: `off_powerflow_${targetDate}`,
-          commitment_id: node.id,
-          provider_id: "powerflow",
-          provider_name: "PowerFlow Energy (Demo)",
-          provider_origin: this.peerOrigins.powerflow,
-          raw_capability: "shift_grid_activation",
-          semantic_kind: "RESCHEDULE_IN_PLACE",
-          proposed_date: targetDate,
-          window: "08:00–12:00",
-          base_price_eur: 30,
-          change_fee_eur: 0,
-          cancellation_penalty_eur: 0,
-          supports_hold: false,
-          hold_ttl_seconds: 0,
-          reversible: false,
-          creates_final_booking: true,
-          requires_user_approval: true,
-          supports_idempotency: true,
-          supports_status_reconciliation: true,
-          is_replacement_provider: false,
-          expires_at: "2027-01-20T23:59:59Z",
-        }),
-      ];
-    }
-
-    return [];
+    return buildFallbackOffersForRelocationNode({
+      node,
+      targetDate,
+      peerOrigins: this.peerOrigins,
+      rippleFailureInjected: this.rippleFailureInjected,
+      providerAlerts: this.providerAlerts,
+    });
   }
 
   async prepareSelectedPlan(planId, existingHarness = null) {
@@ -1006,6 +872,34 @@ export class ContinuityCoordinatorPage {
     };
   }
 
+  async releasePreparedHolds() {
+    if (!this.saga || !this.preparedOps.length) {
+      return { ok: false, reason: "No prepared holds are currently active." };
+    }
+    const { clients } = await this.ensureProviderClients();
+    const res = await this.saga.releasePreparedHolds({ providerClients: clients });
+    if (!res.ok) {
+      return res;
+    }
+    this.preparedOps = [];
+    this.selectedPlanId = null;
+    this.solverResult = null;
+    this.compiledProposal = null;
+    this.impactReport = null;
+    this.holdsPlacedAtMs = null;
+    this.version += 1;
+    this.render(
+      `Released ${res.releasedOperationIds.length} temporary slot hold(s) at €0.00 fee — all original reservations remain CONFIRMED on their baseline dates.`,
+    );
+    return {
+      ok: true,
+      feeChargedEur: 0,
+      releasedCount: res.releasedOperationIds.length,
+      releasedOperationIds: res.releasedOperationIds,
+      version: this.version,
+    };
+  }
+
   async commitPreparedPackage(args) {
     const check = this.checkCommitPackage(args);
     if (!check.ok) {
@@ -1114,16 +1008,63 @@ export class ContinuityCoordinatorPage {
     return { ok: true, bytes: ics.length };
   }
 
-  async downloadSignedAuditBundle() {
-    const bundle = await exportVerifiableAuditBundle({
+  async buildCurrentAuditBundle() {
+    return await exportVerifiableAuditBundle({
       mission: this.mission,
       selectedPlan: this.getSelectedPlan(),
       operations: this.preparedOps,
       auditLog: this.saga?.ledger?.getHistory() || [],
+      trustedProviderKeys: this.saga?.receiptVerifier?.trustedByProvider || null,
     });
+  }
+
+  async downloadSignedAuditBundle() {
+    const bundle = await this.buildCurrentAuditBundle();
     const text = `${JSON.stringify(bundle, null, 2)}\n`;
     this.triggerBrowserDownload(`${this.mission.mission_id}-audit-bundle.json`, "application/json;charset=utf-8", text);
     return bundle;
+  }
+
+  async verifyCurrentAuditBundle() {
+    const bundle = await this.buildCurrentAuditBundle();
+    const report = await verifyExportedAuditBundle(bundle, {
+      externalPinnedKeys: this.saga?.receiptVerifier?.trustedByProvider || undefined,
+    });
+    const el = typeof document !== "undefined" ? document.querySelector("#bundle-verify-status") : null;
+    if (el) {
+      el.hidden = false;
+      el.textContent = report.valid
+        ? `✓ Zero-Trust Audit Bundle Verified: JCS SHA-256 ${report.computedBundleSha256.slice(0, 16)}… · ${report.sagaEventsChecked} hash-chained Saga event(s) · ${report.receiptsVerifiedCount}/${report.receiptsTotalCommitted} Ed25519 provider receipt(s) verified (${report.keyTrustMode}).`
+        : `✕ Bundle Verification Failed: ${report.errors.join(" | ")}`;
+    }
+    return report;
+  }
+
+  async simulateBundleTamperAttack() {
+    const bundle = await this.buildCurrentAuditBundle();
+    const tampered = JSON.parse(JSON.stringify(bundle));
+    if (tampered.operations?.[0]?.receipt_envelope?.receipt_body) {
+      const prev = Number(tampered.operations[0].receipt_envelope.receipt_body.total_charged_eur || 0);
+      tampered.operations[0].receipt_envelope.receipt_body.total_charged_eur = Number((prev + 0.01).toFixed(2));
+    } else if (tampered.selected_plan?.metrics) {
+      tampered.selected_plan.metrics.totalMissionCostEur = Number(
+        (Number(tampered.selected_plan.metrics.totalMissionCostEur || 0) + 0.01).toFixed(2),
+      );
+    }
+    if (Array.isArray(tampered.immutable_saga_log) && tampered.immutable_saga_log.length > 0) {
+      tampered.immutable_saga_log[0].reason += " [forged]";
+    }
+    const report = await verifyExportedAuditBundle(tampered, {
+      externalPinnedKeys: this.saga?.receiptVerifier?.trustedByProvider || undefined,
+    });
+    const el = typeof document !== "undefined" ? document.querySelector("#bundle-verify-status") : null;
+    if (el) {
+      el.hidden = false;
+      el.textContent = !report.valid
+        ? `🛡 In-Memory €0.01 Tamper Attack Caught Instantly (${report.errors.length} cryptographic alarms): ${report.errors.join(" · ")} — Live mission untouched.`
+        : "Unexpected: tamper attack was not detected.";
+    }
+    return report;
   }
 
   /* ------------------------------ UI RENDERING ------------------------------ */
@@ -1180,13 +1121,17 @@ export class ContinuityCoordinatorPage {
     }
 
     const plan = this.getSelectedPlan();
+    const readyToApprove =
+      Boolean(plan)
+      && this.preparedOps.length > 0
+      && this.preparedOps.every((o) => o.state === "AWAITING_APPROVAL");
     const approveBtn = document.querySelector("#approve-commit-btn");
     if (approveBtn) {
-      const readyToApprove =
-        Boolean(plan)
-        && this.preparedOps.length > 0
-        && this.preparedOps.every((o) => o.state === "AWAITING_APPROVAL");
       approveBtn.disabled = !readyToApprove;
+    }
+    const releaseBtn = document.querySelector("#release-holds-btn");
+    if (releaseBtn) {
+      releaseBtn.disabled = !readyToApprove;
     }
 
     const exportBar = document.querySelector("#export-actions-bar");
@@ -1207,511 +1152,55 @@ export class ContinuityCoordinatorPage {
   }
 
   renderHoldCountdown() {
-    const el = document.querySelector("#hold-countdown-strip");
-    if (!el) return;
-    const heldOps = this.preparedOps.filter((o) => o.hold_id && o.state === "AWAITING_APPROVAL");
-    if (!heldOps.length || !this.holdsPlacedAtMs || this.lastSagaExecution) {
-      el.hidden = true;
-      return;
-    }
-    const elapsedSec = Math.max(0, Math.floor((Date.now() - this.holdsPlacedAtMs) / 1000));
-    const remainingSec = Math.max(0, 600 - elapsedSec); // Strictest 10-min hold TTL across peers
-    const mm = String(Math.floor(remainingSec / 60)).padStart(2, "0");
-    const ss = String(remainingSec % 60).padStart(2, "0");
-    const holdIds = heldOps.map((o) => o.hold_id).join(", ");
-    el.hidden = false;
-    el.textContent = `🔒 ${heldOps.length} Non-Destructive Replacement Hold(s) Active (${holdIds}) · Lock TTL ${mm}:${ss} remaining · Original bookings untouched`;
+    renderHoldCountdownView(this);
   }
 
   renderWhatIfSlider() {
-    const box = document.querySelector("#whatif-budget-box");
-    const slider = document.querySelector("#whatif-budget-slider");
-    const valEl = document.querySelector("#whatif-budget-val");
-    const minEl = document.querySelector("#whatif-min-badge");
-    if (!box || !slider || !valEl || !minEl) return;
-
-    if (!this.compiledProposal || this.lastSagaExecution) {
-      box.hidden = true;
-      return;
-    }
-
-    box.hidden = false;
-    const base = Math.round(this.baselineTotalEur());
-    const minSlider = Math.max(20, base - 10);
-    const maxSlider = base + 220;
-    const curCap = Math.round(this.compiledProposal.invariants.maximum_budget_eur);
-    slider.min = String(minSlider);
-    slider.max = String(Math.max(maxSlider, curCap + 20));
-    slider.value = String(curCap);
-    valEl.textContent = `€${curCap}`;
-    const minFeas = this.budgetSensitivity?.minimumFeasibleBudgetEur;
-    minEl.textContent =
-      minFeas !== null && minFeas !== undefined
-        ? `Min feasible threshold: €${minFeas.toFixed(2)}`
-        : "Exceeds available offers";
-
-    this.renderParetoPlot(curCap);
+    renderWhatIfSliderView(this);
   }
 
   renderParetoPlot(curCapEur) {
-    const svg = document.querySelector("#pareto-plot-svg");
-    if (!svg) return;
-    const plans = this.solverResult?.plans || [];
-    const baseEur = this.baselineTotalEur();
-    const minYVal = Math.min(baseEur, ...plans.map((p) => p.metrics.totalMissionCostEur)) - 18;
-    const maxYVal = Math.max(curCapEur + 18, ...plans.map((p) => p.metrics.totalMissionCostEur)) + 18;
-    const spanY = Math.max(45, maxYVal - minYVal);
-
-    const chgValues = plans.map((p) => p.metrics.changedCount);
-    const minChg = chgValues.length ? Math.min(...chgValues) : 1;
-    const maxChg = chgValues.length ? Math.max(...chgValues, minChg + 1) : 4;
-    const mapX = (changedCount) =>
-      88 + ((changedCount - minChg) / Math.max(1, maxChg - minChg)) * 195;
-    const mapY = (costEur) => 106 - ((costEur - minYVal) / spanY) * 78;
-
-    const capY = Math.max(18, Math.min(108, mapY(curCapEur)));
-    const parts = [
-      `<line x1="52" y1="108" x2="444" y2="108" stroke="#334669" stroke-width="1" />`,
-      `<line x1="52" y1="14" x2="52" y2="108" stroke="#334669" stroke-width="1" />`,
-      `<text x="248" y="126" text-anchor="middle" fill="#cbd5e1" font-size="9.5" font-family="system-ui, sans-serif">Disrupted Commitments (Left = Fewer Changes · Lower = Cheaper)</text>`,
-      `<line x1="52" y1="${capY.toFixed(1)}" x2="444" y2="${capY.toFixed(1)}" stroke="#f87171" stroke-width="1.4" stroke-dasharray="4 3" />`,
-      `<text x="440" y="${Math.max(13, capY - 4).toFixed(1)}" text-anchor="end" fill="#fca5a5" font-size="9.5" font-weight="700" font-family="system-ui, sans-serif">Hard Cap €${curCapEur}</text>`,
-    ];
-
-    const paretoPts = plans
-      .filter((p) => p.paretoOptimal)
-      .slice()
-      .sort((a, b) => a.metrics.changedCount - b.metrics.changedCount || a.metrics.totalMissionCostEur - b.metrics.totalMissionCostEur);
-
-    if (paretoPts.length >= 2) {
-      const poly = paretoPts
-        .map((p) => `${mapX(p.metrics.changedCount).toFixed(1)},${mapY(p.metrics.totalMissionCostEur).toFixed(1)}`)
-        .join(" ");
-      parts.push(`<polyline points="${poly}" fill="none" stroke="#10b981" stroke-width="2" />`);
-    }
-
-    const seenByChg = new Map();
-    plans.forEach((p, idx) => {
-      const chg = p.metrics.changedCount;
-      const slotInBucket = seenByChg.get(chg) || 0;
-      seenByChg.set(chg, slotInBucket + 1);
-
-      const cx = mapX(chg);
-      const cy = mapY(p.metrics.totalMissionCostEur);
-      const labelDy = slotInBucket % 2 === 0 ? 15 : -9;
-      const isSel = p.plan_id === this.selectedPlanId;
-      const fill = p.paretoOptimal ? "#10b981" : "#60a5fa";
-      const shortTag = p.plan_id.startsWith("PLAN_A_")
-        ? "Plan A"
-        : p.plan_id.startsWith("PLAN_B_")
-          ? "Plan B"
-          : p.plan_id.startsWith("PLAN_C_")
-            ? "Plan C"
-            : `Alt`;
-      parts.push(
-        `<g style="cursor:pointer" data-pareto-plan="${this.escapeXml(p.plan_id)}">
-          <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${isSel ? 6.5 : 5}" fill="${fill}" stroke="#ffffff" stroke-width="${isSel ? 2.2 : 1.2}" />
-          <text x="${(cx + 8).toFixed(1)}" y="${(cy + labelDy).toFixed(1)}" fill="#f8fafc" font-size="9.5" font-weight="700" font-family="system-ui, sans-serif">${this.escapeXml(`${shortTag}: €${p.metrics.totalMissionCostEur.toFixed(0)} (${chg} chg)`)}</text>
-        </g>`,
-      );
-    });
-
-    svg.innerHTML = parts.join("\n");
-    svg.querySelectorAll("[data-pareto-plan]").forEach((g) => {
-      g.addEventListener("click", () => {
-        const pid = g.getAttribute("data-pareto-plan");
-        if (pid && pid !== this.selectedPlanId && !this.lastSagaExecution) {
-          void this.prepareSelectedPlan(pid);
-        }
-      });
-    });
+    renderParetoFrontierPlot(this, curCapEur);
   }
 
   renderKpis(plan) {
-    const set = (sel, txt) => {
-      const el = document.querySelector(sel);
-      if (el) el.textContent = txt;
-    };
-    const totalCount = this.mission.commitments.length;
-    const baseEur = this.baselineTotalEur();
-    const capEur = this.mission.authoritative_invariants.maximum_budget_eur;
-
-    if (!plan) {
-      set("#kpi-affected", `0 / ${totalCount}`);
-      set("#kpi-affected-sub", "Awaiting change request");
-      set("#kpi-preserved", `${totalCount}`);
-      set("#kpi-preserved-sub", "All original bookings intact");
-      set("#kpi-cost", `€${baseEur.toFixed(2)}`);
-      set("#kpi-cost-sub", `Hard ceiling: €${Number(capEur).toFixed(2)}`);
-      set("#kpi-approvals", "0");
-      set("#kpi-approvals-sub", "Bound by SHA-256 hash");
-      return;
-    }
-    const m = plan.metrics;
-    set("#kpi-affected", `${m.changedCount} / ${totalCount}`);
-    set("#kpi-affected-sub", `${this.impactReport.metrics.providersContactedCount} peers contacted · ${this.impactReport.metrics.unnecessaryOperationsAvoided} skipped`);
-    set("#kpi-preserved", `${m.unchangedCount}`);
-    set("#kpi-preserved-sub", "Original reservations untouched");
-    set("#kpi-cost", `€${m.totalMissionCostEur.toFixed(2)}`);
-    const sign = m.netDeltaEur >= 0 ? "+" : "";
-    set("#kpi-cost-sub", `${sign}€${m.netDeltaEur.toFixed(2)} vs baseline · Cap €${m.maxBudgetEur.toFixed(2)}`);
-    set("#kpi-approvals", `${m.approvalsRequiredCount}`);
-    set("#kpi-approvals-sub", this.lastSagaExecution?.status === "ALL_COMMITTED_AND_VERIFIED" ? "All verified & committed" : "Awaiting user confirmation");
+    renderKpisView(this, plan);
   }
 
   renderGraphSvg() {
-    const svg = document.querySelector("#mission-graph-svg");
-    if (!svg) return;
-    svg.style.transform = `scale(${this.zoomScale})`;
-    const zoomReadout = document.querySelector("#zoom-readout");
-    if (zoomReadout) zoomReadout.textContent = `${Math.round(this.zoomScale * 100)}%`;
-
-    const coordsMap = MissionGraph.computeTopologicalLayout(this.graph, RELOCATION_PRESET_COORDS);
-    const snap = this.graph.toJSON();
-    const parts = [
-      `<defs>
-        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-          <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b" />
-        </marker>
-      </defs>`,
-    ];
-
-    for (const edge of snap.edges) {
-      const src = coordsMap[edge.from];
-      const dst = coordsMap[edge.to];
-      if (!src || !dst) continue;
-      const x1 = src.x + 225;
-      const y1 = src.y + 44;
-      const x2 = dst.x;
-      const y2 = dst.y + 44;
-      const midX = (x1 + x2) / 2;
-      const midY = (y1 + y2) / 2 - 6;
-      const shortEdgeLabel = edge.type.replace(/_/g, " ");
-      parts.push(
-        `<g class="graph-edge">
-          <path d="M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow)" />
-          <text x="${midX}" y="${midY}" text-anchor="middle" fill="#cbd5e1" font-size="9.5" font-family="system-ui, sans-serif">${this.escapeXml(shortEdgeLabel)}</text>
-        </g>`,
-      );
-    }
-
-    for (const node of snap.nodes) {
-      const pos = coordsMap[node.id] || { x: 40, y: 40 };
-      const pal = STATE_PALETTE[node.visual_state] || STATE_PALETTE.UNCHANGED;
-      const meta = GRAPH_VISUAL_STATES[node.visual_state] || GRAPH_VISUAL_STATES.UNCHANGED;
-      const isSelected = node.id === this.selectedNodeId;
-      const strokeW = isSelected ? 2.8 : 1.6;
-
-      const isPinned = this.pinnedNodeIds.has(node.id);
-      const priceLabel = `${isPinned ? "📌 " : ""}€${Number(node.price_eur).toFixed(0)}`;
-
-      parts.push(
-        `<g class="graph-node-group" tabindex="0" data-node-id="${this.escapeXml(node.id)}">
-          <title>${this.escapeXml(`${node.title}: ${meta.label}, scheduled ${node.scheduled_date}, €${node.price_eur}`)}</title>
-          <rect x="${pos.x}" y="${pos.y}" width="225" height="90" rx="10" fill="${pal.fill}" stroke="${pal.stroke}" stroke-width="${strokeW}" />
-          <rect x="${pos.x + 10}" y="${pos.y + 9}" width="114" height="18" rx="5" fill="${pal.badgeBg}" />
-          <text x="${pos.x + 16}" y="${pos.y + 22}" fill="#ffffff" font-size="10" font-weight="700" font-family="system-ui, sans-serif">${this.escapeXml(`${meta.icon} ${meta.badge}`)}</text>
-          <text x="${pos.x + 214}" y="${pos.y + 22}" text-anchor="end" fill="${pal.text}" font-size="10.5" font-weight="700" font-family="system-ui, sans-serif">${this.escapeXml(priceLabel)}</text>
-          <text x="${pos.x + 12}" y="${pos.y + 44}" fill="${pal.text}" font-size="12" font-weight="700" font-family="system-ui, sans-serif">${this.escapeXml(node.title.length > 28 ? `${node.title.slice(0, 26).trimEnd()}…` : node.title)}</text>
-          <text x="${pos.x + 12}" y="${pos.y + 62}" fill="#cbd5e1" font-size="10.5" font-family="system-ui, sans-serif">${this.escapeXml(node.provider_name.length > 30 ? `${node.provider_name.slice(0, 28).trimEnd()}…` : node.provider_name)}</text>
-          <text x="${pos.x + 12}" y="${pos.y + 79}" fill="#93c5fd" font-size="10.5" font-weight="600" font-family="system-ui, sans-serif">${this.escapeXml(`${node.booking_ref} · ${formatDateWithWeekday(node.scheduled_date)}`)}</text>
-        </g>`,
-      );
-    }
-
-    svg.innerHTML = parts.join("\n");
-    svg.querySelectorAll(".graph-node-group").forEach((el) => {
-      const nid = el.getAttribute("data-node-id");
-      el.addEventListener("click", () => {
-        this.selectedNodeId = nid;
-        this.renderGraphSvg();
-        this.renderNodeInspector(nid);
-      });
-      el.addEventListener("keydown", (ev) => {
-        if (ev.key === "Enter" || ev.key === " ") {
-          ev.preventDefault();
-          this.selectedNodeId = nid;
-          this.renderGraphSvg();
-          this.renderNodeInspector(nid);
-        }
-      });
-    });
+    renderMissionGraphSvg(this);
   }
 
   renderNodeInspector(nodeId) {
-    const box = document.querySelector("#node-inspector");
-    if (!box) return;
-    const node = this.graph.nodes.get(nodeId) || Array.from(this.graph.nodes.values())[0];
-    if (!node) return;
-    const meta = GRAPH_VISUAL_STATES[node.visual_state] || GRAPH_VISUAL_STATES.UNCHANGED;
-    const impactInfo = this.impactReport?.nodeDecisions?.[node.id];
-    const canPin = node.id !== this.mission.anchor_commitment_id && !this.lastSagaExecution;
-    const isPinned = this.pinnedNodeIds.has(node.id);
-    const matchingOp = this.preparedOps.find((o) => o.commitment_id === node.id);
-    const receiptDetails = matchingOp?.receipt_envelope
-      ? `<details style="margin-top:8px;"><summary style="cursor:pointer;font-weight:700;">Inspect Signed Ed25519 Receipt JSON</summary><pre style="margin:6px 0 0;padding:8px;border-radius:6px;background:var(--bg-card);overflow:auto;font-size:0.76rem;">${this.escapeXml(JSON.stringify(matchingOp.receipt_envelope, null, 2))}</pre></details>`
-      : "";
-
-    box.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-        <div><strong>${this.escapeXml(node.title)}</strong> — <span>[${this.escapeXml(`${meta.icon} ${meta.label}`)}]</span></div>
-        ${
-          canPin
-            ? `<button id="inspector-pin-btn" type="button" class="mini-btn">${isPinned ? "📌 Pinned Untouched (Click to Unlock)" : "📌 Pin Date Untouched"}</button>`
-            : ""
-        }
-      </div>
-      <div>Provider: <code>${this.escapeXml(node.provider_name)}</code> (${this.escapeXml(node.provider_origin)}) · Ref: <code>${this.escapeXml(node.booking_ref)}</code></div>
-      <div>Scheduled: <strong>${this.escapeXml(formatDateWithWeekday(node.scheduled_date))}</strong> (${this.escapeXml(node.window)}) · Price: <strong>€${Number(node.price_eur).toFixed(2)}</strong> · Cancel Penalty: €${Number(node.cancellation_fee_eur).toFixed(2)}</div>
-      <div>Evidence Trust: <code>${this.escapeXml(node.observed?.evidence_trust || "DEMO_FIXTURE_INITIAL")}</code>${impactInfo ? ` · Impact Rationale: ${this.escapeXml(impactInfo.reasons.join(" "))}` : ""}</div>
-      ${receiptDetails}
-    `;
-
-    box.querySelector("#inspector-pin-btn")?.addEventListener("click", () => {
-      void this.togglePinCommitment(node.id);
-    });
+    renderMissionNodeInspector(this, nodeId);
   }
 
   renderChangePackage(plan) {
-    const summaryBox = document.querySelector("#change-summary-box");
-    const plansContainer = document.querySelector("#plans-selector");
-    const opsContainer = document.querySelector("#operations-list");
-    if (!summaryBox || !plansContainer || !opsContainer) return;
-
-    if (!this.compiledProposal) {
-      summaryBox.innerHTML =
-        "No active change proposal yet. Write your request above and choose <strong>Analyze &amp; prepare plans</strong>.";
-      plansContainer.innerHTML = "";
-      opsContainer.innerHTML =
-        '<p class="muted-empty">Existing reservations remain locked in CONFIRMED state until replacements are prepared and explicitly approved.</p>';
-      return;
-    }
-
-    if (!this.solverResult?.feasible || !plan) {
-      summaryBox.innerHTML = `<strong>Hard Constraint Guard Triggered:</strong> ${this.escapeXml((this.solverResult?.rejectionReasonsSummary || []).join(" "))} Slide the What-If budget ceiling below or adjust your request — your original bookings remain completely untouched.`;
-      plansContainer.innerHTML = "";
-      opsContainer.innerHTML = "";
-      return;
-    }
-
-    const alertsHtml = this.providerAlerts.length
-      ? `<div style="margin-top:8px;color:var(--warn);font-weight:600;">${this.providerAlerts.map((a) => `⚡ ${this.escapeXml(a)}`).join("<br>")}</div>`
-      : "";
-
-    const committedBanner =
-      this.lastSagaExecution?.status === "ALL_COMMITTED_AND_VERIFIED"
-        ? `<strong>Mission Re-Aligned &amp; Cryptographically Verified.</strong> ${plan.metrics.changedCount} service arrangements have been committed for ${formatDateWithWeekday(this.compiledProposal.requested_change.new_value)}. ${plan.metrics.unchangedCount} unaffected commitments remained untouched throughout. Download your updated <code>.ics</code> calendar or click any synced peer above.`
-        : `<strong>Change Package Prepared:</strong> Primary anchor shifts from ${formatDateWithWeekday(this.compiledProposal.requested_change.previous_value)} to <strong>${formatDateWithWeekday(this.compiledProposal.requested_change.new_value)}</strong>. <strong>${plan.metrics.changedCount}</strong> service arrangements need modification; <strong>${plan.metrics.unchangedCount}</strong> existing arrangements remain unchanged. Replacements are prepared and held — your original bookings remain intact until you approve.`;
-
-    summaryBox.innerHTML = `${committedBanner}${alertsHtml}`;
-
-    plansContainer.innerHTML = this.solverResult.plans
-      .map((p) => {
-        const isSel = p.plan_id === this.selectedPlanId;
-        const deltaSign = p.metrics.netDeltaEur >= 0 ? "+" : "";
-        const paretoHtml = p.paretoOptimal ? `<span class="pareto-badge">PARETO OPTIMAL</span>` : "";
-        return `
-          <button type="button" class="plan-option ${isSel ? "selected" : ""}" data-plan-id="${this.escapeXml(p.plan_id)}" ${this.lastSagaExecution ? "disabled" : ""}>
-            <div class="plan-option-top">
-              <span>${isSel ? "✓ " : ""}${this.escapeXml(p.label)}${paretoHtml}</span>
-              <span>€${p.metrics.totalMissionCostEur.toFixed(2)} (${deltaSign}€${p.metrics.netDeltaEur.toFixed(2)})</span>
-            </div>
-            <div class="plan-option-meta">
-              ${p.metrics.changedCount} changed · ${p.metrics.unchangedCount} preserved untouched · Budget headroom: €${p.metrics.budgetHeadroomEur.toFixed(2)}
-            </div>
-          </button>
-        `;
-      })
-      .join("");
-
-    plansContainer.querySelectorAll(".plan-option").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const pid = btn.getAttribute("data-plan-id");
-        if (pid && pid !== this.selectedPlanId) {
-          void this.prepareSelectedPlan(pid);
-        }
-      });
-    });
-
-    opsContainer.innerHTML = this.preparedOps
-      .map((op) => {
-        const totalOp = Number(op.base_price_eur) + Number(op.change_fee_eur || 0) + Number(op.cancellation_penalty_eur || 0);
-        const proofBadge = op.proof_verification?.level
-          ? `<div>Proof: <code>${this.escapeXml(op.proof_verification.level)}</code></div>`
-          : "";
-        return `
-          <div class="op-card">
-            <div class="op-card-head">
-              <span>${this.escapeXml(op.commitment_title)} → ${this.escapeXml(formatDateWithWeekday(op.proposed_date))}</span>
-              <span class="state-tag">${this.escapeXml(op.state)}</span>
-            </div>
-            <div>Provider: <strong>${this.escapeXml(op.provider_name)}</strong> (${this.escapeXml(op.provider_origin)}) · Capability: <code>${this.escapeXml(op.capability)}</code></div>
-            <div>Window: ${this.escapeXml(op.window)} · Total: <strong>€${totalOp.toFixed(2)}</strong> (Fee €${Number(op.change_fee_eur || 0).toFixed(2)}) · Reversible: ${op.reversible ? "Yes (Draft)" : "No (Irreversible Booking)"}</div>
-            <div>Idempotency Key: <code>${this.escapeXml(op.idempotency_key)}</code>${op.hold_id ? ` · Hold: <code>${this.escapeXml(op.hold_id)}</code>` : ""}</div>
-            ${proofBadge}
-          </div>
-        `;
-      })
-      .join("");
+    renderChangePackageView(this, plan);
   }
 
   renderCommitmentsTable() {
-    const tbody = document.querySelector("#commitments-tbody");
-    if (!tbody) return;
-    const snap = this.graph.toJSON();
-    tbody.innerHTML = snap.nodes
-      .map(
-        (n) => `
-        <tr>
-          <td><strong>${this.escapeXml(n.title)}</strong></td>
-          <td>${this.escapeXml(n.provider_name)}<br><small>${this.escapeXml(n.provider_origin)}</small></td>
-          <td><code>${this.escapeXml(n.booking_ref)}</code></td>
-          <td>${this.escapeXml(formatDateWithWeekday(n.scheduled_date))}<br><small>${this.escapeXml(n.window)}</small></td>
-          <td>€${Number(n.price_eur).toFixed(2)}</td>
-          <td><span class="state-tag">${this.escapeXml(`${n.stateMeta.icon} ${n.stateMeta.badge}`)}</span></td>
-          <td><code>${this.escapeXml(n.observed?.evidence_trust || "DEMO_FIXTURE")}</code></td>
-        </tr>`,
-      )
-      .join("");
+    renderCommitmentsTableView(this);
   }
 
   renderPrivacyTable() {
-    const tbody = document.querySelector("#privacy-tbody");
-    if (!tbody) return;
-    if (!this.privacyDisclosures.length) {
-      tbody.innerHTML =
-        '<tr><td colspan="4">No external peer requests dispatched yet. Unaffected commitments receive zero data.</td></tr>';
-      return;
-    }
-    tbody.innerHTML = this.privacyDisclosures
-      .map(
-        (d) => `
-        <tr>
-          <td><strong>${this.escapeXml(d.providerName)}</strong><br><code>${this.escapeXml(d.origin)}</code></td>
-          <td><code>${this.escapeXml(d.sentFields)}</code></td>
-          <td>${this.escapeXml(d.withheldFields)}</td>
-          <td><strong>${this.escapeXml(d.keyExposure)}</strong></td>
-        </tr>`,
-      )
-      .join("");
+    renderPrivacyTableView(this);
   }
 
   renderAuditTimeline() {
-    const list = document.querySelector("#audit-timeline-list");
-    const chainBanner = document.querySelector("#chain-integrity-banner");
-    if (!list) return;
-    const history = this.saga?.ledger?.getHistory() || [];
-    if (!history.length) {
-      if (chainBanner) {
-        chainBanner.textContent = "SHA-256 Tamper-Evident Event Chain Ready (Genesis 00000000…).";
-      }
-      list.innerHTML = `<li>Mission initialized — ${this.mission.commitments.length} confirmed commitments active (€${this.baselineTotalEur().toFixed(2)} baseline).</li>`;
-      return;
-    }
-    const chainCheck = OperationLedger.verifyChainIntegrity(history);
-    if (chainBanner) {
-      chainBanner.textContent = chainCheck.valid
-        ? `✓ SHA-256 Hash Chain Verified (${chainCheck.verifiedEntries}/${history.length} events intact · Head ${chainCheck.headHash.slice(0, 16)}…)`
-        : `✕ Hash Chain Tampering Detected at seq #${chainCheck.brokenAtSeq}: ${chainCheck.reason}`;
-    }
-    list.innerHTML = history
-      .map(
-        (h) =>
-          `<li><code>#${h.seq}</code> <strong>${this.escapeXml(h.operation_id)}</strong>: ${this.escapeXml(h.from_state || "INIT")} → <strong>${this.escapeXml(h.to_state)}</strong> — ${this.escapeXml(h.reason)} <small><code>[sha256:${this.escapeXml((h.entry_hash || "").slice(0, 12))}]</code></small></li>`,
-      )
-      .join("");
+    renderAuditTimelineView(this);
   }
 
   renderMandateTable() {
-    const summary = document.querySelector("#mandate-summary-box");
-    const tbody = document.querySelector("#mandate-tbody");
-    if (!summary || !tbody) return;
-
-    if (!this.activeMandate && !this.bypassAuditReport) {
-      tbody.innerHTML =
-        '<tr><td colspan="4">No mandate issued yet. Run Analyze &amp; Prepare above or click "Try 4 Adversarial Bypasses".</td></tr>';
-      return;
-    }
-
-    if (this.activeMandate) {
-      summary.innerHTML = `<strong>Issued Immutable Policy Mandate:</strong> <code>${this.escapeXml(this.activeMandate.mandate_id)}</code> · Ceiling: <strong>€${(this.activeMandate.ceiling_cents / 100).toFixed(2)}</strong> (withheld from all peer requests) · Digest: <code>sha256:${this.escapeXml(this.activeMandate.mandate_sha256.slice(0, 20))}…</code> · Mechanism: <code>${ARBITER_MECHANISM_VERSION}</code>`;
-    }
-
-    const rows = [];
-    for (const o of this.arbiterReport?.outcomes || []) {
-      rows.push(`
-        <tr>
-          <td><strong>${this.escapeXml(o.provider_name)}</strong><br><small>Sealed Bid Resolution</small></td>
-          <td><code>sha256:${this.escapeXml(o.commitment_hash.slice(0, 18))}…</code><br><small>Private floor hidden</small></td>
-          <td>Catalogue Ask: €${o.catalogue_ask_eur.toFixed(2)}<br>${
-            o.status === "AGREEMENT_REACHED"
-              ? `<strong>Nash Compromise: €${o.compromise_eur.toFixed(2)}</strong> (−€${o.savings_vs_ask_eur.toFixed(2)})`
-              : "Exceeds private slice allowance"
-          }</td>
-          <td><strong>${o.status === "AGREEMENT_REACHED" ? "✓ AGREEMENT_REACHED" : "⊘ NO_AGREEMENT (Zero Floor Leak)"}</strong></td>
-        </tr>
-      `);
-    }
-
-    for (const b of this.bypassAuditReport?.results || []) {
-      rows.push(`
-        <tr>
-          <td><strong>[${this.escapeXml(b.id)}] ${this.escapeXml(b.attack)}</strong></td>
-          <td><code>Policy &amp; Arbiter Guard</code></td>
-          <td>${this.escapeXml(b.detail)}</td>
-          <td><strong>✓ ${this.escapeXml(b.decision)}</strong></td>
-        </tr>
-      `);
-    }
-
-    tbody.innerHTML = rows.join("");
+    renderMandateTableView(this);
   }
 
   renderChaosTable() {
-    const summary = document.querySelector("#chaos-summary");
-    const tbody = document.querySelector("#chaos-tbody");
-    if (!summary || !tbody || !this.chaosReport) return;
-
-    summary.textContent = `Simulation Suite Complete: ${this.chaosReport.passed}/${this.chaosReport.total} scenarios passed (${this.chaosReport.failed} failed). Zero live mission commitments modified.`;
-    tbody.innerHTML = this.chaosReport.results
-      .map(
-        (r) => `
-        <tr>
-          <td>${r.number}</td>
-          <td><strong>${this.escapeXml(r.title)}</strong></td>
-          <td>${this.escapeXml(r.injectedFailure)}</td>
-          <td><code>${this.escapeXml(r.observedState)}</code></td>
-          <td>${r.humanInterventionRequired ? "Required" : "Auto-Reconciled"}</td>
-          <td><strong>${r.passed ? "✓ PASS" : "✕ FAIL"}</strong><br><small>${this.escapeXml(r.evidence)}</small></td>
-        </tr>`,
-      )
-      .join("");
+    renderChaosTableView(this);
   }
 
   renderAuditorTable() {
-    const summary = document.querySelector("#auditor-summary");
-    const tbody = document.querySelector("#auditor-tbody");
-    if (!summary || !tbody || !this.auditorResults.length) return;
-
-    const allOk = this.auditorResults.every((r) => r.ok);
-    summary.textContent = `Conformance Audit Complete: ${this.auditorResults.filter((r) => r.ok).length}/${this.auditorResults.length} Open Agentic Website(s) passed all required MVP 0.2 & Project NANDA checks (${allOk ? "ZERO FAILURES" : "ISSUES DETECTED"}).`;
-
-    tbody.innerHTML = this.auditorResults
-      .map(
-        (r) => `
-        <tr>
-          <td><strong><code>${this.escapeXml(r.siteBaseUrl)}</code></strong></td>
-          <td>Network: <code>${this.escapeXml(r.networkName || "n/a")}</code><br><small>${this.escapeXml(r.manifestDigest || "")}</small></td>
-          <td>${r.checks
-            .map(
-              (c) =>
-                `<div><strong>[${this.escapeXml(c.status)}]</strong> ${this.escapeXml(c.check)} — <small>${this.escapeXml(c.detail)}</small></div>`,
-            )
-            .join("")}</td>
-          <td><strong>${r.ok ? "✓ PASS" : "✕ FAIL"}</strong><br><code>${this.escapeXml(r.score)}</code></td>
-        </tr>`,
-      )
-      .join("");
+    renderAuditorTableView(this);
   }
 
   escapeXml(str) {
@@ -1751,6 +1240,28 @@ export class ContinuityCoordinatorPage {
 
     document.querySelector("#reset-mission-btn")?.addEventListener("click", () => {
       void this.resetMission({ rippleFailureInjected: false, resetToDefaultScenario: false });
+    });
+
+    document.querySelector("#copy-permalink-btn")?.addEventListener("click", async () => {
+      const u = new URL(window.location.href);
+      u.search = "";
+      u.hash = "workspace";
+      if (this.activeScenarioId && this.activeScenarioId !== "custom_intake") {
+        u.searchParams.set("scenario", this.activeScenarioId);
+      }
+      if (this.rippleFailureInjected) {
+        u.searchParams.set("ripple", "1");
+      }
+      const btn = document.querySelector("#copy-permalink-btn");
+      try {
+        await navigator.clipboard.writeText(u.href);
+        if (btn) btn.textContent = "✓ Link copied";
+        setTimeout(() => {
+          if (btn) btn.textContent = "Copy scenario link";
+        }, 1800);
+      } catch {
+        this.render(`Shareable scenario URL: ${u.href}`);
+      }
     });
 
     // Scenario pills
@@ -1816,6 +1327,18 @@ export class ContinuityCoordinatorPage {
     });
     document.querySelector("#export-audit-btn")?.addEventListener("click", () => {
       void this.downloadSignedAuditBundle();
+    });
+
+    document.querySelector("#release-holds-btn")?.addEventListener("click", () => {
+      void this.releasePreparedHolds();
+    });
+
+    document.querySelector("#verify-bundle-btn")?.addEventListener("click", () => {
+      void this.verifyCurrentAuditBundle();
+    });
+
+    document.querySelector("#tamper-bundle-btn")?.addEventListener("click", () => {
+      void this.simulateBundleTamperAttack();
     });
 
     document.querySelector("#approve-commit-btn")?.addEventListener("click", async () => {

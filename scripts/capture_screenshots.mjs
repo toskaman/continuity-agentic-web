@@ -50,43 +50,43 @@ const archSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 820" 
 
   <!-- Deterministic Safety Kernel Box -->
   <rect x="70" y="390" width="770" height="350" rx="12" fill="#0f172a" stroke="#10b981" stroke-width="1.8"/>
-  <text x="95" y="424" fill="#34d399" font-size="16" font-weight="700" font-family="Inter, Segoe UI, sans-serif">2. Deterministic Safety &amp; Reconciliation Kernel (16 Open-Source @continuity/* Modules)</text>
+  <text x="95" y="424" fill="#34d399" font-size="16" font-weight="700" font-family="Inter, Segoe UI, sans-serif">2. Deterministic Safety &amp; Reconciliation Kernel (19 Open-Source @continuity/* Modules)</text>
 
   <rect x="95" y="445" width="350" height="82" rx="8" fill="#131c2e" stroke="#334155"/>
   <text x="112" y="472" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/intake-compiler &amp; mission-graph</text>
-  <text x="112" y="495" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">Compiles .ics / emails / NL; locks hard budget cap;</text>
-  <text x="112" y="513" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">3-color DFS cycle guard &amp; topological DAG layout.</text>
+  <text x="112" y="495" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">Compiles .ics / emails / JSON / NL; locks hard cap;</text>
+  <text x="112" y="513" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">3-color DFS cycle guard &amp; offline bundle verifier.</text>
 
   <rect x="465" y="445" width="350" height="82" rx="8" fill="#131c2e" stroke="#334155"/>
   <text x="482" y="472" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/constraint-solver &amp; mandate-arbiter</text>
-  <text x="482" y="495" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">Bounded BFS skips unaffected bookings; 4D Pareto front;</text>
+  <text x="482" y="495" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">4D NSGA-II Pareto + 1-click counterfactual MUS;</text>
   <text x="482" y="513" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">SHA-256 mandates &amp; sealed-bid integer-cent Nash arbiter.</text>
 
   <rect x="95" y="545" width="350" height="82" rx="8" fill="#131c2e" stroke="#334155"/>
-  <text x="112" y="572" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/cross-origin-bridge &amp; webmcp</text>
+  <text x="112" y="572" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/cross-origin-bridge &amp; facts-publisher</text>
   <text x="112" y="595" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">Zero-server postMessage RPC + WebCrypto Ed25519 +</text>
-  <text x="112" y="613" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">W3C navigator.modelContext dual-protocol bridge.</text>
+  <text x="112" y="613" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">visible data-agent-facts -&gt; 1-turn facts/ &amp; WebMCP.</text>
 
   <rect x="465" y="545" width="350" height="82" rx="8" fill="#131c2e" stroke="#334155"/>
-  <text x="482" y="572" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/outcome-reconciliation &amp; proof</text>
-  <text x="482" y="595" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">14-state SHA-256 hash-chained ledger; UNKNOWN check;</text>
-  <text x="482" y="613" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">Ed25519 provider receipt signature verification.</text>
+  <text x="482" y="572" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/saga-engine &amp; proof-verifier</text>
+  <text x="482" y="595" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">14-state hash-chained ledger; €0 hold release;</text>
+  <text x="482" y="613" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">UNKNOWN reconciler &amp; Ed25519 receipt verification.</text>
 
   <rect x="95" y="645" width="720" height="72" rx="8" fill="#1b263b" stroke="#f59e0b"/>
-  <text x="115" y="673" fill="#fbbf24" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/nanda-resolver (7/7 Live Spec Auditor) + @continuity/chaos-lab (15 Scenarios)</text>
-  <text x="115" y="697" fill="#cbd5e1" font-size="12.5" font-family="Inter, Segoe UI, sans-serif">Audits MVP 0.2 &amp; NANDA A2A v1.0 Agent Cards live · Chaos Lab proves 15/15 distributed fault recoveries.</text>
+  <text x="115" y="673" fill="#fbbf24" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/nanda-resolver (9/9 Live Spec &amp; SARIF Auditor) + @continuity/chaos-lab (20 Scenarios)</text>
+  <text x="115" y="697" fill="#cbd5e1" font-size="12.5" font-family="Inter, Segoe UI, sans-serif">Audits MVP 0.2, facts/, NANDA AI Catalog &amp; A2A v1.0 · Community Builder Kit · 20/20 Chaos recoveries.</text>
 
   <!-- Right Column: Otari Router -->
   <rect x="935" y="115" width="420" height="145" rx="14" fill="#1e1b4b" stroke="#818cf8" stroke-width="2"/>
-  <text x="960" y="150" fill="#c7d2fe" font-size="16" font-weight="700" font-family="Inter, Segoe UI, sans-serif">PLUGGABLE BYOK INFERENCE ROUTER</text>
-  <text x="960" y="178" fill="#f8fafc" font-size="14.5" font-weight="600" font-family="Inter, Segoe UI, sans-serif">Mozilla Otari Gateway (api.otari.ai/api/v1)</text>
-  <text x="960" y="203" fill="#cbd5e1" font-size="12.5" font-family="Inter, Segoe UI, sans-serif">Default model: alibaba/qwen-3.5-35b-a3b (or OpenAI/Ollama)</text>
+  <text x="960" y="150" fill="#c7d2fe" font-size="16" font-weight="700" font-family="Inter, Segoe UI, sans-serif">PLUGGABLE BYOK &amp; ON-DEVICE ROUTER</text>
+  <text x="960" y="178" fill="#f8fafc" font-size="14.5" font-weight="600" font-family="Inter, Segoe UI, sans-serif">Mozilla Otari US/EU + Local Nano / Ollama</text>
+  <text x="960" y="203" fill="#cbd5e1" font-size="12.5" font-family="Inter, Segoe UI, sans-serif">Default model: alibaba/qwen-3.5-35b-a3b (or Gemini/On-Device)</text>
   <text x="960" y="226" fill="#34d399" font-size="12.5" font-weight="600" font-family="Inter, Segoe UI, sans-serif">Receives Bearer key ONLY — Site host pays $0 LLM cost</text>
 
   <!-- Right Column: Independent Peer Origins -->
   <rect x="920" y="295" width="445" height="475" rx="14" fill="#131c2e" stroke="#38bdf8" stroke-width="2"/>
-  <text x="942" y="330" fill="#7dd3fc" font-size="16" font-weight="700" font-family="Inter, Segoe UI, sans-serif">INDEPENDENT PEER AGENTIC WEBSITES</text>
-  <text x="942" y="352" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">Separate Origins · CORS · Manifest · .network.json · A2A · MCP</text>
+  <text x="942" y="330" fill="#7dd3fc" font-size="16" font-weight="700" font-family="Inter, Segoe UI, sans-serif">BIDIRECTIONAL PEER AGENTIC WEBSITES</text>
+  <text x="942" y="352" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">Separate Origins · CORS · Manifest · facts/ · ai-catalog · A2A</text>
 
   <rect x="942" y="372" width="400" height="82" rx="10" fill="#1b263b" stroke="#3b82f6"/>
   <text x="958" y="398" fill="#f8fafc" font-size="13.5" font-weight="700" font-family="Inter, Segoe UI, sans-serif">Peer A — MoveCo Express (moveco_dispatch)</text>
@@ -309,31 +309,37 @@ try {
     await snapPng(name);
   }
 
-  // Screenshot 13: live provider wall on the PUBLIC deployment (needs network; skipped on failure).
-  // Signed receipts only travel between the real public origins, so this one is not captured locally.
-  try {
-    await cdp.send("Page.navigate", { url: "https://toskaman.github.io/continuity-agentic-web/?demo=1" });
-    await cdp.send("Runtime.evaluate", {
-      expression: `(async () => {
-        let d = null;
-        for (let i = 0; i < 100 && !d; i++) { await new Promise((r) => setTimeout(r, 300)); d = document.querySelector("dialog[open]"); }
-        if (!d) throw new Error("approval dialog did not open");
-        if (d) [...d.querySelectorAll("button")].find((b) => /Approve/.test(b.textContent))?.click();
-        await new Promise((r) => setTimeout(r, 7000));
-        document.querySelector("#outcome-panel")?.remove();
-        const w = document.querySelector("#live-wall");
-        window.scrollTo({ top: w.getBoundingClientRect().top + scrollY - 110, behavior: "instant" });
-      })()`,
-      awaitPromise: true,
-    });
-    const verified = await cdp.send("Runtime.evaluate", {
-      expression: `[...document.querySelectorAll(".live-site")].filter((f) => f.dataset.state === "committed").length`,
-    });
-    if ((verified.result?.value || 0) < 3) throw new Error("providers not committed on the public site");
-    await new Promise((r) => setTimeout(r, 2500));
-    await snapPng("13_live_provider_wall.png");
-  } catch (err) {
-    console.log("Skipped 13_live_provider_wall.png:", err.message);
+  // Screenshot 14: Standalone 5-Tool Open Agentic Web Community Builder Kit
+  await cdp.send("Page.navigate", { url: "http://127.0.0.1:8080/community-kit.html" });
+  await new Promise((r) => setTimeout(r, 800));
+  await snapPng("14_community_builder_kit.png");
+
+  // Screenshot 13: live provider wall on the PUBLIC deployment (only when --capture-public-wall is passed).
+  if (process.argv.includes("--capture-public-wall")) {
+    try {
+      await cdp.send("Page.navigate", { url: "https://toskaman.github.io/continuity-agentic-web/?demo=1" });
+      await cdp.send("Runtime.evaluate", {
+        expression: `(async () => {
+          let d = null;
+          for (let i = 0; i < 100 && !d; i++) { await new Promise((r) => setTimeout(r, 300)); d = document.querySelector("dialog[open]"); }
+          if (!d) throw new Error("approval dialog did not open");
+          if (d) [...d.querySelectorAll("button")].find((b) => /Approve/.test(b.textContent))?.click();
+          await new Promise((r) => setTimeout(r, 7000));
+          document.querySelector("#outcome-panel")?.remove();
+          const w = document.querySelector("#live-wall");
+          window.scrollTo({ top: w.getBoundingClientRect().top + scrollY - 110, behavior: "instant" });
+        })()`,
+        awaitPromise: true,
+      });
+      const verified = await cdp.send("Runtime.evaluate", {
+        expression: `[...document.querySelectorAll(".live-site")].filter((f) => f.dataset.state === "committed").length`,
+      });
+      if ((verified.result?.value || 0) < 3) throw new Error("providers not committed on the public site");
+      await new Promise((r) => setTimeout(r, 2500));
+      await snapPng("13_live_provider_wall.png");
+    } catch (err) {
+      console.log("Skipped 13_live_provider_wall.png:", err.message);
+    }
   }
 
   // Screenshot 7: Architecture SVG rendered cleanly to PNG

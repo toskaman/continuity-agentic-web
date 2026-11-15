@@ -44,7 +44,13 @@ Edited files. Each one has a line near its top saying that it was changed:
   agents into one. It also tells agents about the `render_cruse` tool.
 - `ui.js` shows a time picker for `format: "time"` fields and option labels from
   `x-ui.enumLabels`. It groups radio buttons under a legend and links each field to its
-  description for screen readers.
+  description for screen readers. The `⚙ AI model settings` panel lists hosted Otari first
+  (auto-routing `otk_v1_eu_` keys to `eu.api.otari.ai` and `otk_` keys to `api.otari.ai`,
+  while leaving `tk-` self-hosted keys untouched) and recognizes `AQ.` Google AI Studio keys.
+- `model.js` strips the `models/` catalog prefix on Gemini model IDs (`models/gemini-*`).
+- `llm.js` separates parallel SSE tool-call chunks that share `index: 0` with distinct `id`s,
+  preserves `extra_content` (`thought_signature`) across turns, and retries transient `429/502/503/504`
+  router responses before streaming starts while failing fast on `400/401`.
 - `action-transport.js` opens the confirmation dialog with focus on its heading, so a
   stray Enter cannot confirm an action. Closing the dialog puts focus back where it was.
 - `index.js` tells visitors that only actions that cannot be undone ask first, when the

@@ -81,6 +81,18 @@ class SiteActions {
     });
 
     actions.register({
+      name: "release_prepared_holds",
+      description: "Safely release all temporary pre-commit slot holds at €0.00 fee and keep existing baseline reservations untouched.",
+      effect: "write",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
+      execute: () => App.page.releasePreparedHolds(),
+    });
+
+    actions.register({
       name: "commit_prepared_change_package",
       description: "Execute and verify the prepared change package across affected providers after explicit visitor confirmation. Refuses stale expectedVersion or expectedTotalEur drift.",
       effect: "irreversible",

@@ -29,12 +29,23 @@ import { reviewActions } from "./action-transport.js";
 export const AI_MODEL_SETTINGS_LABEL = "AI model settings";
 export const API_KEY_HELP_URL = "https://ai.google.dev/gemini-api/docs/api-key";
 export const API_KEY_PROVIDERS = [
+  // First, because sites built with the agentify-website skill use hosted Otari by default.
+  // Only hosted Otari keys start with "otk_". Self-hosted Otari keys start with "tk-"
+  // and belong to the visitor's own Otari, so they are not matched here.
+  {
+    name: "Otari",
+    keyUrl: "https://otari.ai/dashboard#/keys",
+    router: "https://api.otari.ai/api/v1",
+    model: "alibaba/qwen-3.5-35b-a3b",
+    keyPrefixes: ["otk_"],
+    accessNote: "Challenge default",
+  },
   {
     name: "Google AI Studio",
     keyUrl: "https://aistudio.google.com/apikey",
     router: "https://generativelanguage.googleapis.com/v1beta/openai",
-    model: "gemini-3.8-flash",
-    keyPrefixes: ["AIza"],
+    model: "gemini-2.5-flash",
+    keyPrefixes: ["AIza", "AQ."],
     accessNote: "Free tier",
   },
   {
@@ -63,8 +74,18 @@ export const API_KEY_PROVIDERS = [
   },
 ];
 
+const OTARI_EU_PROVIDER = Object.freeze({
+  name: "Otari",
+  keyUrl: "https://otari.ai/dashboard#/keys",
+  router: "https://eu.api.otari.ai/api/v1",
+  model: "alibaba/qwen-3.5-35b-a3b",
+  keyPrefixes: ["otk_v1_eu_"],
+  accessNote: "Challenge default (EU)",
+});
+
 export function providerForApiKey(apiKey) {
   const key = String(apiKey || "").trim();
+  if (key.startsWith("otk_v1_eu_")) return OTARI_EU_PROVIDER;
   for (const provider of API_KEY_PROVIDERS) {
     if (provider.keyPrefixes.some((prefix) => key.startsWith(prefix))) return provider;
   }

@@ -1,0 +1,11 @@
+{
+  "name": "@continuity/facts-publisher",
+  "version": "1.0.0",
+  "description": "Zero-dependency Public Facts Network compiler & visibility/anti-injection verifier for Open Agentic Websites (data-agent-facts -> facts/<network>_facts)",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  }
+}

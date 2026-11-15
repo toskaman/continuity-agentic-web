@@ -71,7 +71,7 @@
       <div class="container">
         <div class="official-banner reveal" role="note">
           <span class="notice-icon" aria-hidden="true">i</span>
-          <span><strong>Preparation only.</strong> PermitFlow drafts your loading-bay application and checks public notice rules. It does not issue permits and has no access to municipal systems — a prepared draft is not an approval.</span>
+          <span data-agent-facts="scope_boundary"><strong>Preparation only.</strong> PermitFlow drafts your loading-bay application and checks public notice rules. It does not issue permits and has no access to municipal systems — a prepared draft is not an approval.</span>
         </div>
       </div>
     </section>
@@ -82,7 +82,7 @@
           <div class="card-head">
             <div>
               <h2 id="amend-heading">Choose your occupation date</h2>
-              <p class="card-sub">Only dates that meet the 48-hour notice period are listed. Updating the draft costs €10.00.</p>
+              <p class="card-sub" data-agent-facts="notice_and_fee">Only dates that meet the 48-hour notice period are listed. Updating the draft costs €10.00.</p>
             </div>
             <span class="badge badge-info">Reversible draft</span>
           </div>
@@ -135,6 +135,8 @@
             <a href="./agent-manifest.json" target="_blank" rel="noopener">agent-manifest.json</a>
             <a href="./permitflow_advisor.network.json" target="_blank" rel="noopener">permitflow_advisor.network.json</a>
             <a href="./.well-known/agent-card.json" target="_blank" rel="noopener">agent-card.json</a>
+            <a href="./.well-known/ai-catalog.json" target="_blank" rel="noopener">ai-catalog.json</a>
+            <a href="./facts/agent-manifest.json" target="_blank" rel="noopener">facts/</a>
           </div>
         </section>
       </div>
@@ -147,9 +149,17 @@
             <div>
               <span class="eyebrow">PermitFlow assistant</span>
               <h2 id="assistant-heading">Ask PermitFlow Civic Prep</h2>
-              <p class="sub-copy">Check notice rules, preview a date, or update dossier PF-2049 — using your own AI provider key.</p>
+              <p class="sub-copy">Check notice rules, preview a date, update dossier PF-2049, or consult CONTINUITY — with your own key or zero-key replay.</p>
             </div>
-            <span class="mono-tag">permitflow_advisor</span>
+            <div class="peer-assistant-actions">
+              <span class="mono-tag">permitflow_advisor</span>
+              <button id="peer-zero-key-btn" type="button" class="btn btn-primary btn-sm">Try without a key</button>
+            </div>
+          </div>
+          <div class="peer-prompts-row" role="group" aria-label="Suggested prompts">
+            <button type="button" class="peer-prompt-chip" data-prompt="What are the curbside loading-bay notice rules and current date for dossier PF-2049?">Check 48h notice rules</button>
+            <button type="button" class="peer-prompt-chip" data-prompt="Stage a preview for Friday 2026-11-20 on dossier PF-2049.">Preview Friday eligibility</button>
+            <button type="button" class="peer-prompt-chip" data-prompt="How do I coordinate my moving van, fiber, and electricity alongside my permit draft? Ask CONTINUITY.">Ask CONTINUITY (cross-origin)</button>
           </div>
           <p class="assistant-note">Your messages and this page's data go to the LLM provider you choose in the settings below. You confirm anything that cannot be undone before it happens.</p>
           <p id="assistant-status" role="status" class="status-line">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>

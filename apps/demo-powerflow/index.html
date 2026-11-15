@@ -48,7 +48,7 @@
         <div class="reveal">
           <span class="eyebrow">PowerFlow · Meter point PRM-7510299481</span>
           <h1>Powering your home, <em>intelligently.</em></h1>
-          <p class="lead">Manage your energy connection with clarity and confidence. Your meter is switched on remotely — no visit, and changing the date is free.</p>
+          <p class="lead" data-agent-facts="service_overview">Manage your energy connection with clarity and confidence. Your meter is switched on remotely — no visit, and changing the date is free.</p>
           <div class="btn-row">
             <a href="#activation" class="btn btn-primary btn-lg">Manage activation date <span class="arrow" aria-hidden="true">→</span></a>
             <a href="#assistant" class="btn btn-lg">Ask the assistant</a>
@@ -90,7 +90,7 @@
           <div class="card-head">
             <div>
               <h2 id="shift-heading">Choose your activation date</h2>
-              <p class="card-sub">The activation fee stays €30.00. Moving the date costs nothing.</p>
+              <p class="card-sub" data-agent-facts="activation_fee">The activation fee stays €30.00. Moving the date costs nothing.</p>
             </div>
             <span class="badge badge-ok">€0.00 change fee</span>
           </div>
@@ -149,6 +149,8 @@
             <a href="./agent-manifest.json" target="_blank" rel="noopener">agent-manifest.json</a>
             <a href="./powerflow_grid.network.json" target="_blank" rel="noopener">powerflow_grid.network.json</a>
             <a href="./.well-known/agent-card.json" target="_blank" rel="noopener">agent-card.json</a>
+            <a href="./.well-known/ai-catalog.json" target="_blank" rel="noopener">ai-catalog.json</a>
+            <a href="./facts/agent-manifest.json" target="_blank" rel="noopener">facts/</a>
           </div>
         </section>
       </div>
@@ -161,9 +163,17 @@
             <div>
               <span class="eyebrow">PowerFlow assistant</span>
               <h2 id="assistant-heading">Ask PowerFlow Energy</h2>
-              <p class="sub-copy">Check activation dates, stage one, or move activation PFW-9921 — using your own AI provider key.</p>
+              <p class="sub-copy">Check activation dates, stage one, move activation PFW-9921, or consult CONTINUITY — with your own key or zero-key replay.</p>
             </div>
-            <span class="mono-tag">powerflow_grid</span>
+            <div class="peer-assistant-actions">
+              <span class="mono-tag">powerflow_grid</span>
+              <button id="peer-zero-key-btn" type="button" class="btn btn-primary btn-sm">Try without a key</button>
+            </div>
+          </div>
+          <div class="peer-prompts-row" role="group" aria-label="Suggested prompts">
+            <button type="button" class="peer-prompt-chip" data-prompt="What energization dates and modification fees apply to smart-meter schedule PFW-9921?">Check meter schedule</button>
+            <button type="button" class="peer-prompt-chip" data-prompt="Stage Friday 2026-11-20 for smart-meter activation PFW-9921.">Stage Friday activation</button>
+            <button type="button" class="peer-prompt-chip" data-prompt="How do I coordinate my moving van, parking, and fiber alongside electricity activation? Ask CONTINUITY.">Ask CONTINUITY (cross-origin)</button>
           </div>
           <p class="assistant-note">Your messages and this page's data go to the LLM provider you choose in the settings below. You confirm anything that cannot be undone before it happens.</p>
           <p id="assistant-status" role="status" class="status-line">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>

@@ -32,6 +32,14 @@ const PEER_VENDOR_PACKAGES = [
 const isCheck = process.argv.includes("--check");
 
 if (!isCheck) {
+  const skillRuntime = path.join(ROOT, "skills", "agentify-website", "runtime");
+  for (const site of SITES) {
+    await cp(skillRuntime, path.join(ROOT, site.dir, "runtime"), {
+      recursive: true,
+      force: true,
+    });
+  }
+
   await cp(path.join(ROOT, "packages"), path.join(ROOT, "apps", "continuity-web", "vendor"), {
     recursive: true,
     force: true,

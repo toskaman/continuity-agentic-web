@@ -1,4 +1,5 @@
 import { App } from "./script.js";
+import { bindPeerZeroKeyControls } from "./ui-kit.js";
 
 export class AssistantMount {
   static GREETING = "I can check HomeConnect fiber technician installation windows, place a 10-minute window hold, or confirm a date change for appointment HC-5510.";
@@ -29,8 +30,9 @@ export class AssistantMount {
       const needsKey =
         !booted.engine.mockLLM && (!booted.engine.byokKey || booted.engine.byokKey === "demo");
       status.textContent = needsKey
-        ? "Assistant needs your AI provider key. Add it in AI model settings below."
+        ? "Add your AI provider key below, or click 'Try without a key' for instant deterministic replay."
         : "Assistant connected to this page.";
+      bindPeerZeroKeyControls(booted.engine, status, AssistantMount.greet);
       if (!needsKey) AssistantMount.greet();
       return booted.engine;
     } catch (error) {

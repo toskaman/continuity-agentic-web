@@ -22,11 +22,12 @@
   3. `08_pareto_frontier_and_hold_countdown.png` — Plan comparison (A/C/Alternative) + what-if budget frontier
   4. `03_bound_approval_modal.png` — SHA-256-bound human approval dialog
   5. `04_committed_verified_ed25519.png` — Committed & verified with Ed25519 receipts
-  6. `05_chaos_lab_15_passed.png` — Chaos Lab: 15 failure scenarios in the browser
+  6. `05_chaos_lab_15_passed.png` — Chaos Lab: 20 failure scenarios passing in the browser
   7. `09_mandate_arbiter_and_bypasses_denied.png` — Mandate & arbiter: 4 bypass attempts denied
   8. `06_open_agentic_web_runtime_otari_byok.png` — Open Agentic Web runtime, consent cards, Otari BYOK
   9. `07`, `10`, `11`, `12` — The four independent provider sites (MoveCo, PermitFlow, HomeConnect, PowerFlow)
-  10. `00_architecture_diagram.png` — Topology & trust boundaries
+  10. `14_community_builder_kit.png` — Standalone 5-tool Open Agentic Web Community Builder Kit (`community-kit.html`)
+  11. `00_architecture_diagram.png` — Topology & trust boundaries
 - **Built With:** `neuro-san`, `nsdeploy`, `open-agentic-web`, `mozilla-otari`, `project-nanda`, `a2a`, `mcp`, `javascript`, `web-crypto`, `html5`
 
 ---
@@ -51,17 +52,18 @@ Agent demos usually plan something new. Real life breaks *after* things are book
 6. **Verifies.** Every commit returns an Ed25519-signed receipt. Each provider site verifies it on its own origin. You can export the updated calendar and a signed audit file.
 
 ### How it uses the Open Agentic Web
-Five independent websites on two origins — CONTINUITY (`toskaman.github.io`) and four providers (`gpaschercher-sudo.github.io`): MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber and PowerFlow Energy. Each has its own UI, `agent-manifest.json`, resolved `.network.json`, browser `runtime/`, action bridge and A2A agent card. Provider networks run in the visitor's browser on the visitor's own model router (default: Mozilla Otari), so providers never see the visitor's API key. All five sites pass the official `build_network.mjs --check` and `check_partner.mjs` validators. Site actions are also exposed through WebMCP (`navigator.modelContext`).
+Five independent websites on two origins — CONTINUITY (`toskaman.github.io`) and four providers (`gpaschercher-sudo.github.io`): MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber and PowerFlow Energy — connected as a **bidirectional Open Agentic Web mesh** (CONTINUITY consults all four providers, and each provider's assistant can also consult CONTINUITY cross-origin). Each publishes its own UI, `agent-manifest.json`, resolved `.network.json`, single-turn `facts/<network>_facts` network, browser `runtime/`, action bridge, Project NANDA `ai-catalog.json` (`urn:air:...`), and A2A v1.0 agent card. Provider networks run in the visitor's browser on the visitor's own model router (default: Mozilla Otari, plus optional zero-key on-device Chrome `LanguageModel` / local Ollama), so providers never see the visitor's API key. All five sites pass `build_network.mjs --check` (0 warnings) and all 9 `check_partner.mjs` bidirectional checks. Site actions are also exposed through WebMCP (`navigator.modelContext`).
 
 ### Why you can trust it
 - The language model interprets and explains; it cannot raise the budget, enable cancellations or commit anything. Those rules are enforced in code.
 - Network timeouts after a commit become `UNKNOWN` and are reconciled, not blindly retried.
 - **Checked with a real model, not only mocks:** the real engine on hosted Otari with the default model consulted all four providers — 4 consent cards, no provider contacted before consent, API key sent to the router only (`docs/benchmarks/LIVE_MODEL_CHECK.md`).
-- **Chaos Lab:** 15 failure scenarios (forged receipts, price drift after approval, timeouts, partial failures…) run in your browser.
-- **Measured:** 60 benchmark runs, 100% verified completion, 0 cancel calls, 3/3 signed receipts per run; full run 11 ms median on loopback (`docs/benchmarks/BEFORE_AFTER.md`). 42 automated tests pass in CI. Lighthouse 13.6 scores all five sites 100 on desktop in Performance, Accessibility, Best Practices, SEO and the new **Agentic Browsing** category (`docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md`).
+- **Chaos Lab:** 20 failure scenarios (forged & cross-provider spoofed receipts, price drift after approval, timeouts, NANDA sequence rollbacks, mandate floor exhaustion, post-export bundle tampering…) run in your browser.
+- **Measured:** 90 end-to-end sagas across 3 domains (`30` normal relocation + `30` ripple recovery on 5 live origins + `15` outpatient surgery + `15` expo freight), 100% verified completion, 0 cancel calls, 3/3 signed receipts per run; full live 5-origin run ~10 ms median on loopback, plus an empirical uncoordinated split-brain probe showing 2 premature mutations when MoveCo's Friday van is full (`docs/benchmarks/BEFORE_AFTER.md`). **66 automated tests in 23 suites** (including real Headless Chromium CDP Desktop & `390x844` Mobile E2E) pass in CI. Lighthouse 13.6 scores all five sites 100 on desktop in Performance, Accessibility, Best Practices, SEO and the new **Agentic Browsing** category (`docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md`).
 
 ### Shared with the community (Apache-2.0)
-17 zero-dependency modules, including: a cross-origin browser bridge with signed receipt handoff for static sites; an Open Agentic Web MVP 0.2 + Project NANDA conformance auditor (7 checks, usable on any site from the Trust Center); a Google ADK / OpenAI Agents → Neuro SAN HOCON converter; an email/`.ics` intake compiler; and a WebMCP adapter with confirmation gates on irreversible tools.
+- **Live 5-Tool Community Builder Kit Web App:** `https://toskaman.github.io/continuity-agentic-web/community-kit.html` — zero-backend 9-point MVP 0.2 & Project NANDA validator + GitHub Actions SARIF `.yml` generator, visible-DOM `data-agent-facts` → `facts/` compiler (with build-time hidden prompt-injection guard), NANDA `ai-catalog.json` + A2A `agent-card.json` generator, multi-agent Neuro SAN converter, and offline zero-trust cryptographic audit bundle verifier.
+- **19 zero-dependency ES modules (`packages/*`):** cross-origin browser bridge with signed `#continuity_receipt` handoff for static sites; 9-point MVP 0.2 + Facts + NANDA (`urn:air`, `ai-catalog.json`, `POST /resolve` `draft-raskar-02`) conformance auditor & SARIF/bundle-verifier CLI; zero-key on-device Chrome `LanguageModel` (Gemini Nano) & local Ollama router; visible `data-agent-facts` compiler; Pareto + counterfactual MUS relaxation solver; Google ADK / OpenAI Agents → Neuro SAN HOCON converter; email/`.ics` intake compiler & offline cryptographic bundle verifier; and WebMCP confirmation adapter.
 
 ### What is real and what is a demo
 The protocols are real: separate origins, CORS, MCP, signed receipts, consent, approvals. The four providers are demonstration services built for this challenge. No real bookings, payments or municipal permits are touched; PermitFlow only prepares draft applications.

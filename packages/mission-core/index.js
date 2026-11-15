@@ -373,8 +373,62 @@ export function compileMissionChange(input, mission) {
   }
 
   if (!newDate) {
-    // Default fallback if relative shift like "+3 days" is specified
-    const shiftMatch = rawText.match(/\b(\d{1,2})\s+days?\s+later\b/i);
+    // Month + Day expressions (e.g., "Nov 20", "November 20th", "20 Nov", "20 November")
+    const MONTHS = {
+      jan: "01", january: "01",
+      feb: "02", february: "02",
+      mar: "03", march: "03",
+      apr: "04", april: "04",
+      may: "05",
+      jun: "06", june: "06",
+      jul: "07", july: "07",
+      aug: "08", august: "08",
+      sep: "09", sept: "09", september: "09",
+      oct: "10", october: "10",
+      nov: "11", november: "11",
+      dec: "12", december: "12",
+    };
+    const anchorYear = prevDate.slice(0, 4);
+    const mdMatches = [
+      ...rawText.matchAll(
+        /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s*(202\d))?\b/gi,
+      ),
+    ];
+    for (const m of mdMatches) {
+      const mm = MONTHS[m[1].toLowerCase()];
+      const dd = String(Number(m[2])).padStart(2, "0");
+      const yr = m[3] || anchorYear;
+      const cand = `${yr}-${mm}-${dd}`;
+      if (isValidIsoDate(cand) && cand !== prevDate) {
+        newDate = cand;
+        extractedNotes.push(`Resolved calendar phrase "${m[0]}" -> ${newDate}`);
+      }
+    }
+    if (!newDate) {
+      const dmMatches = [
+        ...rawText.matchAll(
+          /\b(\d{1,2})(?:st|nd|rd|th)?(?:\s+of)?\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\.?(?:,?\s*(202\d))?\b/gi,
+        ),
+      ];
+      for (const m of dmMatches) {
+        const dd = String(Number(m[1])).padStart(2, "0");
+        const mm = MONTHS[m[2].toLowerCase()];
+        const yr = m[3] || anchorYear;
+        const cand = `${yr}-${mm}-${dd}`;
+        if (isValidIsoDate(cand) && cand !== prevDate) {
+          newDate = cand;
+          extractedNotes.push(`Resolved calendar phrase "${m[0]}" -> ${newDate}`);
+        }
+      }
+    }
+  }
+
+  if (!newDate) {
+    // Relative shift expressions: "3 days later", "+3 days", "push/postpone/delay/shift by 3 days"
+    const shiftMatch =
+      rawText.match(/\b(\d{1,2})\s+days?\s+later\b/i)
+      || rawText.match(/(?:^|\s)\+(\d{1,2})\s*days?\b/i)
+      || rawText.match(/\b(?:push|postpone|delay|shift|move)(?:\s+\w+){0,3}\s+by\s+(\d{1,2})\s+days?\b/i);
     if (shiftMatch) {
       newDate = addDaysIso(prevDate, Number(shiftMatch[1]));
       extractedNotes.push(`Applied +${shiftMatch[1]} days shift -> ${newDate}`);

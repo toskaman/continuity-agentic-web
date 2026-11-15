@@ -105,3 +105,106 @@ test("S5 Concurrent duplicate approval consumption is race-safe (exactly one suc
   const validCount = [resA, resB].filter((r) => r.valid).length;
   assert.equal(validCount, 1, "Exactly one concurrent execution may consume a bound approval");
 });
+
+test("S6 Path-traversal attempts (/../package.json and encoded ..%2f) on provider server are blocked", async () => {
+  const { startAllEcosystemServers } = await import("../../scripts/serve_ecosystem.mjs");
+  const eco = await startAllEcosystemServers({
+    continuity: 0,
+    moveco: 0,
+    permitflow: 0,
+    homeconnect: 0,
+    powerflow: 0,
+  });
+  try {
+    const origin = eco.peers.moveco.origin();
+    for (const attackPath of ["/..%2f..%2fpackage.json", "/..%5c..%5cpackage.json", "/../../../LICENSE"]) {
+      const res = await fetch(`${origin}${attackPath}`);
+      assert.ok([400, 403, 404].includes(res.status), `Expected 400/403/404 for ${attackPath}, got ${res.status}`);
+    }
+  } finally {
+    await eco.stopAll();
+  }
+});
+
+test("S7 Cross-origin #continuity_receipt handoff rejects provider_id swap, XSS date injection, and pinned-key mismatch", async () => {
+  const { encodeSignedReceiptHandoff, verifySignedReceiptHandoff } = await import(
+    "../../packages/cross-origin-bridge/index.js"
+  );
+  const movecoKey = await generateDemoProviderKeyPair("moveco");
+  const permitKey = await generateDemoProviderKeyPair("permitflow");
+
+  // 1. Valid MoveCo receipt replayed onto PermitFlow tab -> rejected
+  const validMovecoEnv = await signProviderReceipt(
+    {
+      receipt_id: "rcpt_mc_1",
+      provider_id: "moveco",
+      booking_ref: "MC-8841",
+      scheduled_date: "2026-11-20",
+      total_charged_eur: 415,
+    },
+    movecoKey,
+  );
+  const mcToken = encodeSignedReceiptHandoff(validMovecoEnv, movecoKey, "https://peer.example/moveco");
+  const wrongPeer = await verifySignedReceiptHandoff("permitflow", mcToken);
+  assert.equal(wrongPeer.valid, false);
+
+  // 2. HTML/XSS string smuggled inside scheduled_date -> rejected before any DOM touch
+  const xssEnv = await signProviderReceipt(
+    {
+      receipt_id: "rcpt_pf_xss",
+      provider_id: "permitflow",
+      booking_ref: "PF-2049",
+      scheduled_date: "<img src=x onerror=alert(1)>",
+      total_charged_eur: 45,
+    },
+    permitKey,
+  );
+  const xssToken = encodeSignedReceiptHandoff(xssEnv, permitKey, "https://peer.example/permitflow");
+  const xssCheck = await verifySignedReceiptHandoff("permitflow", xssToken);
+  assert.equal(xssCheck.valid, false);
+  assert.match(xssCheck.reason, /YYYY-MM-DD/);
+
+  // 3. Self-signed rogue key rejected when pinnedKey is supplied
+  const rogueKey = await generateDemoProviderKeyPair("permitflow");
+  const rogueEnv = await signProviderReceipt(
+    {
+      receipt_id: "rcpt_pf_rogue",
+      provider_id: "permitflow",
+      booking_ref: "PF-2049",
+      scheduled_date: "2026-11-20",
+      total_charged_eur: 45,
+    },
+    rogueKey,
+  );
+  const rogueToken = encodeSignedReceiptHandoff(rogueEnv, rogueKey, "https://peer.example/permitflow");
+  const pinnedCheck = await verifySignedReceiptHandoff("permitflow", rogueToken, { pinnedKey: permitKey });
+  assert.equal(pinnedCheck.valid, false);
+});
+
+test("S8 Oversized HTTP request body (> 64 KB) is rejected without server crash", async () => {
+  const { startAllEcosystemServers } = await import("../../scripts/serve_ecosystem.mjs");
+  const eco = await startAllEcosystemServers({
+    continuity: 0,
+    moveco: 0,
+    permitflow: 0,
+    homeconnect: 0,
+    powerflow: 0,
+  });
+  try {
+    const hugePayload = JSON.stringify({ pad: "A".repeat(70_000) });
+    const res = await fetch(`${eco.peers.moveco.origin()}/api/call`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: hugePayload,
+    });
+    assert.equal(res.status, 500);
+    const body = await res.json();
+    assert.match(body.error || "", /64 KB/);
+
+    // Server remains healthy immediately afterward
+    const health = await fetch(`${eco.peers.moveco.origin()}/api/state`);
+    assert.equal(health.status, 200);
+  } finally {
+    await eco.stopAll();
+  }
+});

@@ -11,6 +11,9 @@ export function normalizeModelName(value) {
     if (!((first === '"' && last === '"') || (first === "'" && last === "'"))) break;
     model = model.slice(1, -1).trim();
   }
+  if (/^models\/gemini-/i.test(model)) {
+    model = model.replace(/^models\//i, "");
+  }
   return model;
 }
 

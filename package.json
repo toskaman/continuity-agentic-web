@@ -21,6 +21,7 @@
     "test:sites": "node --test \"apps/*/tests/*.test.mjs\"",
     "test": "node scripts/run_all_tests.mjs",
     "benchmark": "node scripts/run_benchmarks.mjs",
+    "audit:perf": "node scripts/audit_browser_perf.mjs",
     "audit:submission": "node packages/nanda-resolver/cli.mjs",
     "verify:live-llm": "node scripts/verify_live_llm.mjs"
   }

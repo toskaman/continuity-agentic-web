@@ -1,0 +1,34 @@
+{
+  "brand": "MoveCo Express Assistant — Public Facts",
+  "networks": [
+    {
+      "name": "moveco_dispatch_facts",
+      "front_man": "moveco_dispatch_facts_agent",
+      "hocon": "./moveco_dispatch_facts.network.json",
+      "description": "Dated public service, fee, and policy facts for MoveCo Express Assistant (answers calling sites in one model turn with no tools).",
+      "tags": [
+        "agentified-website",
+        "open-agentic-web",
+        "public-facts-network"
+      ]
+    }
+  ],
+  "llm_router": {
+    "base_url": "https://api.otari.ai/api/v1",
+    "mock": false,
+    "byok_router": "https://api.otari.ai/api/v1"
+  },
+  "allowed_peers": [],
+  "peer_policy": {
+    "mode": "closed",
+    "deny_origins": [],
+    "note": "Tool-free public facts network; makes zero outbound peer calls."
+  },
+  "deployment": {
+    "mode": "static",
+    "self_contained_runtime": false,
+    "browser_mock": false,
+    "direct_byok": true,
+    "public_mcp_facade": false
+  }
+}

@@ -6,11 +6,23 @@
   Access-Control-Allow-Origin: *
 /agent-mcp.json
   Access-Control-Allow-Origin: *
+/agent-card.json
+  Access-Control-Allow-Origin: *
+/ai-catalog.json
+  Access-Control-Allow-Origin: *
+/facts/agent-manifest.json
+  Access-Control-Allow-Origin: *
+/facts/powerflow_grid_facts.network.json
+  Access-Control-Allow-Origin: *
+/facts/links.json
+  Access-Control-Allow-Origin: *
 /.well-known/nsdeploy.json
   Access-Control-Allow-Origin: *
 /.well-known/nsdeploy-agent.json
   Access-Control-Allow-Origin: *
 /.well-known/agent-card.json
+  Access-Control-Allow-Origin: *
+/.well-known/ai-catalog.json
   Access-Control-Allow-Origin: *
 /runtime/sandbox-worker.js
   Content-Security-Policy: default-src 'none'; script-src blob:; connect-src 'none'; worker-src 'none'

@@ -1,0 +1,43 @@
+{
+  "mediaType": "application/ai-catalog+json",
+  "version": "1.0",
+  "publisher": {
+    "identifier": "127.0.0.1",
+    "displayName": "HomeConnect Fiber Assistant",
+    "identityType": "loopback-dev"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:127.0.0.1:agent:homeconnect_scheduler",
+      "displayName": "HomeConnect Fiber Assistant",
+      "description": "Check HomeConnect 2 Gbps fiber installation technician windows, hold a slot, or reschedule appointment HC-5510.",
+      "type": "application/a2a-agent-card+json",
+      "url": "http://127.0.0.1:8083/agent-card.json",
+      "targetDigest": "sha256:c326509d541ef414ae3993a8a0d1a18c306e6e8c92be90650a0532a89a64190c",
+      "tags": [
+        "open-agentic-web",
+        "a2a",
+        "homeconnect"
+      ],
+      "publisher": {
+        "identifier": "127.0.0.1",
+        "displayName": "HomeConnect Fiber Assistant",
+        "identityType": "dns-or-platform-subpath"
+      },
+      "extensions": {
+        "org.projectnanda": {
+          "resolutionRole": "direct-agent-card",
+          "preferredDiscovery": "agent-manifest-and-a2a",
+          "resolutionProfile": "known-subject-resolution-02"
+        },
+        "org.worldwideagenticweb": {
+          "mvpProfile": "0.2",
+          "manifestUrl": "http://127.0.0.1:8083/agent-manifest.json",
+          "networkUrl": "http://127.0.0.1:8083/homeconnect_scheduler.network.json",
+          "factsManifestUrl": "http://127.0.0.1:8083/facts/agent-manifest.json",
+          "factsNetworkDigest": "sha256:cc8f914069ac4a731844dbe929eb6395ee56b2258c7742f7f92c5903d9c2f1f5"
+        }
+      }
+    }
+  ]
+}

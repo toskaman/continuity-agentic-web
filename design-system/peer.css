@@ -118,6 +118,10 @@
 /* Assistant */
 .assistant-intro { display: flex; justify-content: space-between; gap: var(--s-5); align-items: flex-start; flex-wrap: wrap; }
 .assistant-intro p { color: var(--muted); max-width: 60ch; margin-top: 8px; }
+.peer-assistant-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.peer-prompts-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 12px 0 8px; }
+.peer-prompt-chip { font-size: var(--fs-xs); padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--ink); cursor: pointer; font-weight: 600; transition: border-color .15s, background .15s; }
+.peer-prompt-chip:hover { border-color: var(--accent); background: var(--surface); }
 
 @media (max-width: 960px) {
   .peer-hero-grid, .work-grid, .details-grid { grid-template-columns: 1fr; }

@@ -1,14 +1,18 @@
 /**
- * Generates NANDA-Index-validated A2A v1.0 Agent Cards (`/.well-known/agent-card.json`)
- * and static CORS `_headers` for all 5 Open Agentic Websites.
+ * Generates NANDA-Index-validated A2A v1.0 Agent Cards (`/.well-known/agent-card.json`),
+ * Project NANDA AI Catalogs (`/.well-known/ai-catalog.json`), single-turn Public Facts Networks
+ * (`facts/<network>_facts`), and static CORS `_headers` for all 5 Open Agentic Websites.
  */
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateA2aAgentCard } from "../packages/nanda-resolver/index.js";
+import { buildFactsNetworkBundle } from "../packages/facts-publisher/index.js";
+import { validateA2aAgentCard, validateNandaAiCatalog } from "../packages/nanda-resolver/index.js";
+import { canonicalizeJson, sha256Hex } from "../packages/shared-schemas/index.js";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
+const STABLE_FACTS_DATE = "2026-11-15";
 
 export async function writeAgentCardsAndHeaders(origins = {}) {
   const defaults = {
@@ -24,6 +28,11 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
       key: "continuity",
       folder: "apps/continuity-web",
       network: "continuity_coordinator",
+      structuredFacts: [
+        "Coordinates multi-provider schedule changes across moving, curbside bay prep, fiber installation, smart-meter activation, storage, and furniture delivery.",
+        "Enforces hard user invariants in deterministic code: maximum budget ceiling, hold-before-release, zero unauthorized cancellations, and SHA-256 bound human approvals.",
+        "Verifies Ed25519 provider receipts and exports updated RFC 5545 .ics calendars and signed cryptographic audit JSON bundles.",
+      ],
       skills: [
         {
           id: "coordinate-commitment-change",
@@ -37,6 +46,11 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
       key: "moveco",
       folder: "apps/demo-moveco",
       network: "moveco_dispatch",
+      structuredFacts: [
+        "Residential Luton van + 3-mover crew base rate: €390.00 (weekday morning 08:00–13:00), Saturday rate: €420.00 (09:00–14:00).",
+        "Reschedule fee: €25.00. Temporary crew slot hold TTL: 15 minutes (900 seconds) with zero charge and original booking kept active.",
+        "Demonstration moving service created for the Cognizant Open Agentic Web Challenge; no real trucks dispatched or payments charged.",
+      ],
       skills: [
         {
           id: "moving-crew-dispatch",
@@ -50,6 +64,11 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
       key: "permitflow",
       folder: "apps/demo-permitflow",
       network: "permitflow_advisor",
+      structuredFacts: [
+        "Zone B 15-meter curbside loading-bay dossier preparation base fee: €35.00; draft date amendment fee: €10.00.",
+        "Public notice rule: occupation date must satisfy at least 48 hours advance notice (windows 07:30–14:00 or 08:00–14:00).",
+        "Demonstration dossier preparation service only; never issues municipal permits or modifies government databases.",
+      ],
       skills: [
         {
           id: "curbside-permit-dossier-prep",
@@ -63,6 +82,11 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
       key: "homeconnect",
       folder: "apps/demo-homeconnect",
       network: "homeconnect_scheduler",
+      structuredFacts: [
+        "2 Gbps symmetric fiber ONT installation visit: €49.00 weekday (14:00–17:00) or €39.00 Saturday off-peak (09:00–12:00).",
+        "Reschedule fee: €0.00. Temporary technician window hold TTL: 10 minutes (600 seconds) while keeping the current appointment active.",
+        "Demonstration broadband scheduler for the Open Agentic Web Challenge; no physical technician dispatched.",
+      ],
       skills: [
         {
           id: "fiber-technician-scheduling",
@@ -76,6 +100,11 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
       key: "powerflow",
       folder: "apps/demo-powerflow",
       network: "powerflow_grid",
+      structuredFacts: [
+        "Remote smart-meter electricity energization fee: €30.00 (08:00–12:00 window, no home technician visit needed).",
+        "Schedule date modification fee: €0.00; staging a target date leaves the confirmed activation untouched until explicit confirmation.",
+        "Demonstration utility activation service for the Open Agentic Web Challenge; no physical smart meter switched.",
+      ],
       skills: [
         {
           id: "smart-meter-energization",
@@ -90,9 +119,36 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
   for (const s of sites) {
     const siteDir = path.join(ROOT, s.folder);
     const manifest = JSON.parse(await readFile(path.join(siteDir, "agent-manifest.json"), "utf8"));
+    const htmlText = await readFile(path.join(siteDir, "index.html"), "utf8");
     const baseUrl = defaults[s.key].replace(/\/$/, "");
     const host = new URL(baseUrl).hostname;
 
+    // 1. Build & write single-turn Public Facts Network (`facts/<network>_facts`)
+    const factsDir = path.join(siteDir, "facts");
+    await mkdir(factsDir, { recursive: true });
+    let prevFactsNet = null;
+    const factsNetPath = path.join(factsDir, `${s.network}_facts.network.json`);
+    try {
+      prevFactsNet = JSON.parse(await readFile(factsNetPath, "utf8"));
+    } catch {
+      prevFactsNet = null;
+    }
+
+    const factsBundle = await buildFactsNetworkBundle({
+      siteName: manifest.brand,
+      siteUrl: `${baseUrl}/`,
+      networkName: s.network,
+      htmlText,
+      structuredFacts: s.structuredFacts,
+      todayIso: STABLE_FACTS_DATE,
+      previousNetworkJson: prevFactsNet,
+    });
+
+    await writeFile(path.join(factsDir, "agent-manifest.json"), `${JSON.stringify(factsBundle.manifestJson, null, 2)}\n`, "utf8");
+    await writeFile(factsNetPath, `${JSON.stringify(factsBundle.networkJson, null, 2)}\n`, "utf8");
+    await writeFile(path.join(factsDir, "links.json"), `${JSON.stringify(factsBundle.linksJson, null, 2)}\n`, "utf8");
+
+    // 2. Build & validate A2A v1.0 Agent Card
     const agentCard = {
       name: manifest.brand,
       description: manifest.networks[0].description,
@@ -118,10 +174,12 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
           mvpProfile: "0.2",
           manifestUrl: `${baseUrl}/agent-manifest.json`,
           networkUrl: `${baseUrl}/${s.network}.network.json`,
+          factsNetworkUrl: `${baseUrl}/facts/${s.network}_facts`,
           browserExecuted: true,
         },
         "org.projectnanda": {
           subjectUrnHint: `urn:air:${host}:agent:${s.network}`,
+          aiCatalogUrl: `${baseUrl}/ai-catalog.json`,
           resolutionProfile: "known-subject-resolution-02",
         },
       },
@@ -138,6 +196,59 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
     await writeFile(path.join(wellKnownDir, "agent-card.json"), serializedCard, "utf8");
     await writeFile(path.join(siteDir, "agent-card.json"), serializedCard, "utf8");
 
+    // 3. Build & validate Project NANDA AI Catalog (`ai-catalog.json` + `.well-known/ai-catalog.json`)
+    const cardDigest = `sha256:${await sha256Hex(canonicalizeJson(agentCard))}`;
+    const factsDigest = `sha256:${await sha256Hex(canonicalizeJson(factsBundle.networkJson))}`;
+
+    const aiCatalog = {
+      mediaType: "application/ai-catalog+json",
+      version: "1.0",
+      publisher: {
+        identifier: host,
+        displayName: manifest.brand,
+        identityType: ["127.0.0.1", "localhost"].includes(host) ? "loopback-dev" : "https-origin",
+      },
+      entries: [
+        {
+          identifier: `urn:air:${host}:agent:${s.network}`,
+          displayName: manifest.brand,
+          description: manifest.networks[0].description,
+          type: "application/a2a-agent-card+json",
+          url: `${baseUrl}/agent-card.json`,
+          targetDigest: cardDigest,
+          tags: ["open-agentic-web", "a2a", s.key],
+          publisher: {
+            identifier: host,
+            displayName: manifest.brand,
+            identityType: "dns-or-platform-subpath",
+          },
+          extensions: {
+            "org.projectnanda": {
+              resolutionRole: "direct-agent-card",
+              preferredDiscovery: "agent-manifest-and-a2a",
+              resolutionProfile: "known-subject-resolution-02",
+            },
+            "org.worldwideagenticweb": {
+              mvpProfile: "0.2",
+              manifestUrl: `${baseUrl}/agent-manifest.json`,
+              networkUrl: `${baseUrl}/${s.network}.network.json`,
+              factsManifestUrl: `${baseUrl}/facts/agent-manifest.json`,
+              factsNetworkDigest: factsDigest,
+            },
+          },
+        },
+      ],
+    };
+
+    const catCheck = validateNandaAiCatalog(aiCatalog);
+    if (!catCheck.valid) {
+      throw new Error(`Invalid NANDA AI Catalog for ${s.folder}: ${catCheck.errors.join("; ")}`);
+    }
+    const serializedCatalog = `${JSON.stringify(aiCatalog, null, 2)}\n`;
+    await writeFile(path.join(wellKnownDir, "ai-catalog.json"), serializedCatalog, "utf8");
+    await writeFile(path.join(siteDir, "ai-catalog.json"), serializedCatalog, "utf8");
+
+    // 4. Static Hosting Headers (`_headers`)
     const headersContent = `/agent-manifest.json
   Access-Control-Allow-Origin: *
 /${s.network}.network.json
@@ -146,11 +257,23 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
   Access-Control-Allow-Origin: *
 /agent-mcp.json
   Access-Control-Allow-Origin: *
+/agent-card.json
+  Access-Control-Allow-Origin: *
+/ai-catalog.json
+  Access-Control-Allow-Origin: *
+/facts/agent-manifest.json
+  Access-Control-Allow-Origin: *
+/facts/${s.network}_facts.network.json
+  Access-Control-Allow-Origin: *
+/facts/links.json
+  Access-Control-Allow-Origin: *
 /.well-known/nsdeploy.json
   Access-Control-Allow-Origin: *
 /.well-known/nsdeploy-agent.json
   Access-Control-Allow-Origin: *
 /.well-known/agent-card.json
+  Access-Control-Allow-Origin: *
+/.well-known/ai-catalog.json
   Access-Control-Allow-Origin: *
 /runtime/sandbox-worker.js
   Content-Security-Policy: default-src 'none'; script-src blob:; connect-src 'none'; worker-src 'none'
@@ -161,5 +284,5 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
   await writeAgentCardsAndHeaders();
-  console.log("Wrote validated /.well-known/agent-card.json and _headers for all 5 Open Agentic Websites.");
+  console.log("Wrote validated Agent Cards, NANDA AI Catalogs, Public Facts Networks, and _headers for all 5 Open Agentic Websites.");
 }

@@ -170,6 +170,72 @@ export class SagaCoordinator {
   }
 
   /**
+   * Stage 1b (Safe Reversibility): Explicitly release all prepared pre-commit slot holds
+   * at €0.00 cost while keeping original reservations untouched on their baseline dates.
+   * Refuses if any operation has already entered `COMMITTED` or `UNKNOWN`.
+   *
+   * @param {object} [params]
+   * @param {Record<string, any>} [params.providerClients]
+   * @param {string} [params.reason]
+   * @param {string} [params.nowIso]
+   */
+  async releasePreparedHolds(params = {}) {
+    const now = params.nowIso || new Date().toISOString();
+    const providerClients = params.providerClients || {};
+    const reason = params.reason || "Visitor explicitly released pre-commit holds; original bookings kept untouched.";
+    const allOps = this.ledger.getAllOperations();
+
+    if (allOps.some((op) => op.state === OP_STATES.COMMITTED || op.state === OP_STATES.UNKNOWN)) {
+      return {
+        ok: false,
+        reason: "Cannot bulk-release pre-commit holds after commit dispatch has begun.",
+        releasedOperationIds: [],
+      };
+    }
+
+    const releasedIds = [];
+    for (const op of allOps) {
+      if (op.state !== OP_STATES.AWAITING_APPROVAL && op.state !== OP_STATES.PREPARED) {
+        continue;
+      }
+      this.ledger.transition(
+        op.operation_id,
+        OP_STATES.COMPENSATION_PENDING,
+        "Releasing temporary pre-commit hold at visitor request",
+        { updated_at: now },
+      );
+
+      const client = providerClients[op.provider_id];
+      if (op.hold_id && client && typeof client.releaseHold === "function") {
+        await client.releaseHold({
+          holdId: op.hold_id,
+          bookingRef: op.original_booking_ref,
+        });
+      }
+
+      this.ledger.transition(
+        op.operation_id,
+        OP_STATES.COMPENSATED,
+        reason,
+        {
+          evidence_summary: `${op.original_booking_ref} preserved untouched on ${op.original_date} (€0.00 fee)`,
+          updated_at: now,
+        },
+      );
+      this.graph.updateNode(op.commitment_id, { visual_state: "UNCHANGED" });
+      releasedIds.push(op.operation_id);
+    }
+
+    return {
+      ok: true,
+      feeChargedEur: 0,
+      releasedOperationIds: releasedIds,
+      operations: this.ledger.getAllOperations(),
+      history: this.ledger.getHistory(),
+    };
+  }
+
+  /**
    * Stage 2: Record explicit human approvals cryptographically bound to each exact operation.
    * @param {Array<string>} operationIds
    * @param {{ nowIso?: string, approvedBy?: string }} [meta]

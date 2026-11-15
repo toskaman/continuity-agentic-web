@@ -41,10 +41,12 @@
       "mvpProfile": "0.2",
       "manifestUrl": "http://localhost:8084/agent-manifest.json",
       "networkUrl": "http://localhost:8084/powerflow_grid.network.json",
+      "factsNetworkUrl": "http://localhost:8084/facts/powerflow_grid_facts",
       "browserExecuted": true
     },
     "org.projectnanda": {
       "subjectUrnHint": "urn:air:localhost:agent:powerflow_grid",
+      "aiCatalogUrl": "http://localhost:8084/ai-catalog.json",
       "resolutionProfile": "known-subject-resolution-02"
     }
   }

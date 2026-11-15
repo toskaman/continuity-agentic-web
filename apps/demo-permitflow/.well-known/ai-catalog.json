@@ -1,0 +1,43 @@
+{
+  "mediaType": "application/ai-catalog+json",
+  "version": "1.0",
+  "publisher": {
+    "identifier": "localhost",
+    "displayName": "PermitFlow Civic Prep Assistant",
+    "identityType": "loopback-dev"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:localhost:agent:permitflow_advisor",
+      "displayName": "PermitFlow Civic Prep Assistant",
+      "description": "Check public curbside loading-bay eligibility rules and update prepared demonstration permit dossiers on PermitFlow.",
+      "type": "application/a2a-agent-card+json",
+      "url": "http://localhost:8082/agent-card.json",
+      "targetDigest": "sha256:5d049b45ee197df18b73811dd3f67b26bc754bbb30507e3c01bf259e44a7e09b",
+      "tags": [
+        "open-agentic-web",
+        "a2a",
+        "permitflow"
+      ],
+      "publisher": {
+        "identifier": "localhost",
+        "displayName": "PermitFlow Civic Prep Assistant",
+        "identityType": "dns-or-platform-subpath"
+      },
+      "extensions": {
+        "org.projectnanda": {
+          "resolutionRole": "direct-agent-card",
+          "preferredDiscovery": "agent-manifest-and-a2a",
+          "resolutionProfile": "known-subject-resolution-02"
+        },
+        "org.worldwideagenticweb": {
+          "mvpProfile": "0.2",
+          "manifestUrl": "http://localhost:8082/agent-manifest.json",
+          "networkUrl": "http://localhost:8082/permitflow_advisor.network.json",
+          "factsManifestUrl": "http://localhost:8082/facts/agent-manifest.json",
+          "factsNetworkDigest": "sha256:362e706bd907b76501861e5a01d6b6fc4222375350cc6cfe2e260a8f35dc5f80"
+        }
+      }
+    }
+  ]
+}

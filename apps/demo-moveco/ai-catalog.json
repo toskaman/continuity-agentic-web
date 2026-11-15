@@ -1,0 +1,43 @@
+{
+  "mediaType": "application/ai-catalog+json",
+  "version": "1.0",
+  "publisher": {
+    "identifier": "127.0.0.1",
+    "displayName": "MoveCo Express Assistant",
+    "identityType": "loopback-dev"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:127.0.0.1:agent:moveco_dispatch",
+      "displayName": "MoveCo Express Assistant",
+      "description": "Check MoveCo Express residential moving van availability, place a 15-minute slot hold, or confirm a crew reschedule.",
+      "type": "application/a2a-agent-card+json",
+      "url": "http://127.0.0.1:8081/agent-card.json",
+      "targetDigest": "sha256:0734f5408c99430ca4159a74d10cbc3c6cc513368979f24c3cd700abf9314775",
+      "tags": [
+        "open-agentic-web",
+        "a2a",
+        "moveco"
+      ],
+      "publisher": {
+        "identifier": "127.0.0.1",
+        "displayName": "MoveCo Express Assistant",
+        "identityType": "dns-or-platform-subpath"
+      },
+      "extensions": {
+        "org.projectnanda": {
+          "resolutionRole": "direct-agent-card",
+          "preferredDiscovery": "agent-manifest-and-a2a",
+          "resolutionProfile": "known-subject-resolution-02"
+        },
+        "org.worldwideagenticweb": {
+          "mvpProfile": "0.2",
+          "manifestUrl": "http://127.0.0.1:8081/agent-manifest.json",
+          "networkUrl": "http://127.0.0.1:8081/moveco_dispatch.network.json",
+          "factsManifestUrl": "http://127.0.0.1:8081/facts/agent-manifest.json",
+          "factsNetworkDigest": "sha256:a461309d6255e8665ed90565044a355f68c5c5b7092cf52d0628f8b2eaca8455"
+        }
+      }
+    }
+  ]
+}

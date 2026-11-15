@@ -1,6 +1,8 @@
 import { App } from "./script.js";
 import { registerActions } from "./site-actions.js";
 import { exposeActionsToWebMcp } from "./vendor/webmcp-adapter/index.js";
+import { ChromeBuiltInPromptLlm, probeLocalInferenceBackends } from "./vendor/local-browser-router/index.js";
+import { LlmClient } from "./runtime/llm.js";
 
 if (typeof navigator !== "undefined") {
   exposeActionsToWebMcp(registerActions, {
@@ -539,9 +541,86 @@ export class AssistantMount {
     keyInput?.focus();
   }
 
+  static async enableLocalOrOnDeviceAi(engine, statusEl) {
+    if (!engine?.top) return;
+    if (!AssistantMount.originalTopLlm) {
+      AssistantMount.originalTopLlm = engine.top.llm;
+      AssistantMount.originalUserRouter = { ...engine.userRouter };
+      AssistantMount.originalResolveRemote = engine.resolveRemote.bind(engine);
+    }
+    if (statusEl) {
+      statusEl.textContent = "Probing on-device Chrome LanguageModel (Gemini Nano) and local Ollama (127.0.0.1:11434)…";
+    }
+    const probe = await probeLocalInferenceBackends();
+    const badge = document.querySelector("#agent-app .ns-llmbadge");
+    const settings = document.querySelector("#agent-app .ns-settings");
+    const replayBtn = document.querySelector("#zero-key-replay-btn");
+    const localBtn = document.querySelector("#local-ai-btn");
+
+    if (probe.preferredBackend === "chrome-prompt-api") {
+      engine.mockLLM = true; // bypasses cloud API key gate while marking verifiedReal: true in trace
+      engine.userRouter = { baseUrl: "browser://chrome-language-model", mock: true };
+      engine.top.llm = new ChromeBuiltInPromptLlm({ trace: engine.trace });
+      engine.resolveRemote = async (...args) => {
+        const session = await AssistantMount.originalResolveRemote(...args);
+        if (session) session.llm = new ChromeBuiltInPromptLlm({ trace: engine.trace });
+        return session;
+      };
+      if (badge) {
+        badge.className = "ns-llmbadge real";
+        badge.textContent = "🧠 On-Device Gemini Nano (Zero Cloud Egress)";
+      }
+      if (settings) settings.open = false;
+      if (localBtn) localBtn.textContent = "✓ On-device AI active";
+      if (replayBtn) replayBtn.textContent = "Try without a key";
+      if (statusEl) {
+        statusEl.textContent =
+          `On-device Chrome LanguageModel (${probe.chromeBuiltIn.status}) connected with JSON-Schema tool-calling constraint. Zero cloud API calls and zero key egress.`;
+      }
+      AssistantMount.greet();
+      return;
+    }
+
+    if (probe.preferredBackend === "ollama-loopback") {
+      const model = probe.ollamaLoopback.recommendedModel;
+      const baseUrl = probe.ollamaLoopback.baseUrl;
+      engine.mockLLM = true; // Ollama needs no cloud bearer token
+      engine.modelOverride = model;
+      engine.userRouter = { baseUrl, mock: true };
+      const makeLocalOllama = () => new LlmClient({ baseUrl, apiKey: "ollama-local", trace: engine.trace, mock: true });
+      engine.top.llm = makeLocalOllama();
+      engine.resolveRemote = async (...args) => {
+        const session = await AssistantMount.originalResolveRemote(...args);
+        if (session) session.llm = makeLocalOllama();
+        return session;
+      };
+      if (badge) {
+        badge.className = "ns-llmbadge real";
+        badge.textContent = `🖥 Local Ollama (${model})`;
+      }
+      if (settings) settings.open = false;
+      if (localBtn) localBtn.textContent = `✓ Local Ollama (${model})`;
+      if (replayBtn) replayBtn.textContent = "Try without a key";
+      if (statusEl) {
+        statusEl.textContent =
+          `Connected to local loopback Ollama (${baseUrl} · model ${model}). Zero cloud egress; partner networks run locally on your machine.`;
+      }
+      AssistantMount.greet();
+      return;
+    }
+
+    if (statusEl) {
+      statusEl.textContent =
+        "No on-device LanguageModel (Chrome Built-in AI) or local Ollama (127.0.0.1:11434) detected on this browser/machine. Click 'Try without a key' for instant scripted replay, or 'Use Mozilla Otari' to paste a key.";
+    }
+  }
+
   static bindRuntimeHelpers(engine, statusEl) {
     document.querySelector("#zero-key-replay-btn")?.addEventListener("click", () => {
       AssistantMount.enableZeroKeyReplay(engine, statusEl);
+    });
+    document.querySelector("#local-ai-btn")?.addEventListener("click", () => {
+      void AssistantMount.enableLocalOrOnDeviceAi(engine, statusEl);
     });
     document.querySelector("#otari-preset-btn")?.addEventListener("click", () => {
       AssistantMount.selectOtariByok(engine, statusEl);

@@ -1,5 +1,6 @@
 {
-  "measuredAtIso": "2026-11-14T15:56:03.688Z",
+  "measuredAtIso": "2026-11-15T16:30:21.296Z",
+  "totalMeasuredSagas": 90,
   "environment": {
     "nodeVersion": "v26.13.1",
     "platform": "win32 x64",
@@ -8,42 +9,55 @@
     "networkTopology": "5 independent local HTTP origins (127.0.0.1 & localhost ports 28080..28084)"
   },
   "manualStructuralBaseline": {
-    "classification": "ESTIMATE — documented task model (3 actions per provider site), not a measured human study",
+    "classification": "TASK MODEL + LIVE UNCOORDINATED SPLIT-BRAIN PROBE (no human timing study claimed)",
     "totalCommitmentsInMission": 6,
     "manualUserInteractionsWithoutContinuity": 18,
-    "breakdown": "6 site logins/lookups + 6 availability checks + 6 manual reschedule/hold/verify actions (high risk of premature cancellation or touching unaffected bookings)"
+    "measuredInteractiveControlsAcross4LivePeerPages": 12,
+    "uncoordinatedRippleFailureProbe": {
+      "peerHtmlControlsCount": 12,
+      "movecoRejectedPrimary": false,
+      "statesAfterFailure": {
+        "moveco": "2026-11-20",
+        "permitflow": "2026-11-20",
+        "homeconnect": "2026-11-20",
+        "powerflow": "2026-11-17"
+      },
+      "splitBrainScheduleCreated": false,
+      "prematurelyMutatedProvidersCount": 2
+    },
+    "breakdown": "6 site logins/lookups + 6 availability checks + 6 manual reschedule/hold/verify actions"
   },
   "continuityMeasuredNormalScenario": {
     "sampleSize": 30,
     "compileMs": {
-      "median": 0.083,
-      "p95": 0.105,
-      "max": 0.191,
-      "mean": 0.085
+      "median": 0.063,
+      "p95": 0.185,
+      "max": 0.217,
+      "mean": 0.074
     },
     "impactMs": {
-      "median": 0.096,
-      "p95": 0.154,
-      "max": 0.367,
-      "mean": 0.109
+      "median": 0.076,
+      "p95": 0.114,
+      "max": 0.19,
+      "mean": 0.083
     },
     "quoteLatencyMs": {
-      "median": 2.072,
-      "p95": 3.984,
-      "max": 4.427,
-      "mean": 2.318
+      "median": 1.683,
+      "p95": 3.278,
+      "max": 3.528,
+      "mean": 1.823
     },
     "solveMs": {
-      "median": 0.141,
-      "p95": 0.208,
-      "max": 0.224,
-      "mean": 0.146
+      "median": 0.104,
+      "p95": 0.172,
+      "max": 0.174,
+      "mean": 0.115
     },
     "totalEndToEndMs": {
-      "median": 11.238,
-      "p95": 18.462,
-      "max": 20.31,
-      "mean": 12.317
+      "median": 8.897,
+      "p95": 12.302,
+      "max": 12.521,
+      "mean": 9.467
     },
     "baselineTotalEur": 624,
     "verifiedReceiptsPerRun": 3,
@@ -61,34 +75,34 @@
   "continuityMeasuredRippleRecoveryScenario": {
     "sampleSize": 30,
     "compileMs": {
-      "median": 0.078,
-      "p95": 0.107,
-      "max": 0.133,
-      "mean": 0.081
+      "median": 0.057,
+      "p95": 0.094,
+      "max": 0.095,
+      "mean": 0.063
     },
     "impactMs": {
-      "median": 0.1,
-      "p95": 0.15,
-      "max": 0.19,
-      "mean": 0.104
+      "median": 0.073,
+      "p95": 0.122,
+      "max": 0.124,
+      "mean": 0.08
     },
     "quoteLatencyMs": {
-      "median": 2.339,
-      "p95": 4.104,
-      "max": 4.307,
-      "mean": 2.436
+      "median": 1.582,
+      "p95": 2.618,
+      "max": 2.873,
+      "mean": 1.701
     },
     "solveMs": {
-      "median": 0.15,
-      "p95": 0.226,
-      "max": 0.239,
-      "mean": 0.161
+      "median": 0.105,
+      "p95": 0.195,
+      "max": 0.222,
+      "mean": 0.12
     },
     "totalEndToEndMs": {
-      "median": 11.399,
-      "p95": 15.666,
-      "max": 17.113,
-      "mean": 12.42
+      "median": 8.769,
+      "p95": 11.993,
+      "max": 12.075,
+      "mean": 9.187
     },
     "baselineTotalEur": 624,
     "verifiedReceiptsPerRun": 3,
@@ -101,6 +115,96 @@
     "changedCommitments": 3,
     "preservedCommitments": 3,
     "totalCostEur": 659,
+    "allSucceededRatePct": 100
+  },
+  "continuityMeasuredOutpatientSurgeryScenario": {
+    "sampleSize": 15,
+    "compileMs": {
+      "median": 0.053,
+      "p95": 0.1,
+      "max": 0.1,
+      "mean": 0.057
+    },
+    "impactMs": {
+      "median": 0.056,
+      "p95": 0.122,
+      "max": 0.122,
+      "mean": 0.066
+    },
+    "quoteLatencyMs": {
+      "median": 0.167,
+      "p95": 0.292,
+      "max": 0.292,
+      "mean": 0.18
+    },
+    "solveMs": {
+      "median": 0.085,
+      "p95": 0.135,
+      "max": 0.135,
+      "mean": 0.091
+    },
+    "totalEndToEndMs": {
+      "median": 4.484,
+      "p95": 5.561,
+      "max": 5.561,
+      "mean": 4.576
+    },
+    "baselineTotalEur": 480,
+    "verifiedReceiptsPerRun": 3,
+    "committedPerRun": 3,
+    "cancelToolCallsTotal": 0,
+    "resultsIdenticalAcrossRuns": true,
+    "httpRequestsPerRun": 12,
+    "providersContacted": 4,
+    "unnecessaryProvidersAvoided": 1,
+    "changedCommitments": 3,
+    "preservedCommitments": 2,
+    "totalCostEur": 500,
+    "allSucceededRatePct": 100
+  },
+  "continuityMeasuredExpoFreightScenario": {
+    "sampleSize": 15,
+    "compileMs": {
+      "median": 0.053,
+      "p95": 0.085,
+      "max": 0.085,
+      "mean": 0.059
+    },
+    "impactMs": {
+      "median": 0.063,
+      "p95": 0.123,
+      "max": 0.123,
+      "mean": 0.07
+    },
+    "quoteLatencyMs": {
+      "median": 0.117,
+      "p95": 0.147,
+      "max": 0.147,
+      "mean": 0.117
+    },
+    "solveMs": {
+      "median": 0.065,
+      "p95": 0.087,
+      "max": 0.087,
+      "mean": 0.065
+    },
+    "totalEndToEndMs": {
+      "median": 4.403,
+      "p95": 6.118,
+      "max": 6.118,
+      "mean": 4.506
+    },
+    "baselineTotalEur": 1820,
+    "verifiedReceiptsPerRun": 3,
+    "committedPerRun": 3,
+    "cancelToolCallsTotal": 0,
+    "resultsIdenticalAcrossRuns": true,
+    "httpRequestsPerRun": 9,
+    "providersContacted": 3,
+    "unnecessaryProvidersAvoided": 3,
+    "changedCommitments": 3,
+    "preservedCommitments": 3,
+    "totalCostEur": 1880,
     "allSucceededRatePct": 100
   }
 }

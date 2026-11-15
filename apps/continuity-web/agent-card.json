@@ -41,10 +41,12 @@
       "mvpProfile": "0.2",
       "manifestUrl": "http://127.0.0.1:8080/agent-manifest.json",
       "networkUrl": "http://127.0.0.1:8080/continuity_coordinator.network.json",
+      "factsNetworkUrl": "http://127.0.0.1:8080/facts/continuity_coordinator_facts",
       "browserExecuted": true
     },
     "org.projectnanda": {
       "subjectUrnHint": "urn:air:127.0.0.1:agent:continuity_coordinator",
+      "aiCatalogUrl": "http://127.0.0.1:8080/ai-catalog.json",
       "resolutionProfile": "known-subject-resolution-02"
     }
   }

@@ -37,6 +37,7 @@
         <a href="#network">Network</a>
         <a href="#trust">Trust</a>
         <a href="#assistant">Assistant</a>
+        <a href="./community-kit.html">Builder kit</a>
       </nav>
       <div class="header-meta top-actions">
         <button id="guided-demo-btn" type="button" class="btn btn-primary top-demo-btn" title="Runs the full mission: ripple failure, recovery, plan selection and the approval dialog">Run the live demo</button>
@@ -51,11 +52,11 @@
         <div class="hero-copy reveal">
           <div class="hero-meta">
             <span class="spec-pill">Open Agentic Web · MVP 0.2</span>
-            <span id="webmcp-badge" class="spec-pill" title="Site actions are exposed to Neuro SAN website_* tools and to navigator.modelContext (WebMCP)">WebMCP · 6 tools</span>
+            <span id="webmcp-badge" class="spec-pill" title="Site actions are exposed to Neuro SAN website_* tools and to navigator.modelContext (WebMCP)">WebMCP · 7 tools</span>
           </div>
           <h1 id="hero-heading">One change.<br><span>Every commitment re-aligned.</span></h1>
           <p class="hero-sub">Your services work together. Your life stays in sync.</p>
-          <p class="hero-lead">Tell CONTINUITY what changed. It finds every booking affected, asks each independent provider what is possible, holds replacements before releasing anything, and waits for your approval.</p>
+          <p class="hero-lead" data-agent-facts="mission_coordination">Tell CONTINUITY what changed. It finds every booking affected, asks each independent provider what is possible, holds replacements before releasing anything, and waits for your approval.</p>
           <div class="btn-row hero-ctas">
             <a href="#workspace" class="btn btn-primary btn-lg" id="launch-workspace-link">Launch your workspace <span class="arrow" aria-hidden="true">→</span></a>
             <a href="#network" class="btn btn-lg btn-on-dark">Explore the network</a>
@@ -172,6 +173,7 @@
           <div class="workspace-tools" role="group" aria-label="Demo controls">
             <span class="mono-ref">Mission <code id="mission-id-badge">move_paris_lyon_001</code></span>
             <button id="inject-ripple-btn" type="button" class="ghost-btn btn-sm" title="Simulates MoveCo's primary Friday crew refusing, so CONTINUITY must recover through an overflow partner">Simulate a provider failure</button>
+            <button id="copy-permalink-btn" type="button" class="ghost-btn btn-sm" title="Copy a reproducible URL for the active scenario and failure toggle">Copy scenario link</button>
             <button id="reset-mission-btn" type="button" class="ghost-btn btn-sm">Reset demo</button>
             <button id="theme-toggle-btn" type="button" class="ghost-btn btn-sm" aria-label="Switch light or dark theme">◐ Theme</button>
           </div>
@@ -304,7 +306,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
 
             <div id="hold-countdown-strip" class="hold-countdown-strip" hidden role="status"></div>
 
-            <ul class="guarantees" aria-label="Guarantees">
+            <ul class="guarantees" aria-label="Guarantees" data-agent-facts="safety_guarantees">
               <li><strong>Protected</strong> Bookings outside the change's reach are never contacted.</li>
               <li><strong>Held first</strong> Replacements are held before anything is released.</li>
               <li><strong>Your call</strong> Nothing commits until you approve the exact terms.</li>
@@ -320,7 +322,10 @@ Do not cancel anything or approve additional fees without my confirmation.</text
                 <strong>Ready when you are</strong>
                 <p class="panel-sub">You will see every operation, price and provider before anything runs.</p>
               </div>
-              <button id="approve-commit-btn" type="button" class="approve-btn btn-lg" disabled>Review &amp; approve</button>
+              <div class="btn-row">
+                <button id="release-holds-btn" type="button" class="ghost-btn" disabled title="Release all temporary holds for €0.00 and keep your original bookings untouched">Release holds (€0)</button>
+                <button id="approve-commit-btn" type="button" class="approve-btn btn-lg" disabled>Review &amp; approve</button>
+              </div>
             </div>
           </section>
         </div>
@@ -445,7 +450,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
         <div class="trust-tiles reveal">
           <button type="button" class="trust-tile" data-open-tab="tab-btn-timeline"><span class="tt-icon" aria-hidden="true">⛓</span><strong>Hash-chained log</strong><span>Tamper-evident history of every step</span></button>
           <button type="button" class="trust-tile" data-open-tab="tab-btn-privacy"><span class="tt-icon" aria-hidden="true">◎</span><strong>Data minimization</strong><span>Exactly what each provider received</span></button>
-          <button type="button" class="trust-tile" data-open-tab="tab-btn-chaos"><span class="tt-icon" aria-hidden="true">⚡</span><strong>Chaos Lab</strong><span>15 failure scenarios, run in your browser</span></button>
+          <button type="button" class="trust-tile" data-open-tab="tab-btn-chaos"><span class="tt-icon" aria-hidden="true">⚡</span><strong>Chaos Lab</strong><span>20 failure scenarios, run in your browser</span></button>
           <button type="button" class="trust-tile" data-open-tab="tab-btn-auditor"><span class="tt-icon" aria-hidden="true">✓</span><strong>Spec &amp; NANDA audit</strong><span>Live checks of all 5 sites</span></button>
         </div>
 
@@ -486,7 +491,18 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           </div>
 
           <div id="tab-panel-timeline" role="tabpanel" aria-labelledby="tab-btn-timeline" class="tab-panel" hidden>
+            <div class="chaos-header">
+              <div>
+                <strong>Tamper-evident Saga ledger &amp; zero-trust receipt verifier</strong>
+                <p class="panel-sub">Every state transition is linked by SHA-256 from genesis, and every commit carries an Ed25519 signature. Verify the live audit bundle or simulate a €0.01 tampering attack in memory.</p>
+              </div>
+              <div class="auditor-controls">
+                <button id="verify-bundle-btn" type="button" class="cta-btn">Verify cryptographic bundle</button>
+                <button id="tamper-bundle-btn" type="button" class="ghost-btn">Simulate €0.01 tamper attack</button>
+              </div>
+            </div>
             <p id="chain-integrity-banner" class="chaos-summary">SHA-256 tamper-evident event chain ready (genesis 0000…).</p>
+            <p id="bundle-verify-status" class="chaos-summary" role="status" hidden></p>
             <ol id="audit-timeline-list" class="timeline-list">
               <li>Mission initialized with 6 demonstration commitments (baseline €624.00).</li>
             </ol>
@@ -515,9 +531,9 @@ Do not cancel anything or approve additional fees without my confirmation.</text
             <div class="chaos-header">
               <div>
                 <strong>Chaos Lab — isolated simulation sandbox</strong>
-                <p class="panel-sub">Fifteen distributed failures, injected on purpose: timeouts after commit, price drift after approval, forged receipts, budget overflow, dependency cycles, partial failures. Your live mission is never touched. Every simulated error is shown as it happened.</p>
+                <p class="panel-sub">Twenty distributed failures, injected on purpose: timeouts after commit, price drift after approval, forged and cross-origin spoofed receipts, NANDA sequence rollbacks, mandate floor exhaustion, and post-export bundle tampering. Your live mission is never touched.</p>
               </div>
-              <button id="run-chaos-suite-btn" type="button" class="cta-btn">Run all 15 scenarios</button>
+              <button id="run-chaos-suite-btn" type="button" class="cta-btn">Run all 20 scenarios</button>
             </div>
             <div id="chaos-summary" class="chaos-summary" role="status">Run the suite to verify every reliability rule in your browser.</div>
             <div class="table-wrap">
@@ -533,8 +549,8 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           <div id="tab-panel-auditor" role="tabpanel" aria-labelledby="tab-btn-auditor" class="tab-panel" hidden>
             <div class="chaos-header">
               <div>
-                <strong>Open Agentic Web MVP 0.2 &amp; Project NANDA conformance auditor</strong>
-                <p class="panel-sub">Fetches each site's live <code>agent-manifest.json</code>, resolved <code>.network.json</code>, router isolation, <code>peer_policy</code>, action bridges and <code>/.well-known/agent-card.json</code>, with SHA-256 digests.</p>
+                <strong>Open Agentic Web MVP 0.2, Facts &amp; Project NANDA conformance auditor</strong>
+                <p class="panel-sub">Fetches each site's live <code>agent-manifest.json</code>, resolved <code>.network.json</code>, router isolation, <code>peer_policy</code>, action bridges, <code>/.well-known/agent-card.json</code>, <code>/.well-known/ai-catalog.json</code>, and <code>facts/</code> single-turn network, with SHA-256 digests.</p>
               </div>
               <div class="auditor-controls">
                 <label for="custom-audit-url" class="sr-only">Website URL to audit</label>
@@ -543,7 +559,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
                 <button id="audit-ecosystem-btn" type="button" class="cta-btn">Audit all 5 sites</button>
               </div>
             </div>
-            <div id="auditor-summary" class="chaos-summary" role="status">Audit the five ecosystem sites, or any Open Agentic Website URL, with the 7-point verifier.</div>
+            <div id="auditor-summary" class="chaos-summary" role="status">Audit the five ecosystem sites, or any Open Agentic Website URL, with the 9-point verifier.</div>
             <div class="table-wrap">
               <table class="data-table">
                 <thead>
@@ -595,6 +611,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
             </div>
             <div class="top-actions">
               <button id="otari-preset-btn" type="button" class="ghost-btn">Use Mozilla Otari (your key)</button>
+              <button id="local-ai-btn" type="button" class="ghost-btn" title="Auto-detects Chrome Built-in Gemini Nano (LanguageModel) or local loopback Ollama (127.0.0.1:11434) with zero cloud egress">On-device / local AI</button>
               <button id="zero-key-replay-btn" type="button" class="cta-btn top-demo-btn" title="Runs the real Neuro SAN graphs, website_* tools, CRUSE widgets and consent cards with a scripted model — no API key needed">Try without a key</button>
             </div>
           </div>
@@ -624,15 +641,18 @@ Do not cancel anything or approve additional fees without my confirmation.</text
     <div class="shell footer-grid">
       <div>
         <strong>CONTINUITY</strong>
-        <p id="policy-note" class="disclosure-footer">Disclosure: MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber, and PowerFlow Energy are independent demonstration services created for the Cognizant Open Agentic Web Challenge. PermitFlow prepares demonstration application drafts only and never accesses or modifies official municipal government permits. CONTINUITY cannot process real credit-card charges, guarantee cross-company ACID database locks, or cancel existing commitments without explicit user confirmation.</p>
+        <p id="policy-note" class="disclosure-footer" data-agent-facts="scope_disclosure">Disclosure: MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber, and PowerFlow Energy are independent demonstration services created for the Cognizant Open Agentic Web Challenge. PermitFlow prepares demonstration application drafts only and never accesses or modifies official municipal government permits. CONTINUITY cannot process real credit-card charges, guarantee cross-company ACID database locks, or cancel existing commitments without explicit user confirmation.</p>
       </div>
       <div class="protocol-links">
         <span>Machine-readable artifacts</span>
         <div class="artifact-links">
+          <a href="./community-kit.html">Community Builder Kit ↗</a>
           <a href="./agent-manifest.json" target="_blank" rel="noopener">agent-manifest.json</a>
           <a href="./continuity_coordinator.network.json" target="_blank" rel="noopener">continuity_coordinator.network.json</a>
           <a href="./links.json" target="_blank" rel="noopener">links.json</a>
           <a href="./agent-card.json" target="_blank" rel="noopener">agent-card.json</a>
+          <a href="./ai-catalog.json" target="_blank" rel="noopener">ai-catalog.json</a>
+          <a href="./facts/agent-manifest.json" target="_blank" rel="noopener">facts/agent-manifest.json</a>
         </div>
       </div>
     </div>

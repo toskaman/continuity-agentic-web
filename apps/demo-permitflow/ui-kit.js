@@ -154,3 +154,224 @@ export function chrome() {
   );
   els.forEach((e) => io.observe(e));
 }
+
+/**
+ * Deterministic Zero-Key Replay LLM for the 4 independent peer websites
+ * (`moveco`, `permitflow`, `homeconnect`, `powerflow`) so judges can test each peer's
+ * Neuro SAN `.network.json`, `website_*` read/hold/confirm actions, confirmation dialogs,
+ * AND bidirectional cross-origin consultation of `continuity_coordinator` without an API key.
+ */
+export class PeerScriptedReplayLlm {
+  constructor(trace, remoteNetwork = null) {
+    this.trace = trace;
+    this.remoteNetwork = remoteNetwork;
+    this.mock = true;
+    this.baseUrl = "browser://mock";
+  }
+
+  async chat({ messages = [], tools = [], origin, parentSpan, onContentDelta }) {
+    const span = this.trace?.start("model_call", {
+      parent: parentSpan,
+      origin,
+      model: "peer-deterministic-replay",
+      mock: true,
+      routerHost: "browser-peer-scripted-replay",
+      toolNames: (tools || []).map((t) => t.function?.name),
+    });
+
+    const emitTool = (name, argsObj, seq) => {
+      this.trace?.end(span, { finishReason: "tool_calls", toolCalls: [name], mock: true });
+      return {
+        content: "",
+        toolCalls: [
+          {
+            id: `peer_replay_${name}_${seq}`,
+            type: "function",
+            function: { name, arguments: JSON.stringify(argsObj) },
+          },
+        ],
+        finishReason: "tool_calls",
+        usage: null,
+        model: "peer-deterministic-replay",
+      };
+    };
+
+    const emitText = (txt) => {
+      onContentDelta?.(txt);
+      this.trace?.end(span, { finishReason: "stop", contentChars: txt.length, mock: true });
+      return {
+        content: txt,
+        toolCalls: [],
+        finishReason: "stop",
+        usage: null,
+        model: "peer-deterministic-replay",
+      };
+    };
+
+    // Remote partner network loaded in this peer's browser (e.g., CONTINUITY coordinator)
+    if (this.remoteNetwork) {
+      const frontName = this.remoteNetwork.findFrontMan?.() || "continuity_orchestrator";
+      const spec = this.remoteNetwork.getAgentSpec?.(frontName);
+      const desc = spec?.function?.description || this.remoteNetwork.config?.metadata?.description || "";
+      return emitText(
+        `${desc} CONTINUITY holds replacements before releasing existing commitments, enforces your hard budget ceiling, and verifies Ed25519 receipts across providers.`,
+      );
+    }
+
+    const avail = (tools || []).map((t) => t.function?.name).filter(Boolean);
+    const availSet = new Set(avail);
+    const toolMsgs = messages.filter((m) => m?.role === "tool");
+    const calledSet = new Set(toolMsgs.map((m) => m.name));
+    const lastUser = [...messages].reverse().find((m) => m?.role === "user");
+    const userText = String(lastUser?.content || "");
+
+    const readTool = avail.find((n) => /^website_get_.*_state$/.test(n));
+    const holdOrStageTool = avail.find((n) => /^website_(hold_|stage_)/.test(n));
+    const confirmTool = avail.find((n) => /^website_(confirm_|amend_)/.test(n));
+    const continuityPartnerTool = avail.find((n) => /continuity_coordinator$/.test(n));
+
+    const parseTool = (name) => {
+      const found = [...toolMsgs].reverse().find((m) => m.name === name);
+      if (!found) return null;
+      try {
+        const j = JSON.parse(found.content);
+        return j?.result ?? j;
+      } catch {
+        return null;
+      }
+    };
+
+    // Always read grounded site state first
+    if (readTool && !calledSet.has(readTool)) {
+      return emitTool(readTool, {}, toolMsgs.length + 1);
+    }
+
+    const st = (readTool ? parseTool(readTool) : null) || {};
+    const targetDate = /\b(sat|2026-11-21)\b/i.test(userText) ? "2026-11-21" : "2026-11-20";
+
+    // 1. Bidirectional consultation of CONTINUITY Change Coordinator
+    if (/\b(continuity|coordinate|other bookings|parking|fiber|electricity|align)\b/i.test(userText) && continuityPartnerTool) {
+      if (!calledSet.has(continuityPartnerTool)) {
+        return emitTool(
+          continuityPartnerTool,
+          { request: "How does CONTINUITY coordinate moving, parking dossier, fiber, and electricity date changes?" },
+          toolMsgs.length + 1,
+        );
+      }
+      const partnerMsg = [...toolMsgs].reverse().find((m) => m.name === continuityPartnerTool)?.content || "";
+      let cleanReply = partnerMsg;
+      try {
+        const j = JSON.parse(partnerMsg);
+        if (j?.text) cleanReply = j.text;
+      } catch {}
+      const coordLink = st.coordinatorUrl || document.querySelector("#coordinator-link")?.getAttribute("href") || "#";
+      return emitText(
+        `### Cross-Origin CONTINUITY Response *(Scripted Replay)*\n\n${cleanReply}\n\nOpen the coordinator: [CONTINUITY Change Coordinator](${coordLink})`,
+      );
+    }
+
+    // 2. Reversible hold / preview / stage
+    if (/\b(hold|stage|preview|check eligibility)\b/i.test(userText) && holdOrStageTool && availSet.has(holdOrStageTool)) {
+      if (!calledSet.has(holdOrStageTool)) {
+        return emitTool(holdOrStageTool, { targetDate }, toolMsgs.length + 1);
+      }
+      const holdRes = parseTool(holdOrStageTool);
+      return emitText(
+        holdRes?.ok === false
+          ? `Refused: ${holdRes.reason}`
+          : `✓ Prepared reversible action for **${targetDate}** *(Scripted Replay)*. Your existing booking remains untouched until you confirm.`,
+      );
+    }
+
+    // 3. Irreversible reschedule / amendment (triggers browser confirmation dialog!)
+    if (/\b(confirm|reschedule|amend|update dossier|shift activation)\b/i.test(userText) && confirmTool && availSet.has(confirmTool)) {
+      if (!calledSet.has(confirmTool)) {
+        const confirmSchema = tools.find((t) => t.function?.name === confirmTool)?.function?.parameters;
+        const reqKeys = confirmSchema?.required || [];
+        const refKey = reqKeys.find((k) => /Ref$/.test(k)) || "bookingRef";
+        const refVal =
+          st.booking?.bookingRef
+          || st.dossier?.dossierRef
+          || st.appointment?.appointmentRef
+          || st.activation?.activationRef
+          || "MC-8841";
+        return emitTool(
+          confirmTool,
+          {
+            [refKey]: refVal,
+            targetDate,
+            expectedVersion: Number(st.version || 1),
+          },
+          toolMsgs.length + 1,
+        );
+      }
+      const confMsg = [...toolMsgs].reverse().find((m) => m.name === confirmTool)?.content || "";
+      if (/cancelled|declined/i.test(confMsg)) {
+        return emitText("Confirmation declined — your current Tuesday date remains unchanged.");
+      }
+      return emitText(`✓ Confirmed update to **${targetDate}** *(Scripted Replay)*.`);
+    }
+
+    // 4. Default state & pricing summary
+    const record = st.booking || st.dossier || st.appointment || st.activation || {};
+    const ref = record.bookingRef || record.dossierRef || record.appointmentRef || record.activationRef || "active";
+    const curDate = record.scheduledLabel || record.scheduledDate || "Tuesday";
+    return emitText(
+      `**Grounded Page State *(Scripted Replay)*:** Reference \`${ref}\` is currently scheduled for **${curDate}** (${record.window || "standard window"} · version \`v${st.version ?? 1}\`). Ask to **hold/stage Friday 2026-11-20**, **confirm** a date change, or **ask CONTINUITY** about multi-provider coordination.`,
+    );
+  }
+}
+
+export function bindPeerZeroKeyControls(engine, statusEl, greetFn) {
+  if (!engine?.top || typeof document === "undefined") return;
+  let origTopLlm = null;
+  let origResolveRemote = null;
+
+  const activateReplay = () => {
+    if (!origTopLlm) {
+      origTopLlm = engine.top.llm;
+      origResolveRemote = engine.resolveRemote.bind(engine);
+    }
+    engine.mockLLM = true;
+    engine.userRouter = { baseUrl: "browser://mock", mock: true };
+    engine.top.llm = new PeerScriptedReplayLlm(engine.trace);
+    engine.resolveRemote = async (...args) => {
+      const session = await origResolveRemote(...args);
+      if (session && engine.mockLLM) {
+        session.llm = new PeerScriptedReplayLlm(engine.trace, session.network);
+      }
+      return session;
+    };
+    const badge = document.querySelector("#agent-app .ns-llmbadge");
+    if (badge) {
+      badge.className = "ns-llmbadge mock";
+      badge.textContent = "⚡ Scripted Replay Active (Zero-Key)";
+    }
+    const settings = document.querySelector("#agent-app .ns-settings");
+    if (settings) settings.open = false;
+    const btn = document.querySelector("#peer-zero-key-btn");
+    if (btn) btn.textContent = "✓ Zero-Key Replay Active";
+    if (statusEl) {
+      statusEl.textContent =
+        "Zero-Key Deterministic Replay active: runs this site's real Neuro SAN network, website_* tools, confirmation dialog, and cross-origin CONTINUITY consent card without an API key.";
+    }
+    greetFn?.();
+  };
+
+  document.querySelector("#peer-zero-key-btn")?.addEventListener("click", activateReplay);
+  document.querySelectorAll(".peer-prompt-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const promptText = chip.getAttribute("data-prompt") || "";
+      const hasRealKey = Boolean(engine.byokKey && engine.byokKey !== "demo");
+      if (!hasRealKey && !engine.mockLLM) {
+        activateReplay();
+      }
+      const input = document.querySelector("#ns-input");
+      const send = document.querySelector("#ns-send");
+      if (input && send) {
+        input.value = promptText;
+        send.click();
+      }
+    });
+  });
+}

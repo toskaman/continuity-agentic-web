@@ -1,10 +1,10 @@
-# Chaos Test Catalog — 15 Deterministic Distributed Failure Scenarios
+# Chaos Test Catalog — 20 Deterministic Distributed Failure Scenarios
 
 **Module:** [`packages/chaos-lab/index.js`](../packages/chaos-lab/index.js)
 **Automated Test Runner:** `node --test tests/chaos/chaos_suite.test.mjs`
-**Interactive Browser Runner:** CONTINUITY UI → **Chaos Lab (15 Scenarios)** tab (`simulation_mode: true`)
+**Interactive Browser Runner:** CONTINUITY UI → **Chaos Lab (20 Scenarios)** tab (`simulation_mode: true`)
 
-> **Simulation Disclosure:** All 15 scenarios execute against isolated in-memory demonstration state and Ed25519 test keypairs. They never mutate external production systems or the user's active mission state.
+> **Simulation Disclosure:** All 20 scenarios execute against isolated in-memory demonstration state and Ed25519 test keypairs. They never mutate external production systems or the user's active mission state.
 
 ---
 
@@ -25,3 +25,8 @@
 | **13** | `CHAOS_13_CONFLICTING_DATES` | `MoveCo -> Fiber` (`ON_OR_AFTER`) | Fiber only offers Thursday Nov 19 while MoveCo arrives Friday Nov 20 | `feasible: false` (`INFEASIBLE_SCHEDULE_CONFLICT`) | Solver rejects temporal prerequisite conflict and explains exact edge violation | **Yes** |
 | **14** | `CHAOS_14_PARTIAL_FAILURE_CONTROLLED_COMPENSATION` | Multi-step Saga executing | Ops 1–2 commit, then PermitFlow rejects mid-saga | `PARTIAL_HALTED_SAFE` | Remaining operations halted; `automatic_compensation_executed: false` enforced so irreversible/paid bookings are never rolled back without consent | **Yes** |
 | **15** | `CHAOS_15_MISSING_STATUS_ENDPOINT` | Provider lacks status reconciliation (`supports_status_reconciliation: false`) | Network gateway `504` timeout during commit | `DISPATCHED -> UNKNOWN -> NEEDS_USER` | Refuses blind retry and escalates to human verification because non-execution cannot be proven | **Yes** |
+| **16** | `CHAOS_16_CROSS_PROVIDER_RECEIPT_SPOOF` | Independent provider Ed25519 keys pinned | Compromised `MoveCo` origin signs a `PermitFlow` receipt using MoveCo's valid Ed25519 key | Cross-origin spoof rejected (`UNTRUSTED_SELF_ASSERTED_KEY`) | `ReceiptVerifier` enforces strict `providerId -> keyId/publicJwk` binding and blocks cross-provider spoofing | **Yes** |
+| **17** | `CHAOS_17_NANDA_SEQUENCE_ROLLBACK` | `AuthorityBoundResolver` verified `sequence = 5` | Attacker replays non-expired `known-subject-resolution-02` binding with `sequence = 3` | Rejected as `stale` anti-rollback | Monotonic per-`(subject, issuer)` sequence guard blocks downgrade/replay before target fetch | **Yes** |
+| **18** | `CHAOS_18_PRE_COMMIT_HOLD_RELEASE_REVERSIBILITY` | 3 replacement holds active (`AWAITING_APPROVAL`) | Visitor triggers `releasePreparedHolds()` (`Release holds (€0)`) | `AWAITING_APPROVAL -> COMPENSATION_PENDING -> COMPENSATED` | All holds released at `€0.00` fee; MoveCo and all peers stay on baseline Tuesday dates | **No** *(clean abort)* |
+| **19** | `CHAOS_19_MANDATE_SLICE_NO_AGREEMENT_ZERO_LEAK` | Frozen SHA-256 mandate with `€440` slice allowance | Overflow bidders submit private floors `€480` and `€495` (`> €440`) | `NO_AGREEMENT` (`PRIVACY_PRESERVED`) | `SealedBidArbiter` returns `NO_AGREEMENT` while leaking `0` private floor cents and `0` buyer ceiling cents | **Yes** |
+| **20** | `CHAOS_20_AUDIT_BUNDLE_POST_EXPORT_TAMPER` | Committed Saga exported to `continuity-verifiable-audit-bundle/v1` | Attacker mutates 1 receipt by `+€0.01` and alters 1 Saga log reason | `TAMPER_DETECTED` (3 alarms) | `verifyExportedAuditBundle()` triggers `BUNDLE_SHA256_MISMATCH` + `LEDGER_CHAIN_BROKEN` + `ED25519_SIGNATURE_INVALID` | **Yes** |

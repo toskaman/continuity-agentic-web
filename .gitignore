@@ -9,3 +9,4 @@ key.env
 dist-temp/
 test-results/
 playwright-report/
+prompt.txt

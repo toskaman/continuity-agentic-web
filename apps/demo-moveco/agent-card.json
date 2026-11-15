@@ -41,10 +41,12 @@
       "mvpProfile": "0.2",
       "manifestUrl": "http://127.0.0.1:8081/agent-manifest.json",
       "networkUrl": "http://127.0.0.1:8081/moveco_dispatch.network.json",
+      "factsNetworkUrl": "http://127.0.0.1:8081/facts/moveco_dispatch_facts",
       "browserExecuted": true
     },
     "org.projectnanda": {
       "subjectUrnHint": "urn:air:127.0.0.1:agent:moveco_dispatch",
+      "aiCatalogUrl": "http://127.0.0.1:8081/ai-catalog.json",
       "resolutionProfile": "known-subject-resolution-02"
     }
   }

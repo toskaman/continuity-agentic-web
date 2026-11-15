@@ -194,7 +194,7 @@ test("V2.4 — WebMCP Adapter enforces JSON Schema & mandatory human confirmatio
   assert.equal(executed, 1);
 });
 
-test("V2.5 — Live Open Agentic Web MVP 0.2 & Project NANDA Auditor passes 6/6 checks across all 5 ecosystem sites", async () => {
+test("V2.5 — Live Open Agentic Web MVP 0.2 & Project NANDA Auditor passes 9/9 checks across all 5 ecosystem sites", async () => {
   const eco = await startAllEcosystemServers({
     continuity: 0,
     moveco: 0,
@@ -210,7 +210,8 @@ test("V2.5 — Live Open Agentic Web MVP 0.2 & Project NANDA Auditor passes 6/6 
     for (const url of allUrls) {
       const report = await auditOpenAgenticSite(url);
       assert.equal(report.ok, true, `Expected ${url} to pass conformance audit: ${JSON.stringify(report.checks)}`);
-      assert.equal(report.passedCount, 7);
+      assert.equal(report.passedCount, 9);
+      assert.equal(report.totalChecks, 9);
     }
   } finally {
     await eco.stopAll();
@@ -365,7 +366,7 @@ test("V2.10 — Standalone Open Agentic Web & NANDA Submission CLI (continuity-a
     const parsed = JSON.parse(stdout);
     assert.equal(parsed.ok, true);
     assert.equal(parsed.sitesAudited, 2);
-    assert.equal(parsed.reports[0].passedCount, 7);
+    assert.equal(parsed.reports[0].passedCount, 9);
     assert.equal(parsed.reports[0].corsAllowOrigin, "*");
   } finally {
     await eco.stopAll();

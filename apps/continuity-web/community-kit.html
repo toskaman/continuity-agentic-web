@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Open Agentic Web Community Builder Kit by CONTINUITY — zero-backend 9-point MVP 0.2 & Project NANDA validator, data-agent-facts compiler, AI Catalog generator, and portable Neuro SAN converter.">
+  <meta name="theme-color" content="#0B1220">
+  <title>Community Builder Kit — CONTINUITY · Open Agentic Web</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="community-kit.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#validator-tool">Skip to the validator</a>
+
+  <header class="site-header top-bar" role="banner">
+    <div class="shell header-bar">
+      <a class="brand-lockup" href="./index.html" aria-label="Back to CONTINUITY coordinator">
+        <svg class="brand-mark-svg" width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+          <rect width="36" height="36" rx="10" fill="#0B1220"/>
+          <path d="M10 18a8 8 0 0 1 13.66-5.66M26 18a8 8 0 0 1-13.66 5.66" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+          <circle cx="24" cy="12" r="2.6" fill="#34D399"/>
+          <circle cx="12" cy="24" r="2.6" fill="#6E8BFF"/>
+        </svg>
+        <span>
+          <span class="brand-name brand-title">CONTINUITY</span>
+          <span class="brand-domain">Community Builder Kit · Apache-2.0</span>
+        </span>
+      </a>
+      <nav class="site-nav" aria-label="Builder tools">
+        <a href="#validator-tool">9-Point Validator</a>
+        <a href="#facts-tool">Facts Compiler</a>
+        <a href="#nanda-tool">NANDA Catalog</a>
+        <a href="#converter-tool">Graph → HOCON</a>
+        <a href="#bundle-tool">Receipt Verifier</a>
+        <a href="#modules-catalog">19 Modules</a>
+      </nav>
+      <div class="header-meta top-actions">
+        <button id="kit-theme-btn" type="button" class="ghost-btn btn-sm" aria-label="Switch light or dark theme">◐ Theme</button>
+        <a href="./index.html" class="btn btn-primary btn-sm">← Back to Coordinator</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top" class="main-stack">
+    <section class="hero" aria-labelledby="kit-heading">
+      <div class="shell">
+        <div class="hero-copy" style="max-width: 820px;">
+          <div class="hero-meta">
+            <span class="spec-pill">Open Agentic Web · Community Infrastructure</span>
+            <span class="spec-pill">Zero External Dependencies · Apache-2.0</span>
+          </div>
+          <h1 id="kit-heading">Build, validate &amp; publish<br><span>Open Agentic Websites in seconds.</span></h1>
+          <p class="hero-lead">Shared with the Open Agentic Web community: four browser-local developer tools and 19 zero-dependency ES modules built while engineering CONTINUITY. Nothing you paste leaves your browser.</p>
+          <div class="btn-row hero-ctas">
+            <a href="#validator-tool" class="btn btn-primary btn-lg">Audit an agentic site →</a>
+            <a href="#facts-tool" class="btn btn-lg btn-on-dark">Compile a public facts network</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOOL 1: 9-POINT VALIDATOR + CI WORKFLOW -->
+    <section id="validator-tool" class="section" aria-labelledby="val-heading">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Tool 1 · Live conformance &amp; SARIF CI</span>
+            <h2 id="val-heading">9-Point MVP Profile 0.2 &amp; Project NANDA Validator</h2>
+            <p>Checks transport security, <code>agent-manifest.json</code>, resolved Neuro SAN <code>.network.json</code>, BYOK router policy, <code>peer_policy</code>, action bridge, A2A Agent Card, NANDA AI Catalog, and single-turn <code>facts/</code> network.</p>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="chaos-header">
+            <div class="auditor-controls" style="width:100%;justify-content:space-between;">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;flex:1;">
+                <label for="kit-audit-url" class="sr-only">Open Agentic Website URL</label>
+                <input id="kit-audit-url" type="url" class="audit-url-input" style="min-width:300px;flex:1;" placeholder="https://example.org/my-agentic-site/">
+                <button id="kit-audit-one-btn" type="button" class="cta-btn">Audit URL</button>
+                <button id="kit-audit-eco-btn" type="button" class="ghost-btn">Audit all 5 CONTINUITY sites</button>
+              </div>
+              <button id="kit-copy-ci-btn" type="button" class="mini-btn">Copy GitHub Actions SARIF .yml</button>
+            </div>
+          </div>
+          <p id="kit-audit-status" class="chaos-summary" role="status">Enter any CORS-enabled Open Agentic Website URL or audit the 5 CONTINUITY ecosystem origins.</p>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr><th>Website</th><th>Network &amp; SHA-256 digests</th><th>9-Point MVP 0.2, Facts &amp; NANDA results</th><th>Score</th></tr>
+              </thead>
+              <tbody id="kit-audit-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOOL 2: PUBLIC FACTS NETWORK COMPILER -->
+    <section id="facts-tool" class="section section-alt" aria-labelledby="facts-heading">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Tool 2 · @continuity/facts-publisher</span>
+            <h2 id="facts-heading">Visible-DOM <code>data-agent-facts</code> → Single-Turn Facts Network</h2>
+            <p>Extracts visitor-visible elements marked <code>data-agent-facts="..."</code>, blocks hidden/folded/form prompt-injection vectors at build time, and compiles a 1-agent, tool-free <code>facts/&lt;network&gt;_facts</code> bundle so peer sites get real prices, hours and policies in one model call.</p>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="chaos-header">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <label>Brand <input id="kit-facts-brand" type="text" class="audit-url-input" value="Harbor Kayak Co."></label>
+              <label>Network <input id="kit-facts-net" type="text" class="audit-url-input" value="harbor_kayak"></label>
+              <label>Site URL <input id="kit-facts-url" type="url" class="audit-url-input" value="https://kayak.example.org/"></label>
+            </div>
+            <div class="auditor-controls">
+              <button id="kit-facts-sample-btn" type="button" class="ghost-btn">Load clean HTML</button>
+              <button id="kit-facts-inject-btn" type="button" class="ghost-btn">Test hidden injection block</button>
+              <button id="kit-facts-compile-btn" type="button" class="cta-btn">Compile facts network</button>
+              <button id="kit-facts-dl-btn" type="button" class="mini-btn" hidden>↓ Download facts JSON</button>
+            </div>
+          </div>
+          <p id="kit-facts-status" class="chaos-summary" role="status">Ready to extract visible <code>data-agent-facts</code> elements.</p>
+          <div class="converter-grid">
+            <div>
+              <label for="kit-facts-html" class="input-label">Source HTML with <code>data-agent-facts</code></label>
+              <textarea id="kit-facts-html" class="code-box" rows="10"></textarea>
+            </div>
+            <div>
+              <label for="kit-facts-out" class="input-label">Compiled <code>facts/agent-manifest.json</code> + <code>.network.json</code></label>
+              <textarea id="kit-facts-out" class="code-box" rows="10" readonly></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOOL 3: PROJECT NANDA AI CATALOG & A2A GENERATOR -->
+    <section id="nanda-tool" class="section" aria-labelledby="nanda-heading">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Tool 3 · @continuity/nanda-resolver</span>
+            <h2 id="nanda-heading">Project NANDA <code>ai-catalog.json</code> &amp; A2A v1.0 Card Generator</h2>
+            <p>Generates ARD-compliant <code>urn:air:&lt;domain&gt;:agent:&lt;name&gt;</code> identifiers, verifies extension active-content safety, and computes canonical RFC 8785 JCS SHA-256 <code>targetDigest</code> bindings (`known-subject-resolution-02`).</p>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="chaos-header">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <label>Base HTTPS URL <input id="kit-nanda-url" type="url" class="audit-url-input" value="https://kayak.example.org"></label>
+              <label>Brand <input id="kit-nanda-brand" type="text" class="audit-url-input" value="Harbor Kayak Co."></label>
+              <label>Network Name <input id="kit-nanda-net" type="text" class="audit-url-input" value="harbor_kayak"></label>
+              <label>Skill Description <input id="kit-nanda-desc" type="text" class="audit-url-input" value="Guided sea kayak rentals, 15-minute holds, and weather rescheduling."></label>
+            </div>
+            <div class="auditor-controls">
+              <button id="kit-nanda-gen-btn" type="button" class="cta-btn">Generate &amp; verify</button>
+              <button id="kit-nanda-dl-cat-btn" type="button" class="mini-btn" hidden>↓ ai-catalog.json</button>
+              <button id="kit-nanda-dl-card-btn" type="button" class="mini-btn" hidden>↓ agent-card.json</button>
+            </div>
+          </div>
+          <p id="kit-nanda-status" class="chaos-summary" role="status">Click Generate &amp; verify to build NANDA discovery artifacts.</p>
+          <div class="converter-grid">
+            <div>
+              <label for="kit-nanda-card-out" class="input-label">Validated <code>/.well-known/agent-card.json</code></label>
+              <textarea id="kit-nanda-card-out" class="code-box" rows="10" readonly></textarea>
+            </div>
+            <div>
+              <label for="kit-nanda-cat-out" class="input-label">Validated <code>/.well-known/ai-catalog.json</code> (with SHA-256 <code>targetDigest</code>)</label>
+              <textarea id="kit-nanda-cat-out" class="code-box" rows="10" readonly></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOOL 4: MULTI-AGENT GRAPH -> NEURO SAN CONVERTER -->
+    <section id="converter-tool" class="section section-alt" aria-labelledby="conv-heading">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Tool 4 · @continuity/adk-hocon-converter</span>
+            <h2 id="conv-heading">Multi-Agent Graph → Portable Neuro SAN <code>.network.json</code></h2>
+            <p>Translates multi-agent JSON hierarchies (<code>LlmAgent</code> / <code>sub_agents</code>) into a resolved Open Agentic Web <code>.network.json</code> + <code>agent-manifest.json</code>, scrubs embedded API keys, and rejects cycles.</p>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="chaos-header">
+            <div><strong>Source → Portable Network Compiler</strong></div>
+            <div class="auditor-controls">
+              <button id="kit-adk-sample-btn" type="button" class="ghost-btn">Load sample graph</button>
+              <button id="kit-adk-convert-btn" type="button" class="cta-btn">Convert &amp; verify</button>
+              <button id="kit-adk-dl-btn" type="button" class="mini-btn" hidden>↓ .network.json</button>
+            </div>
+          </div>
+          <p id="kit-adk-status" class="chaos-summary" role="status">Ready to convert multi-agent graph definitions.</p>
+          <div class="converter-grid">
+            <div>
+              <label for="kit-adk-src" class="input-label">Source Multi-Agent Graph (JSON)</label>
+              <textarea id="kit-adk-src" class="code-box" rows="9"></textarea>
+            </div>
+            <div>
+              <label for="kit-adk-out" class="input-label">Emitted Portable <code>.network.json</code> + <code>agent-manifest.json</code></label>
+              <textarea id="kit-adk-out" class="code-box" rows="9" readonly></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOOL 5: OFFLINE CRYPTOGRAPHIC AUDIT BUNDLE VERIFIER -->
+    <section id="bundle-tool" class="section" aria-labelledby="bundle-heading">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Tool 5 · Zero-trust offline verifier</span>
+            <h2 id="bundle-heading">Offline Cryptographic Audit Bundle &amp; Ed25519 Receipt Verifier</h2>
+            <p>Upload or paste any exported <code>*-audit-bundle.json</code> file to independently verify its RFC 8785 JCS SHA-256 digest, genesis-linked Saga hash chain, and WebCrypto Ed25519 provider receipt signatures.</p>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="chaos-header">
+            <div><strong>Independent Browser WebCrypto Verification</strong></div>
+            <div class="auditor-controls">
+              <label for="kit-bundle-file" class="mini-btn file-label-btn">Upload audit JSON</label>
+              <input id="kit-bundle-file" type="file" accept=".json,application/json" class="sr-only">
+              <button id="kit-bundle-verify-btn" type="button" class="cta-btn">Verify pasted bundle</button>
+            </div>
+          </div>
+          <p id="kit-bundle-status" class="chaos-summary" role="status">Paste an exported <code>continuity-verifiable-audit-bundle/v1</code> JSON or upload a file to verify.</p>
+          <label for="kit-bundle-json" class="sr-only">Audit bundle JSON</label>
+          <textarea id="kit-bundle-json" class="code-box" rows="7" placeholder='{"schema":"continuity-verifiable-audit-bundle/v1", ...}'></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE CATALOG -->
+    <section id="modules-catalog" class="section section-alt" aria-labelledby="mods-heading">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Open-source building blocks · Apache-2.0</span>
+            <h2 id="mods-heading">19 Zero-Dependency <code>@continuity/*</code> Community Modules</h2>
+            <p>Every module runs directly in standard browsers and Node.js &ge; 22 with zero external npm dependencies.</p>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr><th>Package</th><th>Spec / Challenge Gap Solved</th><th>Key Exports</th></tr>
+              </thead>
+              <tbody id="kit-modules-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer protocol-footer">
+    <div class="shell footer-grid">
+      <div>
+        <strong>CONTINUITY Community Builder Kit</strong>
+        <p class="disclosure-footer">Open-source infrastructure shared under the Apache-2.0 License for the Cognizant Open Agentic Web Challenge. All compilation, validation and cryptographic hashing execute locally in your browser.</p>
+      </div>
+      <div class="protocol-links">
+        <span>Navigation</span>
+        <div class="artifact-links">
+          <a href="./index.html">← CONTINUITY Coordinator</a>
+          <a href="./agent-manifest.json" target="_blank" rel="noopener">agent-manifest.json</a>
+          <a href="./ai-catalog.json" target="_blank" rel="noopener">ai-catalog.json</a>
+          <a href="./facts/agent-manifest.json" target="_blank" rel="noopener">facts/agent-manifest.json</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

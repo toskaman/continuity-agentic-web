@@ -17,7 +17,7 @@ run(
   [
     "commit",
     "-m",
-    "feat: add @continuity/nanda-resolver, A2A v1.0 Agent Cards, screenshots & GitHub Pages workflow",
+    "feat: bidirectional 5-site Open Agentic Web mesh, facts/ networks, NANDA AI Catalog, 5-tool Community Builder Kit & 66 automated tests",
   ],
   { stdio: "inherit" },
 );
@@ -45,7 +45,11 @@ run("git", ["remote", "add", "origin", "https://github.com/toskaman/continuity-a
 run(GH, ["api", "-X", "POST", "repos/toskaman/continuity-agentic-web/pages", "-f", "build_type=workflow"]);
 run(GH, ["api", "-X", "PUT", "repos/toskaman/continuity-agentic-web/pages", "-f", "build_type=workflow"]);
 
-run("git", ["push", "-u", "origin", "main", "--force"], { stdio: "inherit" });
+const pushRes = run("git", ["push", "-u", "origin", "main"], { stdio: "inherit" });
+if (pushRes.status !== 0) {
+  console.error("git push failed with exit code", pushRes.status);
+  process.exit(pushRes.status || 1);
+}
 
 // Also trigger workflow_dispatch explicitly just in case Pages was enabled milliseconds after push
 run(GH, ["workflow", "run", "deploy-pages.yml", "--repo", "toskaman/continuity-agentic-web"]);

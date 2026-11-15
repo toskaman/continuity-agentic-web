@@ -1,0 +1,11 @@
+{
+  "name": "@continuity/local-browser-router",
+  "version": "1.0.0",
+  "description": "Pluggable zero-key on-device & loopback inference router for Open Agentic Websites (Chrome Built-in LanguageModel / Gemini Nano with JSON-Schema tool-calling + local Ollama auto-probe)",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  }
+}

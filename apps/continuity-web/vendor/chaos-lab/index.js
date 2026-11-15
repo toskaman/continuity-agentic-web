@@ -32,6 +32,9 @@ import {
   signProviderReceipt,
 } from "../proof-verifier/index.js";
 import { SagaCoordinator } from "../saga-engine/index.js";
+import { AuthorityBoundResolver } from "../nanda-resolver/index.js";
+import { issuePolicyBoundMandate, SealedBidArbiter } from "../mandate-arbiter/index.js";
+import { exportVerifiableAuditBundle, verifyExportedAuditBundle } from "../intake-compiler/index.js";
 
 /**
  * Create baseline valid normalized offers for the 4 affected/soft commitments on Friday 2026-11-20.
@@ -909,6 +912,210 @@ export const CHAOS_SCENARIOS = [
         sagaStatus: exec.status,
         humanInterventionRequired: true,
         evidence: exec.partialFailureReason,
+      };
+    },
+  },
+  {
+    id: "CHAOS_16_CROSS_PROVIDER_RECEIPT_SPOOF",
+    number: 16,
+    title: "Cross-Origin Provider Key Spoofing (MoveCo Key Signs PermitFlow Receipt)",
+    injectedFailure: "Compromised MoveCo origin signs a PermitFlow receipt using MoveCo's valid Ed25519 private key.",
+    humanInterventionRequired: true,
+    async run() {
+      const { clients, verifier } = await createSimulatedProviderHarness();
+      const spoofedEnvelope = await signProviderReceipt(
+        {
+          receipt_id: "rcpt_spoof_99",
+          provider_id: "permitflow",
+          booking_ref: "PF-2049",
+          scheduled_date: "2026-11-20",
+          window: "07:30–14:00",
+          total_charged_eur: 45,
+        },
+        clients.moveco.signer,
+      );
+      const check = await verifier.verifyReceipt("permitflow", spoofedEnvelope);
+      return {
+        simulation_mode: true,
+        passed: check.valid === false && check.trusted === false,
+        expectedTransition: "Cross-provider key substitution rejected by pinned provider JWK map",
+        observedState: check.level,
+        sagaStatus: "SPOOF_REJECTED",
+        humanInterventionRequired: true,
+        evidence: check.detail || check.level,
+      };
+    },
+  },
+  {
+    id: "CHAOS_17_NANDA_SEQUENCE_ROLLBACK",
+    number: 17,
+    title: "Project NANDA Resolution Sequence Rollback Replay (Seq 5 -> Seq 3)",
+    injectedFailure: "Registry replays a non-expired binding with sequence=3 after sequence=5 was already verified.",
+    humanInterventionRequired: true,
+    async run() {
+      const resolver = new AuthorityBoundResolver();
+      const baseTarget = {
+        subject: "urn:air:example.org:agent:moveco_dispatch",
+        subjectType: "urn",
+        method: "artifact",
+        targetType: "application/a2a-agent-card+json",
+        targetUrl: "https://example.org/agent-card.json",
+        issuedAt: "2026-11-15T09:00:00Z",
+        expiresAt: "2026-11-16T09:00:00Z",
+        authority: { type: "domain-control", issuer: "https://example.org" },
+      };
+      const first = await resolver.verifyResolutionTarget(
+        { ...baseTarget, sequence: 5 },
+        { nowIso: "2026-11-15T10:00:00Z" },
+      );
+      const replay = await resolver.verifyResolutionTarget(
+        { ...baseTarget, sequence: 3 },
+        { nowIso: "2026-11-15T10:05:00Z" },
+      );
+      return {
+        simulation_mode: true,
+        passed: first.ok === true && replay.ok === false && replay.code === "stale",
+        expectedTransition: "Verified seq 5 -> replayed seq 3 rejected as stale anti-rollback",
+        observedState: replay.code,
+        sagaStatus: "ROLLBACK_BLOCKED",
+        humanInterventionRequired: true,
+        evidence: replay.reason,
+      };
+    },
+  },
+  {
+    id: "CHAOS_18_PRE_COMMIT_HOLD_RELEASE_REVERSIBILITY",
+    number: 18,
+    title: "Explicit Pre-Commit Hold Release (€0.00 Fee & Baseline Preservation)",
+    injectedFailure: "Visitor aborts after 3 slot holds are placed; coordinator releases holds without touching originals.",
+    humanInterventionRequired: false,
+    async run() {
+      const mission = createSignatureMoveMission();
+      const graph = MissionGraph.fromRelocationMission(mission);
+      const { proposal } = compileMissionChange("Move Tuesday to Friday under €700", mission);
+      const impact = analyzeMissionImpact(graph, proposal);
+      const solved = solveMinimalChangePlans({
+        graph,
+        proposal,
+        impact,
+        normalizedOffers: buildBaselineFridayOffers(),
+      });
+      const { clients, verifier } = await createSimulatedProviderHarness();
+      const saga = new SagaCoordinator({ graph, receiptVerifier: verifier });
+      await saga.preparePlan({
+        missionId: mission.mission_id,
+        plan: solved.plans[0],
+        maximumBudgetEur: 700,
+        providerClients: clients,
+        nowIso: "2026-11-15T10:00:00Z",
+      });
+      const rel = await saga.releasePreparedHolds({
+        providerClients: clients,
+        nowIso: "2026-11-15T10:02:00Z",
+      });
+      const vanNode = graph.nodes.get("cmt_moveco_van");
+      return {
+        simulation_mode: true,
+        passed:
+          rel.ok === true
+          && rel.feeChargedEur === 0
+          && rel.releasedOperationIds.length === 3
+          && vanNode.scheduled_date === "2026-11-17",
+        expectedTransition: "AWAITING_APPROVAL -> COMPENSATION_PENDING -> COMPENSATED (€0.00)",
+        observedState: "COMPENSATED",
+        sagaStatus: "ORIGINALS_PRESERVED",
+        humanInterventionRequired: false,
+        evidence: `Released ${rel.releasedOperationIds.length} holds at €0.00; MoveCo remains on ${vanNode.scheduled_date}.`,
+      };
+    },
+  },
+  {
+    id: "CHAOS_19_MANDATE_SLICE_NO_AGREEMENT_ZERO_LEAK",
+    number: 19,
+    title: "Sealed-Bid Mandate Exhaustion (NO_AGREEMENT With Zero Budget/Floor Leak)",
+    injectedFailure: "All overflow bidders submit private floors (€480, €495) above buyer slice allowance (€440).",
+    humanInterventionRequired: true,
+    async run() {
+      const mission = createSignatureMoveMission();
+      const { proposal } = compileMissionChange("Move Tuesday to Friday under €660", mission);
+      const mandate = await issuePolicyBoundMandate(mission, proposal);
+      const arbiter = new SealedBidArbiter(mandate, 44000);
+      await arbiter.commitSealedBid({ providerId: "carrier_a", askCents: 51000, floorCents: 48000 });
+      await arbiter.commitSealedBid({ providerId: "carrier_b", askCents: 52500, floorCents: 49500 });
+      const res = arbiter.resolveNashBargaining();
+      const serialized = JSON.stringify(res);
+      const zeroLeak = !serialized.includes("48000") && !serialized.includes("49500") && !serialized.includes("44000");
+      return {
+        simulation_mode: true,
+        passed: res.outcomes.every((o) => o.status === "NO_AGREEMENT") && zeroLeak,
+        expectedTransition: "floorCents > sliceAllowance -> NO_AGREEMENT (neither floor nor ceiling disclosed)",
+        observedState: "NO_AGREEMENT",
+        sagaStatus: "PRIVACY_PRESERVED",
+        humanInterventionRequired: true,
+        evidence: "2/2 overflow bids rejected cleanly with zero private floor or buyer allowance leakage.",
+      };
+    },
+  },
+  {
+    id: "CHAOS_20_AUDIT_BUNDLE_POST_EXPORT_TAMPER",
+    number: 20,
+    title: "Post-Export Audit Bundle €0.01 Receipt & Saga Log Tampering",
+    injectedFailure: "Exported audit JSON has 1 receipt mutated by +€0.01 and 1 Saga log reason altered.",
+    humanInterventionRequired: true,
+    async run() {
+      const mission = createSignatureMoveMission();
+      const graph = MissionGraph.fromRelocationMission(mission);
+      const { proposal } = compileMissionChange("Move Tuesday to Friday under €700", mission);
+      const impact = analyzeMissionImpact(graph, proposal);
+      const solved = solveMinimalChangePlans({
+        graph,
+        proposal,
+        impact,
+        normalizedOffers: buildBaselineFridayOffers(),
+      });
+      const { clients, verifier } = await createSimulatedProviderHarness();
+      const saga = new SagaCoordinator({ graph, receiptVerifier: verifier });
+      const prep = await saga.preparePlan({
+        missionId: mission.mission_id,
+        plan: solved.plans[0],
+        maximumBudgetEur: 700,
+        providerClients: clients,
+        nowIso: "2026-11-15T10:00:00Z",
+      });
+      const approvals = await saga.approvePreparedOperations(
+        prep.operations.map((o) => o.operation_id),
+        { nowIso: "2026-11-15T10:01:00Z" },
+      );
+      const exec = await saga.executeApprovedSaga({
+        approvedItems: approvals.map((a) => ({ operationId: a.operation_id, approvalId: a.approval_id })),
+        providerClients: clients,
+        nowIso: "2026-11-15T10:02:00Z",
+      });
+      const bundle = await exportVerifiableAuditBundle({
+        mission,
+        selectedPlan: solved.plans[0],
+        operations: exec.operations,
+        auditLog: saga.ledger.getHistory(),
+        trustedProviderKeys: verifier.trustedByProvider,
+      });
+      const tampered = JSON.parse(JSON.stringify(bundle));
+      tampered.operations[0].receipt_envelope.receipt_body.total_charged_eur += 0.01;
+      tampered.immutable_saga_log[0].reason += " [tampered]";
+      const check = await verifyExportedAuditBundle(tampered, {
+        externalPinnedKeys: verifier.trustedByProvider,
+      });
+      return {
+        simulation_mode: true,
+        passed:
+          check.valid === false
+          && check.bundleSha256Valid === false
+          && check.sagaChainValid === false
+          && check.receiptsVerifiedCount < check.receiptsTotalCommitted,
+        expectedTransition: "Triple alarm: BUNDLE_SHA256_MISMATCH + LEDGER_CHAIN_BROKEN + ED25519_SIGNATURE_INVALID",
+        observedState: "TAMPER_DETECTED",
+        sagaStatus: `${check.errors.length} cryptographic alarms`,
+        humanInterventionRequired: true,
+        evidence: check.errors.join(" | "),
       };
     },
   },

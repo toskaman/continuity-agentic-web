@@ -14,10 +14,11 @@ import { normalizePeerOffer } from "../capability-adapter/index.js";
 import { addDaysIso, createSignatureMoveMission, diffDaysIso } from "../mission-core/index.js";
 import { EDGE_TYPES } from "../mission-graph/index.js";
 import { generateDemoProviderKeyPair, ReceiptVerifier, signProviderReceipt } from "../proof-verifier/index.js";
-import { canonicalizeJson, isValidIsoDate, sanitizeJson, sha256Hex } from "../shared-schemas/index.js";
+import { OperationLedger } from "../outcome-reconciliation/index.js";
+import { canonicalizeJson, isPlainObject, isValidIsoDate, sanitizeJson, sha256Hex } from "../shared-schemas/index.js";
 
 export const SAMPLE_RAW_CONFIRMATION_EMAILS = [
-  "Subject: [ANCHOR] High-Speed Rail Charter Confirmed — Ref: TGV-4410",
+  "Subject: [ANCHOR] High-Speed Rail Charter Confirmed — Ref: HSR-4410",
   "Provider: RailWays Express · Date: 2026-11-17 · Window: 08:30–11:30",
   "Price: €210 · Reschedule fee: €15 · Cancel fee: €55 · Hold supported",
   "---",
@@ -444,7 +445,12 @@ export function compileUnstructuredIntake(rawInput, options = {}) {
   }
 
   const isIcs = /BEGIN:VCALENDAR/i.test(text) && /BEGIN:VEVENT/i.test(text);
-  const items = isIcs ? parseIcsEvents(text) : parseConfirmationEmailBlocks(text);
+  const isJsonArray = !isIcs && text.startsWith("[");
+  const items = isIcs
+    ? parseIcsEvents(text)
+    : isJsonArray
+      ? parseJsonBookingArray(text)
+      : parseConfirmationEmailBlocks(text);
 
   if (items.length < 2) {
     throw new Error(
@@ -567,7 +573,7 @@ export function compileUnstructuredIntake(rawInput, options = {}) {
 
   return {
     ok: true,
-    format: isIcs ? "ics" : "emails",
+    format: isIcs ? "ics" : isJsonArray ? "json" : "emails",
     mission,
     baselineTotalEur: baselineTotal,
     inferredEdgesCount: dependencies.length,
@@ -627,6 +633,50 @@ function parseIcsEvents(icsText) {
     });
   });
 
+  return out.slice(0, 16);
+}
+
+function parseJsonBookingArray(jsonText) {
+  let arr;
+  try {
+    arr = sanitizeJson(JSON.parse(jsonText));
+  } catch (err) {
+    throw new Error(`Invalid JSON booking array: ${err.message}`);
+  }
+  if (!Array.isArray(arr)) {
+    throw new Error("JSON schedule intake must be an array of booking objects.");
+  }
+  const out = [];
+  arr.forEach((entry, i) => {
+    if (!isPlainObject(entry)) return;
+    const rawDate = String(entry.scheduled_date || entry.date || "").trim();
+    if (!isValidIsoDate(rawDate)) return;
+    const rawValidUntil = entry.valid_until || entry.validUntil;
+    const validUntil = rawValidUntil && isValidIsoDate(String(rawValidUntil)) ? String(rawValidUntil) : null;
+    const title = String(entry.title || entry.summary || `Booking ${i + 1}`).trim();
+    const providerName = String(entry.provider_name || entry.provider || `Provider ${i + 1}`).trim();
+    const bookingRef = String(entry.booking_ref || entry.ref || `JSON-${100 + i}`).trim();
+    const priceEur = Math.max(0, Number(entry.price_eur ?? entry.price ?? 80) || 0);
+    const rescheduleFeeEur = Math.max(0, Number(entry.reschedule_fee_eur ?? entry.rescheduleFee ?? 10) || 0);
+    const cancelFeeEur = Math.max(0, Number(entry.cancellation_fee_eur ?? entry.cancelFee ?? 30) || 0);
+
+    out.push({
+      explicitAnchor: Boolean(entry.anchor || /\[ANCHOR\]/i.test(title)),
+      title: title.replace(/\[ANCHOR\]\s*/i, "").trim(),
+      providerName,
+      bookingRef,
+      scheduledDate: rawDate,
+      validUntil,
+      window: String(entry.window || "09:00–13:00"),
+      priceEur,
+      rescheduleFeeEur,
+      cancelFeeEur,
+      supportsHold: entry.supports_hold !== false && entry.supportsHold !== false,
+      category: String(entry.category || "imported_json"),
+      notes: String(entry.notes || "Imported from structured JSON booking array."),
+      rawText: `${title} ${providerName} ${entry.notes || ""}`,
+    });
+  });
   return out.slice(0, 16);
 }
 
@@ -929,7 +979,26 @@ export function exportMissionToIcs(mission, graph, operations = []) {
 /**
  * Create an offline-verifiable cryptographic audit bundle JSON with canonical SHA-256 digest.
  */
-export async function exportVerifiableAuditBundle({ mission, selectedPlan, operations, auditLog }) {
+export async function exportVerifiableAuditBundle({
+  mission,
+  selectedPlan,
+  operations,
+  auditLog,
+  trustedProviderKeys = null,
+}) {
+  const keySnapshot = {};
+  if (trustedProviderKeys instanceof Map) {
+    for (const [pid, meta] of trustedProviderKeys.entries()) {
+      keySnapshot[pid] = { keyId: meta.keyId, publicJwk: meta.publicJwk };
+    }
+  } else if (isPlainObject(trustedProviderKeys)) {
+    for (const [pid, meta] of Object.entries(trustedProviderKeys)) {
+      if (meta?.keyId && meta?.publicJwk) {
+        keySnapshot[pid] = { keyId: meta.keyId, publicJwk: meta.publicJwk };
+      }
+    }
+  }
+
   const payload = sanitizeJson({
     schema: "continuity-verifiable-audit-bundle/v1",
     exported_at: new Date().toISOString(),
@@ -947,6 +1016,7 @@ export async function exportVerifiableAuditBundle({ mission, selectedPlan, opera
     operations: (operations || []).map((op) => ({
       operation_id: op.operation_id,
       commitment_id: op.commitment_id,
+      provider_id: op.provider_id || op.receipt_envelope?.receipt_body?.provider_id || null,
       provider_name: op.provider_name,
       state: op.state,
       proposed_date: op.proposed_date,
@@ -955,6 +1025,7 @@ export async function exportVerifiableAuditBundle({ mission, selectedPlan, opera
       proof_verification: op.proof_verification || null,
       receipt_envelope: op.receipt_envelope || null,
     })),
+    pinned_provider_keys_snapshot: keySnapshot,
     immutable_saga_log: auditLog || [],
   });
 
@@ -965,5 +1036,100 @@ export async function exportVerifiableAuditBundle({ mission, selectedPlan, opera
       canonicalization: "RFC8785-JCS-Subset",
       bundle_sha256: bundleSha256,
     },
+  };
+}
+
+/**
+ * Offline Zero-Trust Cryptographic Audit Bundle Verifier.
+ * Independently checks:
+ *  1. Canonical RFC 8785 JCS `bundle_sha256` payload digest (catches any 1-byte mutation).
+ *  2. SHA-256 hash-chained `immutable_saga_log` (`OperationLedger.verifyChainIntegrity` from genesis `0000...`).
+ *  3. WebCrypto Ed25519 signature + payload SHA-256 on every `COMMITTED` operation's `receipt_envelope`.
+ *     Explicitly distinguishes external pinned trust anchors (`PINNED_TRUST_STORE`) from embedded snapshot
+ *     consistency (`SNAPSHOT_SELF_CONSISTENT`).
+ *
+ * @param {unknown} rawBundle
+ * @param {object} [options]
+ * @param {Record<string, { keyId: string, publicJwk: JsonWebKey }> | Map<string, any>} [options.externalPinnedKeys]
+ */
+export async function verifyExportedAuditBundle(rawBundle, options = {}) {
+  if (!isPlainObject(rawBundle) || rawBundle.schema !== "continuity-verifiable-audit-bundle/v1") {
+    return {
+      valid: false,
+      bundleSha256Valid: false,
+      sagaChainValid: false,
+      receiptsVerifiedCount: 0,
+      receiptsTotalCommitted: 0,
+      keyTrustMode: "NONE",
+      errors: ['Bundle must be a JSON object with schema "continuity-verifiable-audit-bundle/v1".'],
+    };
+  }
+
+  const errors = [];
+  const clean = sanitizeJson(rawBundle);
+  const { bundle_integrity: integrity, ...corePayload } = clean;
+  const expectedSha = integrity?.bundle_sha256 || "";
+  const computedSha = await sha256Hex(canonicalizeJson(corePayload));
+  const bundleSha256Valid = Boolean(expectedSha) && computedSha === expectedSha;
+  if (!bundleSha256Valid) {
+    errors.push(
+      `BUNDLE_SHA256_MISMATCH: expected ${expectedSha.slice(0, 16) || "missing"}…, computed ${computedSha.slice(0, 16)}…`,
+    );
+  }
+
+  const chainCheck = OperationLedger.verifyChainIntegrity(
+    Array.isArray(clean.immutable_saga_log) ? clean.immutable_saga_log : [],
+  );
+  const sagaChainValid = chainCheck.valid;
+  if (!sagaChainValid) {
+    errors.push(`LEDGER_CHAIN_BROKEN: ${chainCheck.reason || `tampered at seq #${chainCheck.brokenAtSeq}`}`);
+  }
+
+  let keyMapObj = null;
+  let keyTrustMode = "NONE";
+  if (options.externalPinnedKeys instanceof Map && options.externalPinnedKeys.size > 0) {
+    keyMapObj = Object.fromEntries(options.externalPinnedKeys.entries());
+    keyTrustMode = "PINNED_TRUST_STORE";
+  } else if (isPlainObject(options.externalPinnedKeys) && Object.keys(options.externalPinnedKeys).length > 0) {
+    keyMapObj = options.externalPinnedKeys;
+    keyTrustMode = "PINNED_TRUST_STORE";
+  } else if (
+    isPlainObject(clean.pinned_provider_keys_snapshot)
+    && Object.keys(clean.pinned_provider_keys_snapshot).length > 0
+  ) {
+    keyMapObj = clean.pinned_provider_keys_snapshot;
+    keyTrustMode = "SNAPSHOT_SELF_CONSISTENT";
+  }
+
+  const verifier = new ReceiptVerifier(keyMapObj || {});
+  const committedOps = (Array.isArray(clean.operations) ? clean.operations : []).filter(
+    (op) => op?.state === "COMMITTED",
+  );
+  let receiptsVerifiedCount = 0;
+
+  for (const op of committedOps) {
+    const pid = op.provider_id || op.receipt_envelope?.receipt_body?.provider_id;
+    if (!pid || !op.receipt_envelope) {
+      errors.push(`MISSING_RECEIPT: committed operation "${op.operation_id}" has no signed receipt_envelope.`);
+      continue;
+    }
+    const res = await verifier.verifyReceipt(pid, op.receipt_envelope);
+    if (!res.valid) {
+      errors.push(`ED25519_SIGNATURE_INVALID (${pid} / ${op.operation_id}): ${res.detail || res.level}`);
+    } else {
+      receiptsVerifiedCount += 1;
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    bundleSha256Valid,
+    computedBundleSha256: computedSha,
+    sagaChainValid,
+    sagaEventsChecked: chainCheck.verifiedEntries ?? (clean.immutable_saga_log?.length || 0),
+    receiptsVerifiedCount,
+    receiptsTotalCommitted: committedOps.length,
+    keyTrustMode,
+    errors,
   };
 }

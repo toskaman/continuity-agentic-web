@@ -41,10 +41,12 @@
       "mvpProfile": "0.2",
       "manifestUrl": "http://127.0.0.1:8083/agent-manifest.json",
       "networkUrl": "http://127.0.0.1:8083/homeconnect_scheduler.network.json",
+      "factsNetworkUrl": "http://127.0.0.1:8083/facts/homeconnect_scheduler_facts",
       "browserExecuted": true
     },
     "org.projectnanda": {
       "subjectUrnHint": "urn:air:127.0.0.1:agent:homeconnect_scheduler",
+      "aiCatalogUrl": "http://127.0.0.1:8083/ai-catalog.json",
       "resolutionProfile": "known-subject-resolution-02"
     }
   }

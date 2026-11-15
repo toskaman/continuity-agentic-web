@@ -113,9 +113,11 @@ export function solveMinimalChangePlans({
   impact,
   normalizedOffers,
   pinnedCommitmentIds = [],
+  _skipCounterfactual = false,
 }) {
   const t0 = performance.now();
   const pinnedSet = new Set(pinnedCommitmentIds);
+  const targetCommitmentId = proposal.requested_change.target_commitment_id;
   const targetAnchorDate = proposal.requested_change.new_value;
   const maxBudgetEur = proposal.invariants.maximum_budget_eur;
   const allowUnauthorizedCancel = proposal.invariants.unauthorized_cancellation === true;
@@ -195,6 +197,7 @@ export function solveMinimalChangePlans({
         graph,
         allNodes,
         current,
+        targetCommitmentId,
         targetAnchorDate,
         maxBudgetEur,
         allowUnauthorizedCancel,
@@ -220,10 +223,20 @@ export function solveMinimalChangePlans({
   search(0, {});
 
   if (feasibleAssignments.length === 0) {
+    const counterfactualPrescription = _skipCounterfactual
+      ? null
+      : computeMinimalCounterfactualRelaxation({
+          graph,
+          proposal,
+          impact,
+          normalizedOffers,
+          pinnedCommitmentIds,
+        });
     return {
       feasible: false,
       recommendedPlanId: null,
       plans: [],
+      counterfactualPrescription,
       rejectedCombinationsCount: rejectedCount,
       rejectionReasonsSummary: Array.from(rejectionReasons),
       solverDurationMs: Number((performance.now() - t0).toFixed(3)),
@@ -341,25 +354,199 @@ export function computeParetoFrontier(plans) {
     Number(p.metrics.irreversibleCount),
   ];
 
+  // NSGA-II Crowding Distance across the 4 normalized minimization objectives
+  const distances = new Map(plans.map((p) => [p.plan_id, 0]));
+  if (plans.length <= 2) {
+    for (const p of plans) distances.set(p.plan_id, Number.POSITIVE_INFINITY);
+  } else {
+    for (let dim = 0; dim < 4; dim++) {
+      const sorted = plans.slice().sort((a, b) => vec(a)[dim] - vec(b)[dim]);
+      const minV = vec(sorted[0])[dim];
+      const maxV = vec(sorted[sorted.length - 1])[dim];
+      const span = maxV - minV;
+      if (span <= 0) continue;
+      distances.set(sorted[0].plan_id, Number.POSITIVE_INFINITY);
+      distances.set(sorted[sorted.length - 1].plan_id, Number.POSITIVE_INFINITY);
+      for (let i = 1; i < sorted.length - 1; i++) {
+        const cur = distances.get(sorted[i].plan_id) || 0;
+        if (!Number.isFinite(cur)) continue;
+        const delta = (vec(sorted[i + 1])[dim] - vec(sorted[i - 1])[dim]) / span;
+        distances.set(sorted[i].plan_id, Number((cur + delta).toFixed(4)));
+      }
+    }
+  }
+
   return plans.map((plan) => {
     const vP = vec(plan);
     let dominator = null;
+    let dominatedCount = 0;
     for (const other of plans) {
       if (other.plan_id === plan.plan_id) continue;
       const vO = vec(other);
-      const noWorseAll = vO.every((val, i) => val <= vP[i]);
-      const strictlyBetterOne = vO.some((val, i) => val < vP[i]);
-      if (noWorseAll && strictlyBetterOne) {
+      const otherDominates = vO.every((val, i) => val <= vP[i]) && vO.some((val, i) => val < vP[i]);
+      if (otherDominates && dominator === null) {
         dominator = other.plan_id;
-        break;
+      }
+      const planDominatesOther = vP.every((val, i) => val <= vO[i]) && vP.some((val, i) => val < vO[i]);
+      if (planDominatesOther) {
+        dominatedCount += 1;
       }
     }
+    const rawCd = distances.get(plan.plan_id) ?? 0;
     return {
       ...plan,
       paretoOptimal: dominator === null,
+      paretoRank: dominator === null ? 1 : 2,
       dominatedByPlanId: dominator,
+      dominatedCount,
+      crowdingDistance: Number.isFinite(rawCd) ? rawCd : "boundary",
     };
   });
+}
+
+/**
+ * Minimal Unsatisfiable Core (MUS) & Exact Counterfactual Relaxation Prescription:
+ * When hard constraints make a mission change infeasible, computes the smallest deterministic
+ * change in user-controlled bounds (exact minimum budget ceiling in cents, minimal conflicting
+ * pin release, or both) needed to unlock at least one valid plan.
+ *
+ * @param {object} params
+ * @param {import("../mission-graph/index.js").MissionGraph} params.graph
+ * @param {Record<string, any>} params.proposal
+ * @param {Record<string, any>} params.impact
+ * @param {Array<Record<string, any>>} params.normalizedOffers
+ * @param {string[]} [params.pinnedCommitmentIds]
+ */
+export function computeMinimalCounterfactualRelaxation({
+  graph,
+  proposal,
+  impact,
+  normalizedOffers,
+  pinnedCommitmentIds = [],
+}) {
+  const currentCapEur = Number(proposal.invariants.maximum_budget_eur);
+  const UNBOUNDED_PROBE_EUR = 1_000_000;
+
+  const probeWith = (capEur, pins) =>
+    solveMinimalChangePlans({
+      graph,
+      proposal: {
+        ...proposal,
+        invariants: {
+          ...proposal.invariants,
+          maximum_budget_eur: capEur,
+        },
+      },
+      impact,
+      normalizedOffers,
+      pinnedCommitmentIds: pins,
+      _skipCounterfactual: true,
+    });
+
+  // 1. Check if raising the budget ceiling alone (keeping all pins) unlocks feasibility
+  const budgetOnlyProbe = probeWith(UNBOUNDED_PROBE_EUR, pinnedCommitmentIds);
+  if (budgetOnlyProbe.feasible) {
+    const minTotalEur = budgetOnlyProbe.plans.reduce(
+      (minC, p) => Math.min(minC, p.metrics.totalMissionCostEur),
+      UNBOUNDED_PROBE_EUR,
+    );
+    const exactMinEur = Number(minTotalEur.toFixed(2));
+    const deltaEur = Number(Math.max(0.01, exactMinEur - currentCapEur).toFixed(2));
+    const verifiedAtMin = probeWith(exactMinEur, pinnedCommitmentIds);
+    return {
+      relaxationFound: true,
+      kind: "raise_budget",
+      currentBudgetEur: currentCapEur,
+      relaxedBudgetEur: exactMinEur,
+      deltaBudgetNeededEur: deltaEur,
+      unpinCommitmentIds: [],
+      unpinTitles: [],
+      unlockedPlansCount: verifiedAtMin.plans.length,
+      summary: `Raise budget ceiling by +€${deltaEur.toFixed(2)} (from €${currentCapEur.toFixed(2)} to €${exactMinEur.toFixed(2)}) to unlock ${verifiedAtMin.plans.length} valid plan(s).`,
+    };
+  }
+
+  // 2. If commitments are pinned, search minimal cardinality unpin subsets (size 1..k)
+  const pins = Array.from(new Set(pinnedCommitmentIds)).sort();
+  if (pins.length > 0) {
+    /** @type {string[][]} */
+    const subsets = [];
+    const genSubsets = (startIdx, chosen, targetLen) => {
+      if (chosen.length === targetLen) {
+        subsets.push(chosen.slice());
+        return;
+      }
+      for (let i = startIdx; i < pins.length; i++) {
+        chosen.push(pins[i]);
+        genSubsets(i + 1, chosen, targetLen);
+        chosen.pop();
+      }
+    };
+    for (let k = 1; k <= pins.length; k++) {
+      genSubsets(0, [], k);
+    }
+
+    // 2a. Unpin only, keeping user's current budget cap
+    for (const dropSet of subsets) {
+      const dropLookup = new Set(dropSet);
+      const remainingPins = pins.filter((id) => !dropLookup.has(id));
+      const p = probeWith(currentCapEur, remainingPins);
+      if (p.feasible) {
+        const titles = dropSet.map((id) => graph.nodes.get(id)?.title || id);
+        return {
+          relaxationFound: true,
+          kind: "unpin_commitments",
+          currentBudgetEur: currentCapEur,
+          relaxedBudgetEur: currentCapEur,
+          deltaBudgetNeededEur: 0,
+          unpinCommitmentIds: dropSet,
+          unpinTitles: titles,
+          unlockedPlansCount: p.plans.length,
+          summary: `Unpin conflicting lock on ${titles.join(", ")} to unlock ${p.plans.length} valid plan(s) within your €${currentCapEur.toFixed(2)} ceiling.`,
+        };
+      }
+    }
+
+    // 2b. Combined minimal unpin + exact minimum budget increase
+    for (const dropSet of subsets) {
+      const dropLookup = new Set(dropSet);
+      const remainingPins = pins.filter((id) => !dropLookup.has(id));
+      const pUnbounded = probeWith(UNBOUNDED_PROBE_EUR, remainingPins);
+      if (pUnbounded.feasible) {
+        const minTotalEur = pUnbounded.plans.reduce(
+          (minC, pl) => Math.min(minC, pl.metrics.totalMissionCostEur),
+          UNBOUNDED_PROBE_EUR,
+        );
+        const exactMinEur = Number(minTotalEur.toFixed(2));
+        const deltaEur = Number(Math.max(0.01, exactMinEur - currentCapEur).toFixed(2));
+        const verifiedAtMin = probeWith(exactMinEur, remainingPins);
+        const titles = dropSet.map((id) => graph.nodes.get(id)?.title || id);
+        return {
+          relaxationFound: true,
+          kind: "unpin_and_raise_budget",
+          currentBudgetEur: currentCapEur,
+          relaxedBudgetEur: exactMinEur,
+          deltaBudgetNeededEur: deltaEur,
+          unpinCommitmentIds: dropSet,
+          unpinTitles: titles,
+          unlockedPlansCount: verifiedAtMin.plans.length,
+          summary: `Unpin ${titles.join(", ")} and raise budget ceiling by +€${deltaEur.toFixed(2)} to €${exactMinEur.toFixed(2)} to unlock ${verifiedAtMin.plans.length} valid plan(s).`,
+        };
+      }
+    }
+  }
+
+  return {
+    relaxationFound: false,
+    kind: "structural_provider_unavailability",
+    currentBudgetEur: currentCapEur,
+    relaxedBudgetEur: null,
+    deltaBudgetNeededEur: null,
+    unpinCommitmentIds: [],
+    unpinTitles: [],
+    unlockedPlansCount: 0,
+    summary: "No provider offers satisfy the hard physical/temporal dependency rules for this target date.",
+  };
 }
 
 /**
@@ -434,12 +621,14 @@ function validateCandidateAssignment(
   graph,
   allNodes,
   assignmentMap,
+  targetCommitmentId,
   targetAnchorDate,
   maxBudgetEur,
   allowUnauthorizedCancel,
   baselineTotalEur,
 ) {
-  const anchorChoice = assignmentMap["cmt_moveco_van"];
+  const anchorId = targetCommitmentId || "cmt_moveco_van";
+  const anchorChoice = assignmentMap[anchorId];
   if (anchorChoice && anchorChoice.proposed_date !== targetAnchorDate) {
     return {
       valid: false,
