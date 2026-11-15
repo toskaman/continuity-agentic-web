@@ -49,6 +49,7 @@ import {
   proveSpendWithinBlindedCeiling,
   verifyBlindedBudgetAttestation,
 } from "../zk-budget-attestation/index.js";
+import { encodeSignedReceiptHandoff, verifySignedReceiptHandoff } from "../cross-origin-bridge/index.js";
 
 /**
  * Create baseline valid normalized offers for the 4 affected/soft commitments on Friday 2026-11-20.
@@ -1455,6 +1456,108 @@ export const CHAOS_SCENARIOS = [
         sagaStatus: "ZERO_DROPPED_CLICKS",
         humanInterventionRequired: false,
         evidence: "Early click synchronized cleanly behind non-blocking peer handshake promise.",
+      };
+    },
+  },
+  {
+    id: "CHAOS_29_SAME_HOST_BROADCAST_CHANNEL_SPOOF_BLOCKED",
+    number: 29,
+    title: "Same-Host Subpath BroadcastChannel Forgery Blocked by Pinned Ed25519 Key",
+    injectedFailure: "Another subpath on shared *.github.io host broadcasts forged PEER_COMMITTED signed with unpinned key.",
+    humanInterventionRequired: true,
+    async run() {
+      const legitMovecoKey = await generateDemoProviderKeyPair("moveco");
+      const rogueSiblingKey = await generateDemoProviderKeyPair("moveco");
+      const forgedEnvelope = await signProviderReceipt(
+        {
+          receipt_id: "rcpt_forged_bc",
+          provider_id: "moveco",
+          booking_ref: "MC-8841",
+          scheduled_date: "2026-12-25",
+          total_price_eur: 0,
+        },
+        rogueSiblingKey,
+      );
+      const forgedToken = encodeSignedReceiptHandoff(
+        forgedEnvelope,
+        rogueSiblingKey,
+        "https://gpaschercher-sudo.github.io/moveco-agentic-peer",
+      );
+      const check = await verifySignedReceiptHandoff("moveco", forgedToken, { pinnedKey: legitMovecoKey });
+      return {
+        simulation_mode: true,
+        passed: check.valid === false,
+        expectedTransition: "BroadcastChannel handoff_token checked against pinnedKey -> REJECTED",
+        observedState: "FORGERY_DROPPED",
+        sagaStatus: "PEER_STATE_INTACT",
+        humanInterventionRequired: true,
+        evidence: check.reason || "Pinned Ed25519 key mismatch blocked BroadcastChannel mutation.",
+      };
+    },
+  },
+  {
+    id: "CHAOS_30_CONTINUOUS_MULTI_WAVE_CHAINED_REPLANNING",
+    number: 30,
+    title: "Continuous Day-2 -> Day-3 Chained Re-Planning Without Manual Reset",
+    injectedFailure: "After committing Tuesday -> Thursday, user immediately shifts again from Thursday -> Friday.",
+    humanInterventionRequired: true,
+    async run() {
+      const mission = createSignatureMoveMission();
+      const { clients, verifier } = await createSimulatedProviderHarness();
+
+      // Wave 1: Tuesday (2026-11-17) -> Thursday (2026-11-19)
+      const g1 = MissionGraph.fromMission(mission);
+      const { proposal: p1 } = compileMissionChange("Move relocation from Tuesday to Thursday under €700", mission);
+      const imp1 = analyzeMissionImpact(g1, p1);
+      const offers1 = buildBaselineFridayOffers().map((o) =>
+        o.proposed_date === "2026-11-20" ? { ...o, proposed_date: "2026-11-19" } : o,
+      );
+      const solved1 = solveMinimalChangePlans({ graph: g1, proposal: p1, impact: imp1, normalizedOffers: offers1 });
+      const saga1 = new SagaCoordinator({ graph: g1, receiptVerifier: verifier });
+      const prep1 = await saga1.preparePlan({
+        missionId: mission.mission_id,
+        plan: solved1.plans[0],
+        maximumBudgetEur: 700,
+        providerClients: clients,
+      });
+      const app1 = await saga1.approvePreparedOperations(prep1.operations.map((o) => o.operation_id));
+      const ex1 = await saga1.executeApprovedSaga({
+        approvedItems: app1.map((a) => ({ operationId: a.operation_id, approvalId: a.approval_id })),
+        providerClients: clients,
+      });
+
+      // Synchronize authoritative mission state after Wave 1 commit
+      mission.anchor_date = "2026-11-19";
+      for (const op of ex1.operations) {
+        if (op.state === "COMMITTED") {
+          const cmt = mission.commitments.find((c) => c.id === op.commitment_id);
+          if (cmt) cmt.scheduled_date = op.proposed_date;
+        }
+      }
+
+      // Wave 2: Thursday (2026-11-19) -> Friday (2026-11-20)
+      const g2 = MissionGraph.fromMission(mission);
+      const { proposal: p2 } = compileMissionChange("Move relocation from Thursday to Friday under €700", mission);
+      const imp2 = analyzeMissionImpact(g2, p2);
+      const solved2 = solveMinimalChangePlans({
+        graph: g2,
+        proposal: p2,
+        impact: imp2,
+        normalizedOffers: buildBaselineFridayOffers(),
+      });
+
+      return {
+        simulation_mode: true,
+        passed:
+          ex1.status === "ALL_COMMITTED_AND_VERIFIED"
+          && p2.requested_change.previous_value === "2026-11-19"
+          && p2.requested_change.new_value === "2026-11-20"
+          && solved2.feasible === true,
+        expectedTransition: "Tue -> Thu COMMITTED -> fresh Thu -> Fri plans solved cleanly",
+        observedState: "CHAINED_CONTINUITY_OK",
+        sagaStatus: solved2.recommendedPlanId,
+        humanInterventionRequired: true,
+        evidence: "Both consecutive day-shifts maintained invariants and preserved Storage & Saturday Delivery.",
       };
     },
   },

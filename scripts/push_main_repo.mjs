@@ -17,7 +17,7 @@ run(
   [
     "commit",
     "-m",
-    "feat: zero-ceiling-leak hash-ladder budget proof, per-agent toolbox scoper, semantic ripple SVG graph, EN/FR NL compiler, N=120 benchmarks, 28 Chaos & 80 tests",
+    "feat: pinned-key BroadcastChannel guard, chained multi-wave replanning, 30 Chaos scenarios, 82 tests & complete TITAN Phase 20 report",
   ],
   { stdio: "inherit" },
 );

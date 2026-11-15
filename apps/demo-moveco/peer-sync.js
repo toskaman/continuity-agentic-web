@@ -1,6 +1,6 @@
 import { App } from "./script.js";
 import { registerActions } from "./site-actions.js";
-import { verifySignedReceiptHandoff } from "./vendor/cross-origin-bridge/index.js";
+import { getOrCreateOriginKeyPair, verifySignedReceiptHandoff } from "./vendor/cross-origin-bridge/index.js";
 import { exposeActionsToWebMcp } from "./vendor/webmcp-adapter/index.js";
 
 function fmtWeekday(iso) {
@@ -35,13 +35,18 @@ syncFromReceiptHash();
 window.addEventListener("hashchange", syncFromReceiptHash);
 if (typeof BroadcastChannel === "function") {
   const bc = new BroadcastChannel("continuity-peer-moveco");
-  bc.addEventListener("message", (ev) => {
-    const rb = ev.data?.result?.receipt_envelope?.receipt_body;
-    if (ev.data?.type === "PEER_COMMITTED" && rb) {
-      App.page.booking.scheduledDate = rb.scheduled_date;
-      App.page.booking.scheduledLabel = fmtWeekday(rb.scheduled_date);
-      if (rb.window) App.page.booking.window = rb.window;
-      App.page.render(`✓ Live Bridge Commit (${rb.receipt_id}): ${App.page.booking.scheduledLabel}`);
-    }
+  bc.addEventListener("message", async (ev) => {
+    const token = ev.data?.result?.handoff_token;
+    if (ev.data?.type !== "PEER_COMMITTED" || typeof token !== "string") return;
+    const pinnedKey = await getOrCreateOriginKeyPair("moveco");
+    const check = await verifySignedReceiptHandoff("moveco", token, { pinnedKey });
+    if (!check.valid) return;
+    const rb = check.receiptBody;
+    App.page.version += 1;
+    App.page.booking.scheduledDate = rb.scheduled_date;
+    App.page.booking.scheduledLabel = fmtWeekday(rb.scheduled_date);
+    if (rb.window) App.page.booking.window = rb.window;
+    App.page.hold = null;
+    App.page.render(`✓ Live Bridge Commit Verified (${rb.receipt_id}): ${App.page.booking.scheduledLabel}`);
   });
 }

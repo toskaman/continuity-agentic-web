@@ -1,6 +1,6 @@
 import { App } from "./script.js";
 import { registerActions } from "./site-actions.js";
-import { verifySignedReceiptHandoff } from "./vendor/cross-origin-bridge/index.js";
+import { getOrCreateOriginKeyPair, verifySignedReceiptHandoff } from "./vendor/cross-origin-bridge/index.js";
 import { exposeActionsToWebMcp } from "./vendor/webmcp-adapter/index.js";
 
 function fmtWeekday(iso) {
@@ -35,12 +35,18 @@ syncFromReceiptHash();
 window.addEventListener("hashchange", syncFromReceiptHash);
 if (typeof BroadcastChannel === "function") {
   const bc = new BroadcastChannel("continuity-peer-homeconnect");
-  bc.addEventListener("message", (ev) => {
-    const rb = ev.data?.result?.receipt_envelope?.receipt_body;
-    if (ev.data?.type === "PEER_COMMITTED" && rb) {
-      App.page.appointment.scheduledDate = rb.scheduled_date;
-      App.page.appointment.scheduledLabel = fmtWeekday(rb.scheduled_date);
-      App.page.render(`✓ Live Bridge Appointment (${rb.receipt_id}): ${App.page.appointment.scheduledLabel}`);
-    }
+  bc.addEventListener("message", async (ev) => {
+    const token = ev.data?.result?.handoff_token;
+    if (ev.data?.type !== "PEER_COMMITTED" || typeof token !== "string") return;
+    const pinnedKey = await getOrCreateOriginKeyPair("homeconnect");
+    const check = await verifySignedReceiptHandoff("homeconnect", token, { pinnedKey });
+    if (!check.valid) return;
+    const rb = check.receiptBody;
+    App.page.version += 1;
+    App.page.appointment.scheduledDate = rb.scheduled_date;
+    App.page.appointment.scheduledLabel = fmtWeekday(rb.scheduled_date);
+    if (rb.window) App.page.appointment.window = rb.window;
+    App.page.hold = null;
+    App.page.render(`✓ Live Bridge Appointment Verified (${rb.receipt_id}): ${App.page.appointment.scheduledLabel}`);
   });
 }

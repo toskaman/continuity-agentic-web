@@ -80,7 +80,7 @@ const COMMUNITY_MODULES = [
   ["@continuity/toolbox-scoper", "Least-privilege per-agent website_* toolbox compiler, partner zero-action isolator & prompt-token optimizer", "compileScopedToolboxNetwork"],
   ["@continuity/zk-budget-attestation", "Preimage-sound SHA-256 Hash-Ladder Range Proof verifying spend <= private ceiling with zero ceiling disclosure", "createBlindedBudgetCommitment, proveSpendWithinBlindedCeiling, verifyBlindedBudgetAttestation"],
   ["@continuity/transition-playbook", "Hybrid Open Agentic Web + Legacy Vendor Hold-First Playbook & mailto: reschedule draft generator", "buildHybridTransitionPlaybook"],
-  ["@continuity/chaos-lab", "28 deterministic distributed-failure scenarios in an isolated simulation sandbox", "runAllChaosScenarios, CHAOS_SCENARIOS"],
+  ["@continuity/chaos-lab", "30 deterministic distributed-failure scenarios in an isolated simulation sandbox", "runAllChaosScenarios, CHAOS_SCENARIOS"],
 ];
 
 function esc(s) {

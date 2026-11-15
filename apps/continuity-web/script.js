@@ -550,9 +550,10 @@ export class ContinuityCoordinatorPage {
       return { ok: false, field: "requestText", reason: "Enter a natural-language change request first." };
     }
 
-    if (!this.lastSagaExecution) {
-      this.graph = MissionGraph.fromMission(this.mission);
+    if (this.lastSagaExecution) {
+      this.lastSagaExecution = null;
     }
+    this.graph = MissionGraph.fromMission(this.mission);
 
     let compiled;
     try {
@@ -1028,6 +1029,15 @@ export class ContinuityCoordinatorPage {
     this.holdsPlacedAtMs = null;
     if (execResult.status === "ALL_COMMITTED_AND_VERIFIED") {
       this.mission.anchor_date = this.compiledProposal.requested_change.new_value;
+      for (const op of execResult.operations) {
+        if (op.state === "COMMITTED") {
+          const cmt = this.mission.commitments.find((c) => c.id === op.commitment_id);
+          if (cmt) {
+            cmt.scheduled_date = op.proposed_date;
+            if (op.window) cmt.window = op.window;
+          }
+        }
+      }
     }
     this.version += 1;
 

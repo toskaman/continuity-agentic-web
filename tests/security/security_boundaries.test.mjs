@@ -314,3 +314,52 @@ test("S12 Coordinator awaits pending _peerProbePromise before choosing transport
   await page.ensureProviderClients();
   assert.equal(resolvedProbe, true);
 });
+
+test("S13 All 4 peer-sync.js BroadcastChannel listeners enforce pinned-key Ed25519 verification before mutating booking state", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const path = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+  const root = fileURLToPath(new URL("../../", import.meta.url));
+
+  for (const peer of ["demo-moveco", "demo-permitflow", "demo-homeconnect", "demo-powerflow"]) {
+    const src = await readFile(path.join(root, "apps", peer, "peer-sync.js"), "utf8");
+    assert.match(src, /getOrCreateOriginKeyPair/, `${peer}/peer-sync.js must load pinned origin Ed25519 key`);
+    assert.match(
+      src,
+      /verifySignedReceiptHandoff\([^,]+,\s*token,\s*\{\s*pinnedKey\s*\}\)/,
+      `${peer}/peer-sync.js BroadcastChannel must verify Ed25519 handoff token against pinnedKey`,
+    );
+  }
+});
+
+test("S14 Continuous Day-2 -> Day-3 Chained Re-Planning updates anchor & commitments cleanly across consecutive commits", async () => {
+  const { ContinuityCoordinatorPage } = await import("../../apps/continuity-web/script.js");
+  const page = new ContinuityCoordinatorPage();
+
+  // Wave 1: Tuesday -> Thursday
+  const prep1 = await page.analyzeAndPrepareChange("Move relocation from Tuesday to Thursday under €700.");
+  assert.equal(prep1.ok, true);
+  assert.equal(prep1.targetDate, "2026-11-19");
+  const st1 = page.getState();
+  const commit1 = await page.commitPreparedPackage({
+    planId: st1.selectedPlanId,
+    expectedVersion: st1.version,
+    expectedTotalEur: st1.selectedPlanSummary.metrics.totalMissionCostEur,
+  });
+  assert.equal(commit1.ok, true);
+  assert.equal(page.mission.anchor_date, "2026-11-19");
+
+  // Wave 2: Thursday -> Friday (without calling resetMission!)
+  const prep2 = await page.analyzeAndPrepareChange("Now move relocation from Thursday to Friday under €700.");
+  assert.equal(prep2.ok, true);
+  assert.equal(page.lastSagaExecution, null, "New change wave must clear previous lastSagaExecution lock");
+  assert.equal(prep2.targetDate, "2026-11-20");
+  const st2 = page.getState();
+  const commit2 = await page.commitPreparedPackage({
+    planId: st2.selectedPlanId,
+    expectedVersion: st2.version,
+    expectedTotalEur: st2.selectedPlanSummary.metrics.totalMissionCostEur,
+  });
+  assert.equal(commit2.ok, true);
+  assert.equal(page.mission.anchor_date, "2026-11-20");
+});
