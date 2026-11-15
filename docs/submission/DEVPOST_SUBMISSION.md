@@ -16,6 +16,7 @@
   - `https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/` (`homeconnect_scheduler`)
   - `https://gpaschercher-sudo.github.io/powerflow-agentic-peer/` (`powerflow_grid`)
 - **Screenshots to upload (`docs/submission/screenshots/`, captured from the redesigned UI):**
+  0. **`13_live_provider_wall.png` — use this as the cover image.** Four real provider pages, framed from their own origin, each showing *Receipt Verified* after one approval (captured on the public deployment)
   1. `01_continuity_mission_baseline.png` — Landing: one change, every commitment re-aligned + live network map
   2. `02_ripple_recovery_prepared_plan.png` — Mission map + Approval Center after a provider failure is recovered
   3. `08_pareto_frontier_and_hold_countdown.png` — Plan comparison (A/C/Alternative) + what-if budget frontier

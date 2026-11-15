@@ -6,6 +6,8 @@ Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agentic
 
 ![CONTINUITY coordinator](docs/submission/screenshots/01_continuity_mission_baseline.png)
 
+![Four provider sites verify their signed receipt](docs/submission/screenshots/13_live_provider_wall.png)
+
 ## Try it in 60 seconds (no API key needed)
 
 1. Open **https://toskaman.github.io/continuity-agentic-web/?demo=1** — the demo starts by itself (or open the site and click **Run the live demo**).
