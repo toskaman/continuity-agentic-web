@@ -2,6 +2,7 @@ import { App } from "./script.js";
 import { registerActions } from "./site-actions.js";
 import { exposeActionsToWebMcp } from "./vendor/webmcp-adapter/index.js";
 import { ChromeBuiltInPromptLlm, probeLocalInferenceBackends } from "./vendor/local-browser-router/index.js";
+import { inspectPeerNetworkSafety, PeerTofuRegistry } from "./vendor/peer-firewall/index.js";
 import { LlmClient } from "./runtime/llm.js";
 
 if (typeof navigator !== "undefined") {
@@ -360,6 +361,35 @@ export class AssistantMount {
         sandboxWorkerUrl: new URL("runtime/sandbox-worker.js", siteBase).href,
       });
       AssistantMount.engine = booted.engine;
+      AssistantMount.tofuRegistry = new PeerTofuRegistry(
+        typeof localStorage !== "undefined" ? localStorage : null,
+      );
+      const rawResolveRemote = booted.engine.resolveRemote.bind(booted.engine);
+      booted.engine.resolveRemote = async (...args) => {
+        const session = await rawResolveRemote(...args);
+        if (session?.network?.config) {
+          const peerInspection = await inspectPeerNetworkSafety({
+            manifestJson: session.manifest || { networks: [{ name: session.network.name || "peer" }] },
+            networkJson: session.network.config,
+            siteBaseUrl: session.origin || String(args[0] || ""),
+          });
+          const tofu = AssistantMount.tofuRegistry.verifyOrPin(peerInspection);
+          if (!peerInspection.safe) {
+            throw new Error(tofu.reason);
+          }
+          if (tofu.requiresReconsent) {
+            const reapproved = await booted.engine.onConsent({
+              origin: session.origin || String(args[0] || ""),
+              purpose: `Peer artifact digest changed since first approval (${tofu.previousBundleSha256.slice(0, 16)}… → ${tofu.nextBundleSha256.slice(0, 16)}…). Re-approve updated network?`,
+            });
+            if (!reapproved) {
+              throw new Error("Visitor declined re-consent after peer artifact digest change.");
+            }
+            AssistantMount.tofuRegistry.approveUpdatedPin(peerInspection);
+          }
+        }
+        return session;
+      };
       AssistantMount.defaultReview = booted.engine.onActionConfirm;
       booted.engine.onActionConfirm = AssistantMount.review;
       AssistantMount.defaultConsent = booted.engine.onConsent;

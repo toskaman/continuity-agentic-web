@@ -1,0 +1,11 @@
+{
+  "name": "@continuity/openrouter-pkce",
+  "version": "1.0.0",
+  "description": "Zero-client-ID RFC 7636 S256 OAuth PKCE 1-click sign-in for OpenRouter BYOK on static Open Agentic Websites (implements cognizant-ai-labs/agentic-web Issue #22)",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  }
+}

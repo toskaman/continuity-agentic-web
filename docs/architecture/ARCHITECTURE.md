@@ -37,7 +37,7 @@ flowchart TB
 
 ### 2.1 Probabilistic Layer vs. Deterministic Safety Kernel
 - **Probabilistic Layer (Neuro SAN HOCON Agents):** Interprets natural-language requests, delegates cross-origin informational queries across partner networks after visitor consent, and renders CRUSE summaries.
-- **Deterministic Safety Kernel (`packages/*` — 20 Zero-Dependency Apache-2.0 Modules):**
+- **Deterministic Safety Kernel (`packages/*` — 22 Zero-Dependency Apache-2.0 Modules):**
   1. `@continuity/shared-schemas` — Strict JSON Schema validator, prototype-pollution blocker, RFC-8785-style canonical JSON serializer, and Web Crypto SHA-256 digest.
   2. `@continuity/mission-core` — Compiles natural-language requests (ISO dates, weekdays, `Month Day`, `+N days`) and prevents any downgrade of hard invariants (`maximum_budget_eur`, `preserve_existing_commitments = true`, `unauthorized_cancellation = false`).
   3. `@continuity/intake-compiler` — Compiles folded RFC 5545 `.ics` calendars, confirmation emails, and JSON booking arrays; exports `.ics` and verifies `continuity-verifiable-audit-bundle/v1` offline.
@@ -54,9 +54,11 @@ flowchart TB
   14. `@continuity/approval-engine` — Binds human consent to canonical operation parameters via SHA-256 and blocks replay or `€0.01` price drift.
   15. `@continuity/outcome-reconciliation` & 16. `@continuity/saga-engine` — 14-state SHA-256 hash-chained ledger implementing **Prepare-First, `€0` Hold-Release, Commit-Last** execution and `UNKNOWN` reconciliation.
   17. `@continuity/proof-verifier` — Verifies Ed25519 provider receipts against pinned demonstration public JWKs.
-  18. `@continuity/nanda-resolver` — Project NANDA `urn:air:` validator, `ai-catalog.json` & A2A v1.0 checks, `POST /resolve` (`draft-raskar-02` §6), SPA fallback detection, and 9-point SARIF/bundle-verifier CLI.
+  18. `@continuity/nanda-resolver` — Project NANDA `urn:air:` validator, `ai-catalog.json` & A2A v1.0 checks, Poppy `nandaindex.org/reach` v1 post-tab locator router, `POST /resolve` (`draft-raskar-02` §6), SPA fallback detection, and 9-point SARIF/bundle-verifier CLI.
   19. `@continuity/transition-playbook` — Hybrid Open Agentic Web + Legacy Vendor Hold-First execution playbook & `mailto:` reschedule draft generator solving cold-start mixed schedules.
-  20. `@continuity/chaos-lab` — 20 deterministic fault-injection scenarios runnable via CLI or browser tab.
+  20. `@continuity/peer-firewall` — Pre-execution peer instruction firewall, Unicode Bidi/zero-width Trojan scanner, and TOFU JCS SHA-256 rug-pull re-consent pinning.
+  21. `@continuity/openrouter-pkce` — Zero-client-ID RFC 7636 S256 1-click OpenRouter OAuth PKCE onboarding & URL `?code=` scrubber.
+  22. `@continuity/chaos-lab` — 24 deterministic fault-injection scenarios runnable via CLI or browser tab.
 
 ---
 

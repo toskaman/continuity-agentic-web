@@ -233,16 +233,16 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
     assert.equal(fullOutcome.committedCount, 3);
     assert.equal(fullOutcome.bundleValid, true);
     assert.equal(fullOutcome.tamperCaught, true);
-    assert.equal(fullOutcome.chaosPassed, 20);
-    assert.equal(fullOutcome.chaosTotal, 20);
+    assert.equal(fullOutcome.chaosPassed, 24);
+    assert.equal(fullOutcome.chaosTotal, 24);
     assert.equal(fullOutcome.auditOk, true);
     assert.equal(fullOutcome.auditScore, "9 / 9");
 
-    // 4. Navigate to standalone Community Builder Kit (`/community-kit.html`) and verify all 4 tools in real Chrome
+    // 4. Navigate to standalone Community Builder Kit (`/community-kit.html`) and verify all 6 tools & 22 modules in real Chrome
     await cdp.send("Page.navigate", { url: `${eco.coordinator.origin()}/community-kit.html` });
     const kitOutcome = await cdp.evalJson(`(async () => {
       for (let i = 0; i < 30; i++) {
-        if (document.querySelectorAll("#kit-modules-tbody tr").length === 20 && document.querySelector("#kit-nanda-cat-out")?.value) {
+        if (document.querySelectorAll("#kit-modules-tbody tr").length === 22 && document.querySelector("#kit-nanda-cat-out")?.value) {
           break;
         }
         await new Promise((r) => setTimeout(r, 100));
@@ -251,17 +251,22 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
       document.querySelector("#kit-facts-inject-btn")?.click();
       await new Promise((r) => setTimeout(r, 80));
       const injectionBlocked = (document.querySelector("#kit-facts-status")?.textContent || "").includes("Blocked");
+      document.querySelector("#kit-fw-attack-btn")?.click();
+      await new Promise((r) => setTimeout(r, 120));
+      const firewallBlocked = (document.querySelector("#kit-fw-status")?.textContent || "").includes("BLOCKED");
       return {
         modulesRows: document.querySelectorAll("#kit-modules-tbody tr").length,
         cleanCompiled,
         injectionBlocked,
+        firewallBlocked,
         nandaCatalogGenerated: (document.querySelector("#kit-nanda-cat-out")?.value || "").includes("urn:air:"),
       };
     })()`);
 
-    assert.equal(kitOutcome.modulesRows, 20);
+    assert.equal(kitOutcome.modulesRows, 22);
     assert.equal(kitOutcome.cleanCompiled, true);
     assert.equal(kitOutcome.injectionBlocked, true);
+    assert.equal(kitOutcome.firewallBlocked, true);
     assert.equal(kitOutcome.nandaCatalogGenerated, true);
 
     // 5. Verify 1-click Inbound Cross-Origin Peer -> CONTINUITY trigger (`?ask_continuity=1`) on MoveCo Express

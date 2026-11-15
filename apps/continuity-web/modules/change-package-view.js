@@ -31,6 +31,8 @@ export function renderWhatIfSliderView(page) {
 
   if (!page.compiledProposal || page.lastSagaExecution) {
     box.hidden = true;
+    const hs = document.querySelector("#horizon-sweep-strip");
+    if (hs) hs.innerHTML = "";
     return;
   }
 
@@ -50,6 +52,35 @@ export function renderWhatIfSliderView(page) {
       : "Exceeds available offers";
 
   page.renderParetoPlot(curCap);
+
+  const hStrip = document.querySelector("#horizon-sweep-strip");
+  if (hStrip) {
+    const sweepDays = page.horizonSweep?.days || [];
+    if (!sweepDays.length) {
+      hStrip.innerHTML = "";
+    } else {
+      const curTarget = page.compiledProposal.requested_change.new_value;
+      hStrip.innerHTML =
+        `<span class="horizon-strip-label">6-Day Horizon:</span>`
+        + sweepDays
+          .map((d) => {
+            const isSel = d.targetDate === curTarget;
+            const cls = `horizon-pill${isSel ? " active" : ""}${d.isLowestCostDay ? " best-day" : ""}`;
+            const costTxt = d.feasible ? `€${d.minTotalCostEur.toFixed(0)}` : "Infeasible";
+            const star = d.isLowestCostDay && d.feasible ? " ★" : "";
+            return `<button type="button" class="${cls}" data-horizon-date="${page.escapeXml(d.targetDate)}" title="${page.escapeXml(`${d.shortLabel}: ${d.feasible ? `€${d.minTotalCostEur.toFixed(2)} (${d.bestChangedCount} changed)` : "Violates budget or dependency rules"}`)}">${page.escapeXml(`${d.shortLabel} · ${costTxt}${star}`)}</button>`;
+          })
+          .join("");
+      hStrip.querySelectorAll("[data-horizon-date]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const dt = btn.getAttribute("data-horizon-date");
+          if (dt && dt !== curTarget && !page.lastSagaExecution) {
+            void page.switchTargetAnchorDate(dt);
+          }
+        });
+      });
+    }
+  }
 }
 
 export function renderKpisView(page, plan) {
@@ -96,9 +127,13 @@ export function renderChangePackageView(page, plan) {
   const summaryBox = document.querySelector("#change-summary-box");
   const plansContainer = document.querySelector("#plans-selector");
   const opsContainer = document.querySelector("#operations-list");
+  const pbDrawer = document.querySelector("#playbook-preview-drawer");
+  const pbSummary = document.querySelector("#playbook-preview-summary");
+  const pbBody = document.querySelector("#playbook-preview-body");
   if (!summaryBox || !plansContainer || !opsContainer) return;
 
   if (!page.compiledProposal) {
+    if (pbDrawer) pbDrawer.hidden = true;
     summaryBox.innerHTML =
       "No active change proposal yet. Write your request above and choose <strong>Analyze &amp; prepare plans</strong>.";
     plansContainer.innerHTML = "";
@@ -108,6 +143,7 @@ export function renderChangePackageView(page, plan) {
   }
 
   if (!page.solverResult?.feasible || !plan) {
+    if (pbDrawer) pbDrawer.hidden = true;
     const rx = page.solverResult?.counterfactualPrescription;
     const rxHtml = rx?.relaxationFound
       ? `<div class="rx-prescription">
@@ -168,6 +204,11 @@ export function renderChangePackageView(page, plan) {
     plan,
     preparedOps: page.preparedOps,
   });
+  if (pbDrawer && pbSummary && pbBody) {
+    pbDrawer.hidden = false;
+    pbSummary.textContent = `Ordered Hold-First Playbook (${playbook.agenticStepsCount} autonomous Agentic Web · ${playbook.legacyStepsCount} legacy mailto: draft(s) · €${playbook.avoidedPenaltiesTotalEur.toFixed(2)} cancel fees avoided)`;
+    pbBody.textContent = playbook.markdown;
+  }
   const playbookStepByCommitment = new Map(playbook.steps.map((s) => [s.commitmentId, s]));
 
   opsContainer.innerHTML = page.preparedOps

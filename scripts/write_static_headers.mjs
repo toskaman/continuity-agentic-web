@@ -8,7 +8,11 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildFactsNetworkBundle } from "../packages/facts-publisher/index.js";
-import { validateA2aAgentCard, validateNandaAiCatalog } from "../packages/nanda-resolver/index.js";
+import {
+  validateA2aAgentCard,
+  validateNandaAiCatalog,
+  validatePoppyReachDeclaration,
+} from "../packages/nanda-resolver/index.js";
 import { canonicalizeJson, sha256Hex } from "../packages/shared-schemas/index.js";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
@@ -248,6 +252,32 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
     await writeFile(path.join(wellKnownDir, "ai-catalog.json"), serializedCatalog, "utf8");
     await writeFile(path.join(siteDir, "ai-catalog.json"), serializedCatalog, "utf8");
 
+    // 3b. Build & validate Poppy / nandaindex.org/reach v1 post-tab notification manifest (`poppy.json` + `.well-known/poppy.json`)
+    const poppyJson = {
+      poppy_version: "1.0",
+      provider_name: manifest.brand,
+      extensions: {
+        "nandaindex.org/reach": [
+          {
+            version: "1",
+            index: "https://api.nandaindex.org",
+            message_topics: ["hold_expiry", "schedule_reconciliation", "promotion"],
+            sender: `${s.key}-desk@continuity-agentic.example`,
+            endpoint: `${baseUrl}/poppy.json`,
+            description:
+              "Stores only an opted-in session NANDA locator (urn:air:<publisher>:personal:<id>) to notify your Personal Agent about slot-hold expiry or overflow availability after tab close, never storing inbox or card URLs.",
+          },
+        ],
+      },
+    };
+    const popCheck = validatePoppyReachDeclaration(poppyJson);
+    if (!popCheck.valid) {
+      throw new Error(`Invalid Poppy Reach manifest for ${s.folder}: ${popCheck.errors.join("; ")}`);
+    }
+    const serializedPoppy = `${JSON.stringify(poppyJson, null, 2)}\n`;
+    await writeFile(path.join(wellKnownDir, "poppy.json"), serializedPoppy, "utf8");
+    await writeFile(path.join(siteDir, "poppy.json"), serializedPoppy, "utf8");
+
     // 4. Static Hosting Headers (`_headers`)
     const headersContent = `/agent-manifest.json
   Access-Control-Allow-Origin: *
@@ -260,6 +290,8 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
 /agent-card.json
   Access-Control-Allow-Origin: *
 /ai-catalog.json
+  Access-Control-Allow-Origin: *
+/poppy.json
   Access-Control-Allow-Origin: *
 /facts/agent-manifest.json
   Access-Control-Allow-Origin: *
@@ -274,6 +306,8 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
 /.well-known/agent-card.json
   Access-Control-Allow-Origin: *
 /.well-known/ai-catalog.json
+  Access-Control-Allow-Origin: *
+/.well-known/poppy.json
   Access-Control-Allow-Origin: *
 /runtime/sandbox-worker.js
   Content-Security-Policy: default-src 'none'; script-src blob:; connect-src 'none'; worker-src 'none'

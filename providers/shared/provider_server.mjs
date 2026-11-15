@@ -59,6 +59,7 @@ export class IndependentProviderHost {
       "/agent-manifest.json",
       "/agent-card.json",
       "/ai-catalog.json",
+      "/poppy.json",
       "/links.json",
       "/agent-mcp.json",
       "/facts/agent-manifest.json",
@@ -67,6 +68,7 @@ export class IndependentProviderHost {
       "/.well-known/nsdeploy-agent.json",
       "/.well-known/agent-card.json",
       "/.well-known/ai-catalog.json",
+      "/.well-known/poppy.json",
     ]);
   }
 
@@ -337,7 +339,15 @@ export class IndependentProviderHost {
 
       if (rpc.method === "tools/call") {
         const toolName = rpc.params?.name;
-        const toolArgs = rpc.params?.arguments || {};
+        const rawArgs = rpc.params?.arguments || {};
+        const toolArgs =
+          rawArgs && typeof rawArgs === "object" && !Array.isArray(rawArgs)
+            ? Object.fromEntries(
+                Object.entries(rawArgs).filter(
+                  ([k]) => k !== "activation_capsule" && k !== "sly_data",
+                ),
+              )
+            : rawArgs;
         const invoked = await this.invokeCapability(toolName, toolArgs);
         const isError = invoked.httpStatus >= 400 || invoked.payload?.ok === false;
         this.sendCorsJson(res, 200, {

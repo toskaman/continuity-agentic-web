@@ -11,8 +11,8 @@
  *    infeasibility precisely if no valid plan exists.
  */
 
-import { diffDaysIso } from "../mission-core/index.js";
-import { evaluateEdgeImpact } from "../impact-engine/index.js";
+import { addDaysIso, diffDaysIso, formatDateWithWeekday } from "../mission-core/index.js";
+import { analyzeMissionImpact, evaluateEdgeImpact } from "../impact-engine/index.js";
 
 export const OBJECTIVE_WEIGHTS = Object.freeze({
   minimal_change: {
@@ -611,6 +611,86 @@ export function analyzeBudgetSensitivity({
     baselineTotalEur,
     minimumFeasibleBudgetEur,
     points,
+  };
+}
+
+/**
+ * Multi-Day Anchor Horizon Surrogate Sweep: evaluates candidate target dates (+1..+horizonDays
+ * from the baseline anchor date) in sub-millisecond time to reveal cheaper or less-disruptive
+ * calendar days across the entire week.
+ *
+ * @param {object} params
+ * @param {import("../mission-graph/index.js").MissionGraph} params.graph
+ * @param {Record<string, any>} params.proposal
+ * @param {(targetDate: string, impact: Record<string, any>) => Array<Record<string, any>>} params.buildOffersForDate
+ * @param {number} [params.horizonDays=6]
+ * @param {string[]} [params.pinnedCommitmentIds=[]]
+ */
+export function sweepAnchorHorizon({
+  graph,
+  proposal,
+  buildOffersForDate,
+  horizonDays = 6,
+  pinnedCommitmentIds = [],
+}) {
+  const t0 = performance.now();
+  const baseDate = proposal.requested_change.previous_value;
+  const days = [];
+  let lowestCostEur = Infinity;
+
+  for (let offset = 1; offset <= horizonDays; offset++) {
+    const candidateDate = addDaysIso(baseDate, offset);
+    const dayProposal = {
+      ...proposal,
+      requested_change: {
+        ...proposal.requested_change,
+        new_value: candidateDate,
+      },
+    };
+    const dayImpact = analyzeMissionImpact(graph, dayProposal);
+    const offers = buildOffersForDate(candidateDate, dayImpact);
+    const solved = solveMinimalChangePlans({
+      graph,
+      proposal: dayProposal,
+      impact: dayImpact,
+      normalizedOffers: offers,
+      pinnedCommitmentIds,
+      _skipCounterfactual: true,
+    });
+
+    const minDayCost = solved.feasible
+      ? solved.plans.reduce((m, p) => Math.min(m, p.metrics.totalMissionCostEur), Infinity)
+      : null;
+    if (minDayCost !== null && minDayCost < lowestCostEur) {
+      lowestCostEur = minDayCost;
+    }
+
+    const shortLabel = formatDateWithWeekday(candidateDate).replace(/,\s*202\d$/, "");
+    days.push({
+      offsetDays: offset,
+      targetDate: candidateDate,
+      shortLabel,
+      feasible: solved.feasible,
+      minTotalCostEur: minDayCost !== null ? Number(minDayCost.toFixed(2)) : null,
+      bestChangedCount: solved.plans[0]?.metrics?.changedCount ?? null,
+      bestUnchangedCount: solved.plans[0]?.metrics?.unchangedCount ?? null,
+      recommendedPlanId: solved.recommendedPlanId,
+      isLowestCostDay: false,
+    });
+  }
+
+  for (const d of days) {
+    if (d.feasible && d.minTotalCostEur !== null && Math.abs(d.minTotalCostEur - lowestCostEur) < 0.01) {
+      d.isLowestCostDay = true;
+    }
+  }
+
+  return {
+    baseDate,
+    selectedTargetDate: proposal.requested_change.new_value,
+    lowestFeasibleCostEur: Number.isFinite(lowestCostEur) ? Number(lowestCostEur.toFixed(2)) : null,
+    sweepDurationMs: Number((performance.now() - t0).toFixed(3)),
+    days,
   };
 }
 

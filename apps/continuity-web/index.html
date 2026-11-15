@@ -314,6 +314,11 @@ Do not cancel anything or approve additional fees without my confirmation.</text
               <li><strong>Your call</strong> Nothing commits until you approve the exact terms.</li>
             </ul>
 
+            <details id="playbook-preview-drawer" class="receipt-drawer" hidden>
+              <summary id="playbook-preview-summary">Ordered Hold-First execution checklist &amp; avoided penalties</summary>
+              <pre id="playbook-preview-body" class="receipt-pre"></pre>
+            </details>
+
             <h4 class="sub-heading">Prepared operations</h4>
             <div id="operations-list" class="operations-list">
               <p class="muted-empty">Your current reservations stay confirmed until replacements are prepared and you approve them.</p>
@@ -362,6 +367,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
             </div>
             <input id="whatif-budget-slider" type="range" min="620" max="760" step="5" value="700">
             <svg id="pareto-plot-svg" viewBox="0 0 460 132" role="img" aria-label="Trade-off frontier: changed bookings versus total cost"></svg>
+            <div id="horizon-sweep-strip" class="horizon-strip" role="group" aria-label="6-day target date trade-off sweep"></div>
           </div>
         </div>
       </div>
@@ -453,7 +459,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
         <div class="trust-tiles reveal">
           <button type="button" class="trust-tile" data-open-tab="tab-btn-timeline"><span class="tt-icon" aria-hidden="true">⛓</span><strong>Hash-chained log</strong><span>Tamper-evident history of every step</span></button>
           <button type="button" class="trust-tile" data-open-tab="tab-btn-privacy"><span class="tt-icon" aria-hidden="true">◎</span><strong>Data minimization</strong><span>Exactly what each provider received</span></button>
-          <button type="button" class="trust-tile" data-open-tab="tab-btn-chaos"><span class="tt-icon" aria-hidden="true">⚡</span><strong>Chaos Lab</strong><span>20 failure scenarios, run in your browser</span></button>
+          <button type="button" class="trust-tile" data-open-tab="tab-btn-chaos"><span class="tt-icon" aria-hidden="true">⚡</span><strong>Chaos Lab</strong><span>24 failure scenarios, run in your browser</span></button>
           <button type="button" class="trust-tile" data-open-tab="tab-btn-auditor"><span class="tt-icon" aria-hidden="true">✓</span><strong>Spec &amp; NANDA audit</strong><span>Live checks of all 5 sites</span></button>
         </div>
 
@@ -534,9 +540,9 @@ Do not cancel anything or approve additional fees without my confirmation.</text
             <div class="chaos-header">
               <div>
                 <strong>Chaos Lab — isolated simulation sandbox</strong>
-                <p class="panel-sub">Twenty distributed failures, injected on purpose: timeouts after commit, price drift after approval, forged and cross-origin spoofed receipts, NANDA sequence rollbacks, mandate floor exhaustion, and post-export bundle tampering. Your live mission is never touched.</p>
+                <p class="panel-sub">Twenty-four distributed failures, injected on purpose: timeouts after commit, price drift after approval, forged and cross-origin spoofed receipts, Unicode Trojan peer instructions, TOFU rug-pulls, NANDA Reach 410 card migrations, mandate floor exhaustion, and post-export bundle tampering. Your live mission is never touched.</p>
               </div>
-              <button id="run-chaos-suite-btn" type="button" class="cta-btn">Run all 20 scenarios</button>
+              <button id="run-chaos-suite-btn" type="button" class="cta-btn">Run all 24 scenarios</button>
             </div>
             <div id="chaos-summary" class="chaos-summary" role="status">Run the suite to verify every reliability rule in your browser.</div>
             <div class="table-wrap">
@@ -657,6 +663,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           <a href="./links.json" target="_blank" rel="noopener">links.json</a>
           <a href="./agent-card.json" target="_blank" rel="noopener">agent-card.json</a>
           <a href="./ai-catalog.json" target="_blank" rel="noopener">ai-catalog.json</a>
+          <a href="./poppy.json" target="_blank" rel="noopener">poppy.json (NANDA Reach)</a>
           <a href="./facts/agent-manifest.json" target="_blank" rel="noopener">facts/agent-manifest.json</a>
         </div>
       </div>

@@ -1,0 +1,20 @@
+{
+  "poppy_version": "1.0",
+  "provider_name": "HomeConnect Fiber Assistant",
+  "extensions": {
+    "nandaindex.org/reach": [
+      {
+        "version": "1",
+        "index": "https://api.nandaindex.org",
+        "message_topics": [
+          "hold_expiry",
+          "schedule_reconciliation",
+          "promotion"
+        ],
+        "sender": "homeconnect-desk@continuity-agentic.example",
+        "endpoint": "http://127.0.0.1:8083/poppy.json",
+        "description": "Stores only an opted-in session NANDA locator (urn:air:<publisher>:personal:<id>) to notify your Personal Agent about slot-hold expiry or overflow availability after tab close, never storing inbox or card URLs."
+      }
+    ]
+  }
+}

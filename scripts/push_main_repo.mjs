@@ -17,7 +17,7 @@ run(
   [
     "commit",
     "-m",
-    "feat: hybrid Open Agentic Web + Legacy Hold-First Transition Playbook, mixed .ics URL discovery, 1-click inbound peer calls & 70 automated tests",
+    "feat: peer instruction firewall & TOFU pinning, 1-click OpenRouter PKCE, NANDA Reach Poppy v1, 6-day horizon sweep, 6-tool Builder Kit & 76 automated tests",
   ],
   { stdio: "inherit" },
 );

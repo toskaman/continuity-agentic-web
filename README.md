@@ -76,7 +76,7 @@ node scripts/run_all_tests.mjs
 This single command executes:
 1. Official Cognizant `build_network.mjs --check` across all 5 websites (**0 errors, 0 warnings**).
 2. Official Cognizant `check_partner.mjs` across all **9 bidirectional cross-origin directions** (`CONTINUITY -> 4 Peers`, `All 4 Peers -> CONTINUITY`, and external open callability — **CORS, manifests, networks, and `bridge/action-bridge.html` verified**).
-3. All **70 automated tests in 24 suites** (unit, runtime multi-provider SSE parallel tool calls & EU/US Otari + Gemini `AQ.` routing, zero-key on-device `LanguageModel` & loopback Ollama router, visible `data-agent-facts` anti-injection & `facts/` partner checks, Project NANDA `urn:air` + AI Catalog + `POST /resolve` `draft-raskar-02` + SPA fallback detection, NSGA-II Pareto + counterfactual relaxation, NL `Month Day` / `+N days` & JSON/`.ics` intake, hybrid Open Agentic Web + legacy Hold-First transition playbook, zero-trust audit bundle verifier & `€0.01` tamper detection, `€0` pre-commit hold release, Google ADK → HOCON converter, mandate & Nash bargaining bypasses, SHA-256 hash-chained ledger, cross-origin browser bridge, peer zero-key replay, WebMCP guardrails, bidirectional `Engine` composition `I1–I3`, live 9-point MVP 0.2 + NANDA conformance auditor & SARIF CLI, production `--dry-run` bundle staging, docs-vs-code truth contract, provider MCP contracts, adversarial security boundaries, **real Headless Chromium CDP Desktop + `390x844` Mobile + `?demo=1` + Builder Kit E2E**, and all **20 Chaos Lab scenarios**).
+3. All **76 automated tests in 25 suites** (unit, runtime multi-provider SSE parallel tool calls & EU/US Otari + Gemini `AQ.` routing, 1-click OpenRouter OAuth PKCE S256 & URL `?code=` scrubbing, pre-execution peer instruction firewall & TOFU SHA-256 rug-pull pinning, zero-key on-device `LanguageModel` & loopback Ollama router, visible `data-agent-facts` anti-injection & `facts/` partner checks, Project NANDA `urn:air` + AI Catalog + Poppy `nandaindex.org/reach` v1 + `POST /resolve` `draft-raskar-02` + SPA fallback detection, NSGA-II Pareto + counterfactual relaxation + 6-day horizon sweep, NL `Month Day` / `+N days` & hybrid `.ics` intake, hybrid Open Agentic Web + legacy Hold-First transition playbook, zero-trust audit bundle verifier & `€0.01` tamper detection, `€0` pre-commit hold release, Google ADK → HOCON converter, mandate & Nash bargaining bypasses, SHA-256 hash-chained ledger, cross-origin browser bridge, peer zero-key replay, W3C `document.modelContext` + `navigator.modelContext` WebMCP guardrails, bidirectional `Engine` composition `I1–I3`, live 9-point MVP 0.2 + NANDA conformance auditor & SARIF CLI, production `--dry-run` bundle staging, docs-vs-code truth contract, provider MCP contracts, adversarial security boundaries, **real Headless Chromium CDP Desktop + `390x844` Mobile + `?demo=1` + `?ask_continuity=1` + Builder Kit E2E**, and all **24 Chaos Lab scenarios**).
 
 ### 3. Reproduce Before/After & Multi-Domain Benchmarks (`N = 90` Measured Sagas)
 
@@ -96,11 +96,13 @@ continuity/
 │   ├── demo-permitflow/       # Peer B: Public curbside bay notice check & demo dossier drafts
 │   ├── demo-homeconnect/      # Peer C: Fiber ONT technician scheduling & 10-min holds
 │   └── demo-powerflow/        # Peer D: Remote smart-meter electricity energization
-├── packages/                  # 20 Reusable Open-Source Community Modules (Apache-2.0)
+├── packages/                  # 22 Reusable Open-Source Community Modules (Apache-2.0)
 │   ├── shared-schemas/        # Canonical JSON (JCS), SHA-256 Web Crypto, strict JSON Schema
 │   ├── mission-core/          # Mission compiler & hard-invariant guard
-│   ├── intake-compiler/       # Email + RFC 5545 .ics + JSON compiler & zero-trust Audit Bundle verifier
+│   ├── intake-compiler/       # Email + Hybrid RFC 5545 .ics + JSON compiler & Audit Bundle verifier
 │   ├── transition-playbook/   # Hybrid Agentic-Web + Legacy Vendor Hold-First Playbook & mailto: drafts
+│   ├── peer-firewall/         # Pre-execution peer instruction firewall, Bidi Trojan & TOFU SHA-256 guard
+│   ├── openrouter-pkce/       # Zero-client-ID RFC 7636 S256 1-click OpenRouter OAuth PKCE onboarding
 │   ├── adk-hocon-converter/   # Google ADK / OpenAI Agents -> Portable Neuro SAN HOCON converter
 │   ├── local-browser-router/  # Zero-key Chrome LanguageModel (Gemini Nano) & loopback Ollama router
 │   ├── facts-publisher/       # Visible data-agent-facts extractor & 1-turn facts/<network>_facts builder
@@ -116,7 +118,7 @@ continuity/
 │   ├── saga-engine/           # Prepare-first, €0 hold-release, commit-last Saga coordinator
 │   ├── proof-verifier/        # Ed25519 receipt verification & explicit trust classification
 │   ├── nanda-resolver/        # Project NANDA AI Catalog, POST /resolve, A2A & 9-point CLI/SARIF auditor
-│   └── chaos-lab/             # 20 deterministic failure-injection scenarios
+│   └── chaos-lab/             # 24 deterministic failure-injection scenarios
 ├── providers/                 # Standalone CORS + MCP (2025-06-18) servers for each peer
 ├── skills/agentify-website/   # Official Cognizant runtime & compliance validators
 ├── design-system/             # Shared tokens, components, per-site themes (built by scripts/write_peer_styles.mjs)

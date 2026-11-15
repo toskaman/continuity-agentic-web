@@ -34,7 +34,8 @@
         <a href="#nanda-tool">NANDA Catalog</a>
         <a href="#converter-tool">Graph → HOCON</a>
         <a href="#bundle-tool">Receipt Verifier</a>
-        <a href="#modules-catalog">20 Modules</a>
+        <a href="#firewall-tool">Peer Firewall</a>
+        <a href="#modules-catalog">22 Modules</a>
       </nav>
       <div class="header-meta top-actions">
         <button id="kit-theme-btn" type="button" class="ghost-btn btn-sm" aria-label="Switch light or dark theme">◐ Theme</button>
@@ -52,7 +53,7 @@
             <span class="spec-pill">Zero External Dependencies · Apache-2.0</span>
           </div>
           <h1 id="kit-heading">Build, validate &amp; publish<br><span>Open Agentic Websites in seconds.</span></h1>
-          <p class="hero-lead">Shared with the Open Agentic Web community: five browser-local developer tools and 20 zero-dependency ES modules built while engineering CONTINUITY. Nothing you paste leaves your browser.</p>
+          <p class="hero-lead">Shared with the Open Agentic Web community: six browser-local developer tools and 22 zero-dependency ES modules built while engineering CONTINUITY. Nothing you paste leaves your browser.</p>
           <div class="btn-row hero-ctas">
             <a href="#validator-tool" class="btn btn-primary btn-lg">Audit an agentic site →</a>
             <a href="#facts-tool" class="btn btn-lg btn-on-dark">Compile a public facts network</a>
@@ -161,6 +162,7 @@
               <button id="kit-nanda-gen-btn" type="button" class="cta-btn">Generate &amp; verify</button>
               <button id="kit-nanda-dl-cat-btn" type="button" class="mini-btn" hidden>↓ ai-catalog.json</button>
               <button id="kit-nanda-dl-card-btn" type="button" class="mini-btn" hidden>↓ agent-card.json</button>
+              <button id="kit-nanda-dl-poppy-btn" type="button" class="mini-btn" hidden title="Poppy / nandaindex.org/reach v1 post-tab locator manifest">↓ poppy.json</button>
             </div>
           </div>
           <p id="kit-nanda-status" class="chaos-summary" role="status">Click Generate &amp; verify to build NANDA discovery artifacts.</p>
@@ -240,13 +242,48 @@
       </div>
     </section>
 
+    <!-- TOOL 6: PEER INSTRUCTION FIREWALL & TOFU RUG-PULL DIFF -->
+    <section id="firewall-tool" class="section section-alt" aria-labelledby="fw-heading">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Tool 6 · @continuity/peer-firewall (MVP Spec §5 &amp; §7)</span>
+            <h2 id="fw-heading">Pre-Execution Peer Instruction Firewall &amp; TOFU Rug-Pull Guard</h2>
+            <p>Scans untrusted peer <code>.network.json</code> files before they run on a visitor's BYOK router: blocks invisible Unicode Bidi/zero-width Trojan characters, policy-override &amp; credential-exfiltration prompts, and computes TOFU SHA-256 diffs to force re-consent on silent publisher updates.</p>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="chaos-header">
+            <div><strong>Static &amp; TOFU Integrity Scanner</strong></div>
+            <div class="auditor-controls">
+              <button id="kit-fw-clean-btn" type="button" class="ghost-btn">Load clean peer</button>
+              <button id="kit-fw-attack-btn" type="button" class="ghost-btn">Test Trojan + Rug-Pull attack</button>
+              <button id="kit-fw-scan-btn" type="button" class="cta-btn">Scan &amp; verify TOFU pin</button>
+            </div>
+          </div>
+          <p id="kit-fw-status" class="chaos-summary" role="status">Ready to inspect peer <code>agent-manifest.json</code> + <code>.network.json</code>.</p>
+          <div class="converter-grid">
+            <div>
+              <label for="kit-fw-src" class="input-label">Candidate Peer Bundle (<code>{ siteBaseUrl, manifestJson, networkJson }</code>)</label>
+              <textarea id="kit-fw-src" class="code-box" rows="9"></textarea>
+            </div>
+            <div>
+              <label for="kit-fw-out" class="input-label">Firewall Verdict, JCS SHA-256 Fingerprints &amp; TOFU Diff</label>
+              <textarea id="kit-fw-out" class="code-box" rows="9" readonly></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- MODULE CATALOG -->
-    <section id="modules-catalog" class="section section-alt" aria-labelledby="mods-heading">
+    <section id="modules-catalog" class="section" aria-labelledby="mods-heading">
       <div class="shell">
         <div class="section-head">
           <div>
             <span class="eyebrow">Open-source building blocks · Apache-2.0</span>
-            <h2 id="mods-heading">20 Zero-Dependency <code>@continuity/*</code> Community Modules</h2>
+            <h2 id="mods-heading">22 Zero-Dependency <code>@continuity/*</code> Community Modules</h2>
             <p>Every module runs directly in standard browsers and Node.js &ge; 22 with zero external npm dependencies.</p>
           </div>
         </div>

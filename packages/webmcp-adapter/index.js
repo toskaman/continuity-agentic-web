@@ -31,6 +31,19 @@ import { assertValidSchema, sanitizeJson } from "../shared-schemas/index.js";
  *   invokeTool: (name: string, rawArgs?: Record<string, any>) => Promise<unknown>
  * }}
  */
+const NEURO_SAN_FRAMEWORK_ARGS = new Set(["activation_capsule", "sly_data"]);
+
+function stripNeuroSanFrameworkArgs(rawObj) {
+  if (!rawObj || typeof rawObj !== "object" || Array.isArray(rawObj)) return rawObj;
+  const copy = {};
+  for (const [k, v] of Object.entries(rawObj)) {
+    if (!NEURO_SAN_FRAMEWORK_ARGS.has(k)) {
+      copy[k] = v;
+    }
+  }
+  return copy;
+}
+
 export function exposeActionsToWebMcp(registerActionsFn, options = {}) {
   const namespace = String(options.namespace || "continuity").trim();
   /** @type {Map<string, Record<string, any>>} */
@@ -61,7 +74,7 @@ export function exposeActionsToWebMcp(registerActionsFn, options = {}) {
     if (!def) {
       throw new Error(`Unknown WebMCP tool "${name}" in namespace "${namespace}".`);
     }
-    const cleanArgs = sanitizeJson(rawArgs ?? {});
+    const cleanArgs = stripNeuroSanFrameworkArgs(sanitizeJson(rawArgs ?? {}));
     const validated = def.inputSchema
       ? assertValidSchema(def.inputSchema, cleanArgs, `WebMCP(${name})`)
       : cleanArgs;
@@ -84,6 +97,7 @@ export function exposeActionsToWebMcp(registerActionsFn, options = {}) {
     inputSchema: def.inputSchema || { type: "object", properties: {}, additionalProperties: false },
     annotations: {
       readOnlyHint: (def.effect || "read") === "read",
+      consequentialHint: def.effect === "irreversible",
       destructiveHint: def.effect === "irreversible",
       openAgenticWebBridge: true,
     },
@@ -91,8 +105,14 @@ export function exposeActionsToWebMcp(registerActionsFn, options = {}) {
   }));
 
   let nativeWebMcpDetected = false;
-  const mc = typeof navigator !== "undefined" ? navigator.modelContext : undefined;
-  if (mc) {
+  const docMc =
+    options.documentModelContext
+    ?? (typeof document !== "undefined" ? document.modelContext : undefined);
+  const navMc =
+    options.navigatorModelContext
+    ?? (typeof navigator !== "undefined" ? navigator.modelContext : undefined);
+  const targets = Array.from(new Set([docMc, navMc].filter(Boolean)));
+  for (const mc of targets) {
     nativeWebMcpDetected = true;
     try {
       if (typeof mc.registerTool === "function") {

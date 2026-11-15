@@ -1,0 +1,11 @@
+{
+  "name": "@continuity/peer-firewall",
+  "version": "1.0.0",
+  "description": "Pre-execution Open Agentic Web Peer Instruction Firewall, Unicode Bidi/Zero-Width Trojan scanner, and TOFU JCS SHA-256 Rug-Pull Re-Consent Pinning (MVP Spec §5 & §7)",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  }
+}

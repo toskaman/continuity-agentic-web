@@ -755,6 +755,24 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
     });
   }
 
+  // Optional Poppy / nandaindex.org/reach v1 post-tab extension probe (metadata only; preserves 9-point score scale)
+  let poppyReach = { supported: false, topics: [] };
+  try {
+    let popFetch = await safeFetchJsonObject(fetchImpl, new URL("poppy.json", base).href);
+    if (!popFetch.ok) {
+      popFetch = await safeFetchJsonObject(fetchImpl, new URL(".well-known/poppy.json", base).href);
+    }
+    if (popFetch.ok) {
+      const popValid = validatePoppyReachDeclaration(popFetch.json);
+      if (popValid.valid) {
+        poppyReach = {
+          supported: true,
+          topics: popFetch.json.extensions["nandaindex.org/reach"][0].message_topics,
+        };
+      }
+    }
+  } catch {}
+
   const passedCount = checks.filter((c) => c.status === "PASS").length;
   const failedCount = checks.filter((c) => c.status === "FAIL").length;
 
@@ -764,9 +782,217 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
     networkName: manifest?.networks?.[0]?.name || null,
     manifestDigest,
     networkDigest,
+    poppyReach,
     passedCount,
     totalChecks: checks.length,
     score: `${passedCount} / ${checks.length}`,
     checks,
+  };
+}
+
+/**
+ * Validate a Company `/.well-known/poppy.json` declaration for the `nandaindex.org/reach` v1
+ * Personal Agent Protocol extension (draft of 15 November 2026).
+ *
+ * @param {unknown} poppyJson
+ */
+export function validatePoppyReachDeclaration(poppyJson) {
+  const errors = [];
+  if (!isPlainObject(poppyJson) || !isPlainObject(poppyJson.extensions)) {
+    return { valid: false, errors: ['poppy.json requires an "extensions" object.'] };
+  }
+  const reachArr = poppyJson.extensions["nandaindex.org/reach"];
+  if (!Array.isArray(reachArr) || reachArr.length === 0) {
+    return { valid: false, errors: ['extensions["nandaindex.org/reach"] must be a nonempty array.'] };
+  }
+  reachArr.forEach((item, idx) => {
+    if (!isPlainObject(item)) {
+      errors.push(`reach[${idx}] must be an object.`);
+      return;
+    }
+    if (item.version !== "1") {
+      errors.push(`reach[${idx}].version must equal "1".`);
+    }
+    try {
+      const idxUrl = new URL(String(item.index || ""));
+      if (idxUrl.protocol !== "https:" && !["127.0.0.1", "localhost"].includes(idxUrl.hostname)) {
+        errors.push(`reach[${idx}].index must use https.`);
+      }
+    } catch {
+      errors.push(`reach[${idx}].index must be a valid URL.`);
+    }
+    if (
+      !Array.isArray(item.message_topics)
+      || item.message_topics.length === 0
+      || item.message_topics.some((t) => typeof t !== "string" || !t.trim())
+    ) {
+      errors.push(`reach[${idx}].message_topics must be a nonempty string array.`);
+    }
+    if (typeof item.sender !== "string" || !item.sender.includes("@")) {
+      errors.push(`reach[${idx}].sender must be a recognizable sender address.`);
+    }
+  });
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Validate a Person's A2A Agent Card augmented with `nandaindex.org/reach` v1 `agents[]` and `routing[]` (§6).
+ *
+ * @param {unknown} card
+ */
+export function validateNandaReachCard(card) {
+  const baseCheck = validateA2aAgentCard(card);
+  const errors = [...baseCheck.errors];
+  if (!isPlainObject(card)) {
+    return { valid: false, errors };
+  }
+  const agentIds = new Set();
+  if (!Array.isArray(card.agents) || card.agents.length === 0) {
+    errors.push("NANDA Reach card requires nonempty agents[].");
+  } else {
+    card.agents.forEach((ag, i) => {
+      if (!isPlainObject(ag) || typeof ag.id !== "string" || !ag.id.trim()) {
+        errors.push(`agents[${i}].id is required.`);
+        return;
+      }
+      agentIds.add(ag.id);
+      if (
+        !isPlainObject(ag.inbox)
+        || typeof ag.inbox.kind !== "string"
+        || typeof ag.inbox.address !== "string"
+        || !ag.inbox.address.trim()
+      ) {
+        errors.push(`agents[${i}].inbox requires { kind, address }.`);
+      }
+    });
+  }
+  if (!Array.isArray(card.routing) || card.routing.length === 0) {
+    errors.push("NANDA Reach card requires nonempty routing[].");
+  } else {
+    card.routing.forEach((r, i) => {
+      if (!isPlainObject(r) || typeof r.match !== "string" || !r.match.trim()) {
+        errors.push(`routing[${i}].match is required.`);
+        return;
+      }
+      if (typeof r.deliver_to !== "string" || (r.deliver_to !== "none" && !agentIds.has(r.deliver_to))) {
+        errors.push(`routing[${i}].deliver_to must be "none" or a declared agents[].id.`);
+      }
+    });
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Execute the 6-step `nandaindex.org/reach` v1 send-time resolution & topic routing flow (§5):
+ *  locator -> NANDA Index -> current A2A card -> first matching routing rule -> inbox OR "none" decline.
+ *  Never stores or falls back to a cached card URL or inbox!
+ *
+ * @param {object} params
+ * @param {string} params.locator - e.g. `urn:air:host39.org:personal:alex@example.com`
+ * @param {string} params.topic - e.g. `"hold_expiry"` or `"promotion"`
+ * @param {string} [params.indexBaseUrl="https://api.nandaindex.org"]
+ * @param {typeof fetch} [params.fetchImpl=globalThis.fetch]
+ */
+export async function resolveAndRouteNandaReach({
+  locator,
+  topic,
+  indexBaseUrl = "https://api.nandaindex.org",
+  fetchImpl = globalThis.fetch,
+}) {
+  const urnCheck = validateAirUrn(locator);
+  if (!urnCheck.valid || urnCheck.namespace !== "personal") {
+    return {
+      ok: false,
+      delivered: false,
+      code: "invalid-locator",
+      reason: 'NANDA Reach requires a personal locator of the form "urn:air:<publisher>:personal:<id>".',
+    };
+  }
+  const cleanTopic = String(topic || "").trim();
+  if (!cleanTopic) {
+    return { ok: false, delivered: false, code: "missing-topic", reason: "Message topic is required." };
+  }
+
+  const resolveUrl = `${String(indexBaseUrl).replace(/\/+$/, "")}/api/v1/resolve?locator=${encodeURIComponent(locator)}`;
+  const idxFetch = await safeFetchJsonObject(fetchImpl, resolveUrl);
+  if (!idxFetch.ok) {
+    return {
+      ok: false,
+      delivered: false,
+      code: "index-resolution-failed",
+      reason: `NANDA Index resolution failed (${idxFetch.reason}); sender MUST NOT fall back to a cached card or inbox.`,
+    };
+  }
+
+  const entry = idxFetch.json;
+  if (entry.status && entry.status !== "active") {
+    return {
+      ok: false,
+      delivered: false,
+      code: "inactive-locator",
+      reason: `NANDA locator status is "${entry.status}" (expected "active").`,
+    };
+  }
+
+  const cardUrl = entry.registry_url || entry.url;
+  if (typeof cardUrl !== "string" || !cardUrl.trim()) {
+    return { ok: false, delivered: false, code: "missing-card-url", reason: "Index entry missing card URL." };
+  }
+
+  const cardFetch = await safeFetchJsonObject(fetchImpl, cardUrl);
+  if (!cardFetch.ok) {
+    return {
+      ok: false,
+      delivered: false,
+      code: "card-unreachable",
+      reason: `Resolved card URL returned ${cardFetch.reason}; sender MUST NOT fall back to a cached inbox.`,
+    };
+  }
+
+  const card = cardFetch.json;
+  const cardCheck = validateNandaReachCard(card);
+  if (!cardCheck.valid) {
+    return {
+      ok: false,
+      delivered: false,
+      code: "invalid-reach-card",
+      reason: cardCheck.errors.join("; "),
+    };
+  }
+
+  const matchedRule = card.routing.find((r) => r.match === cleanTopic || r.match === "*");
+  if (!matchedRule) {
+    return {
+      ok: true,
+      delivered: false,
+      action: "NO_MATCHING_ROUTE",
+      cardVersion: card.version,
+      resolvedCardUrl: cardUrl,
+    };
+  }
+
+  if (matchedRule.deliver_to === "none") {
+    return {
+      ok: true,
+      delivered: false,
+      action: "DECLINED_BY_PERSON",
+      topic: cleanTopic,
+      cardVersion: card.version,
+      resolvedCardUrl: cardUrl,
+      reason: `Person declined topic "${cleanTopic}" via routing deliver_to="none" (§5 step 5).`,
+    };
+  }
+
+  const targetAgent = card.agents.find((a) => a.id === matchedRule.deliver_to);
+  return {
+    ok: true,
+    delivered: true,
+    action: "DELIVER_TO_AGENT_INBOX",
+    topic: cleanTopic,
+    targetAgentId: targetAgent.id,
+    targetAgentName: targetAgent.name || targetAgent.id,
+    inbox: targetAgent.inbox,
+    cardVersion: card.version,
+    resolvedCardUrl: cardUrl,
   };
 }

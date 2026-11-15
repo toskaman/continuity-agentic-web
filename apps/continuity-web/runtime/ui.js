@@ -57,6 +57,14 @@ export const API_KEY_PROVIDERS = [
     accessNote: "Free tier",
   },
   {
+    name: "OpenRouter",
+    keyUrl: "https://openrouter.ai/settings/keys",
+    router: "https://openrouter.ai/api/v1",
+    model: "qwen/qwen3-30b-a3b",
+    keyPrefixes: ["sk-or-"],
+    accessNote: "1-click OAuth PKCE",
+  },
+  {
     name: "OpenAI",
     keyUrl: "https://platform.openai.com/api-keys",
     router: "https://api.openai.com/v1",
@@ -315,6 +323,7 @@ export function mountApp(root, { engine, trace, manifest }) {
         <a href="${API_KEY_HELP_URL}" target="_blank" rel="noopener noreferrer">What is an API key and how do I get one? <span aria-hidden="true">↗</span></a>
         <p>Choose a provider below and create a key. Its recommended settings will be filled in for you.</p>
         <div class="ns-key-providers">${providerLinksHtml}</div>
+        <button type="button" id="ns-openrouter-pkce" class="ghost">🔑 Connect with OpenRouter (1-click PKCE — no copy/paste)</button>
         <div class="ns-hint">Free tiers have usage limits and may vary by region. Other providers may require billing.</div>
       </div>
       <label><span>API key <span aria-hidden="true">*</span></span><input id="ns-key" type="password" autocomplete="off" placeholder="Paste your API key" required aria-required="true"></label>
@@ -1279,6 +1288,84 @@ export function mountApp(root, { engine, trace, manifest }) {
   });
   refreshHint();
   if (needsByok) setProfileHint(setupMessage, "warn");
+
+  // 1-Click OpenRouter OAuth PKCE S256 onboarding (cognizant-ai-labs/agentic-web Issue #22)
+  const pkceSlot = "nsweb-openrouter-pkce-v1";
+  const b64Url = (u8) => {
+    let s = "";
+    for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
+    return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  };
+  root.querySelector("#ns-openrouter-pkce")?.addEventListener("click", async () => {
+    try {
+      const vBytes = new Uint8Array(32);
+      const sBytes = new Uint8Array(24);
+      crypto.getRandomValues(vBytes);
+      crypto.getRandomValues(sBytes);
+      const verifier = b64Url(vBytes);
+      const state = b64Url(sBytes);
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+      const challenge = b64Url(new Uint8Array(digest));
+      const cleanCb = new URL(location.href);
+      cleanCb.searchParams.delete("code");
+      cleanCb.searchParams.delete("state");
+      sessionStorage.setItem(pkceSlot, JSON.stringify({ verifier, state, createdAtMs: Date.now() }));
+      const authUrl = new URL("https://openrouter.ai/auth");
+      authUrl.searchParams.set("callback_url", cleanCb.toString());
+      authUrl.searchParams.set("code_challenge", challenge);
+      authUrl.searchParams.set("code_challenge_method", "S256");
+      authUrl.searchParams.set("state", state);
+      location.assign(authUrl.toString());
+    } catch (err) {
+      setProfileHint(`Could not start OpenRouter PKCE sign-in: ${err.message}`, "warn");
+    }
+  });
+  // Handle incoming ?code=...&state=... PKCE callback if present
+  (async () => {
+    try {
+      const cur = new URL(location.href);
+      const code = cur.searchParams.get("code");
+      if (!code || typeof sessionStorage === "undefined") return;
+      const retState = cur.searchParams.get("state") || "";
+      cur.searchParams.delete("code");
+      cur.searchParams.delete("state");
+      try { history.replaceState(null, "", cur.pathname + cur.search + cur.hash); } catch {}
+      const rawPkce = sessionStorage.getItem(pkceSlot);
+      sessionStorage.removeItem(pkceSlot);
+      if (!rawPkce) return;
+      const savedPkce = JSON.parse(rawPkce);
+      if (!retState || retState !== savedPkce.state || Date.now() - savedPkce.createdAtMs > 600_000) {
+        setProfileHint("OpenRouter PKCE sign-in state mismatch or expired — rejected.", "warn");
+        return;
+      }
+      const exRes = await fetch("https://openrouter.ai/api/v1/auth/keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          code,
+          code_verifier: savedPkce.verifier,
+          code_challenge_method: "S256",
+          key_label: String(manifest?.brand || "Open Agentic Website").slice(0, 64),
+        }),
+      });
+      if (!exRes.ok) {
+        setProfileHint(`OpenRouter PKCE key exchange returned HTTP ${exRes.status}.`, "warn");
+        return;
+      }
+      const exData = await exRes.json();
+      if (!exData?.key) return;
+      const { profile } = upsertByokProfile({
+        name: "OpenRouter (PKCE)",
+        router: "https://openrouter.ai/api/v1",
+        model: "qwen/qwen3-30b-a3b",
+        key: String(exData.key).trim(),
+      });
+      if (profile) {
+        saveTabByokSetup(profile);
+        location.reload();
+      }
+    } catch {}
+  })();
 
   root.querySelector("#ns-apply").addEventListener("click", async () => {
     const p = new URLSearchParams(location.search);

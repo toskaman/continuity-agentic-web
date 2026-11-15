@@ -23,7 +23,11 @@ import {
 import { GRAPH_VISUAL_STATES, MissionGraph } from "./vendor/mission-graph/index.js";
 import { analyzeMissionImpact } from "./vendor/impact-engine/index.js";
 import { normalizePeerOffer } from "./vendor/capability-adapter/index.js";
-import { analyzeBudgetSensitivity, solveMinimalChangePlans } from "./vendor/constraint-solver/index.js";
+import {
+  analyzeBudgetSensitivity,
+  solveMinimalChangePlans,
+  sweepAnchorHorizon,
+} from "./vendor/constraint-solver/index.js";
 import { ReceiptVerifier } from "./vendor/proof-verifier/index.js";
 import { SagaCoordinator } from "./vendor/saga-engine/index.js";
 import {
@@ -110,6 +114,7 @@ export class ContinuityCoordinatorPage {
     this.impactReport = null;
     this.cachedNormalizedOffers = [];
     this.budgetSensitivity = null;
+    this.horizonSweep = null;
     this.solverResult = null;
     this.selectedPlanId = null;
     this.saga = null;
@@ -446,6 +451,7 @@ export class ContinuityCoordinatorPage {
     this.impactReport = null;
     this.cachedNormalizedOffers = [];
     this.budgetSensitivity = null;
+    this.horizonSweep = null;
     this.solverResult = null;
     this.selectedPlanId = null;
     this.saga = null;
@@ -575,8 +581,47 @@ export class ContinuityCoordinatorPage {
       impact: this.impactReport,
       normalizedOffers,
     });
+    this.horizonSweep = sweepAnchorHorizon({
+      graph: this.graph,
+      proposal: this.compiledProposal,
+      pinnedCommitmentIds: Array.from(this.pinnedNodeIds),
+      buildOffersForDate: (candDate, candImpact) => {
+        if (candDate === targetDate) return normalizedOffers;
+        const outOffers = [];
+        for (const c of candImpact.providersToContact) {
+          const n = this.graph.nodes.get(c.commitmentId);
+          if (!n) continue;
+          if (!this.isRelocationScenario() && typeof harness.buildOffersForNode === "function") {
+            outOffers.push(...harness.buildOffersForNode(n, candDate, this.graph));
+          } else {
+            outOffers.push(
+              ...buildFallbackOffersForRelocationNode({
+                node: n,
+                targetDate: candDate,
+                peerOrigins: this.peerOrigins,
+                rippleFailureInjected: this.rippleFailureInjected,
+                providerAlerts: [],
+              }),
+            );
+          }
+        }
+        return outOffers;
+      },
+    });
 
     return await this._solveAndPrepareFromCachedOffers({ clients, verifier });
+  }
+
+  async switchTargetAnchorDate(newTargetIso) {
+    const cap =
+      this.compiledProposal?.invariants?.maximum_budget_eur
+      ?? this.mission.authoritative_invariants.maximum_budget_eur;
+    const promptText = `Move ${this.mission.title} from ${this.mission.anchor_date} to ${newTargetIso}. Keep current reservations held first and stay below €${cap}.`;
+    if (typeof document !== "undefined") {
+      const inp = document.querySelector("#mission-input");
+      if (inp) inp.value = promptText;
+    }
+    return await this.analyzeAndPrepareChange(promptText);
   }
 
   async recalculateWithBudgetCeiling(newBudgetEur) {
@@ -1540,6 +1585,7 @@ export class ContinuityCoordinatorPage {
         selfBase,
         "https://sainath998.github.io/plainly-agent/",
         "https://shutdown-clerk.pages.dev/",
+        "https://montbaga.github.io/agent-customs/",
       ]);
     });
 

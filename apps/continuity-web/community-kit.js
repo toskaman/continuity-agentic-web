@@ -13,7 +13,15 @@ import {
   auditOpenAgenticSite,
   validateA2aAgentCard,
   validateNandaAiCatalog,
+  validatePoppyReachDeclaration,
 } from "./vendor/nanda-resolver/index.js";
+import {
+  diffPeerNetworks,
+  inspectPeerNetworkSafety,
+  PeerTofuRegistry,
+  SAMPLE_CLEAN_PEER_BUNDLE,
+  SAMPLE_RUGPULL_PEER_BUNDLE,
+} from "./vendor/peer-firewall/index.js";
 import { canonicalizeJson, sha256Hex } from "./vendor/shared-schemas/index.js";
 
 const CLEAN_FACTS_SAMPLE_HTML = `<main>
@@ -66,9 +74,11 @@ const COMMUNITY_MODULES = [
   ["@continuity/outcome-reconciliation", "14-state SHA-256 hash-chained operation ledger & UNKNOWN post-timeout reconciler", "OperationLedger, reconcileOperationOutcome"],
   ["@continuity/saga-engine", "Prepare-first, €0 pre-commit hold release, commit-last multi-origin Saga coordinator", "SagaCoordinator"],
   ["@continuity/proof-verifier", "WebCrypto Ed25519 provider receipt verification & explicit 5-tier trust classification", "ReceiptVerifier, signProviderReceipt"],
-  ["@continuity/nanda-resolver", "Project NANDA urn:air, AI Catalog, draft-raskar-02 POST /resolve, A2A & 9-point SARIF CLI", "AuthorityBoundResolver, auditOpenAgenticSite, handleFederatedResolutionRequest"],
+  ["@continuity/nanda-resolver", "Project NANDA urn:air, AI Catalog, Poppy nandaindex.org/reach v1, draft-raskar-02 POST /resolve, A2A & 9-point SARIF CLI", "AuthorityBoundResolver, auditOpenAgenticSite, resolveAndRouteNandaReach"],
+  ["@continuity/peer-firewall", "Pre-execution peer instruction firewall, Unicode Bidi Trojan scanner & TOFU SHA-256 rug-pull re-consent pinning", "inspectPeerNetworkSafety, PeerTofuRegistry, diffPeerNetworks"],
+  ["@continuity/openrouter-pkce", "Zero-client-ID RFC 7636 S256 1-click OpenRouter OAuth PKCE onboarding & URL code scrubber", "createOpenRouterPkceAuthRequest, completeOpenRouterPkceCallback"],
   ["@continuity/transition-playbook", "Hybrid Open Agentic Web + Legacy Vendor Hold-First Playbook & mailto: reschedule draft generator", "buildHybridTransitionPlaybook"],
-  ["@continuity/chaos-lab", "20 deterministic distributed-failure scenarios in an isolated simulation sandbox", "runAllChaosScenarios, CHAOS_SCENARIOS"],
+  ["@continuity/chaos-lab", "24 deterministic distributed-failure scenarios in an isolated simulation sandbox", "runAllChaosScenarios, CHAOS_SCENARIOS"],
 ];
 
 function esc(s) {
@@ -262,18 +272,41 @@ async function generateKitNanda() {
     const catCheck = validateNandaAiCatalog(catalog);
     if (!catCheck.valid) throw new Error(catCheck.errors.join("; "));
 
-    lastNandaArtifacts = { card, catalog };
+    const poppy = {
+      poppy_version: "1.0",
+      provider_name: brand,
+      extensions: {
+        "nandaindex.org/reach": [
+          {
+            version: "1",
+            index: "https://api.nandaindex.org",
+            message_topics: ["hold_expiry", "schedule_reconciliation", "promotion"],
+            sender: `desk@${host}`,
+            endpoint: `${baseUrl}/poppy.json`,
+            description: "Resolves opted-in NANDA personal locators at send time without storing inbox or card URLs.",
+          },
+        ],
+      },
+    };
+    const popCheck = validatePoppyReachDeclaration(poppy);
+    if (!popCheck.valid) throw new Error(popCheck.errors.join("; "));
+
+    const dlPoppy = document.querySelector("#kit-nanda-dl-poppy-btn");
+    lastNandaArtifacts = { card, catalog, poppy };
     if (cardOut) cardOut.value = JSON.stringify(card, null, 2);
     if (catOut) catOut.value = JSON.stringify(catalog, null, 2);
     if (statusEl) {
-      statusEl.textContent = `✓ Verified A2A v1.0 Card & NANDA AI Catalog for urn:air:${host}:agent:${net} (targetDigest ${cardDigest.slice(0, 23)}…).`;
+      statusEl.textContent = `✓ Verified A2A v1.0 Card, NANDA AI Catalog & Poppy Reach v1 for urn:air:${host}:agent:${net} (targetDigest ${cardDigest.slice(0, 23)}…).`;
     }
     if (dlCat) dlCat.hidden = false;
     if (dlCard) dlCard.hidden = false;
+    if (dlPoppy) dlPoppy.hidden = false;
   } catch (err) {
     lastNandaArtifacts = null;
     if (dlCat) dlCat.hidden = true;
     if (dlCard) dlCard.hidden = true;
+    const dlPoppy = document.querySelector("#kit-nanda-dl-poppy-btn");
+    if (dlPoppy) dlPoppy.hidden = true;
     if (statusEl) statusEl.textContent = `✕ Validation error: ${err.message}`;
   }
 }
@@ -308,6 +341,7 @@ function initKit() {
       ecosystemUrls()[0],
       "https://sainath998.github.io/plainly-agent/",
       "https://shutdown-clerk.pages.dev/",
+      "https://montbaga.github.io/agent-customs/",
     ]);
   });
   document.querySelector("#kit-copy-ci-btn")?.addEventListener("click", async () => {
@@ -356,6 +390,10 @@ function initKit() {
     if (!lastNandaArtifacts) return;
     downloadText("agent-card.json", "application/json;charset=utf-8", `${JSON.stringify(lastNandaArtifacts.card, null, 2)}\n`);
   });
+  document.querySelector("#kit-nanda-dl-poppy-btn")?.addEventListener("click", () => {
+    if (!lastNandaArtifacts?.poppy) return;
+    downloadText("poppy.json", "application/json;charset=utf-8", `${JSON.stringify(lastNandaArtifacts.poppy, null, 2)}\n`);
+  });
 
   // Tool 4: Multi-Agent Graph -> Portable Neuro SAN Converter
   let lastAdkBundle = null;
@@ -363,10 +401,9 @@ function initKit() {
   const adkOut = document.querySelector("#kit-adk-out");
   const adkStatus = document.querySelector("#kit-adk-status");
   const adkDl = document.querySelector("#kit-adk-dl-btn");
-  const runAdk = () => {
+  const runAdk = async () => {
     try {
-      const parsed = JSON.parse(adkSrc?.value || "{}");
-      const res = convertAgentFrameworkToHoconBundle(parsed);
+      const res = await convertAgentFrameworkToHoconBundle(adkSrc?.value || "{}");
       lastAdkBundle = res;
       if (adkOut) {
         adkOut.value = JSON.stringify(
@@ -390,13 +427,15 @@ function initKit() {
   };
   if (adkSrc) {
     adkSrc.value = SAMPLE_GOOGLE_ADK_CONFIG;
-    runAdk();
+    void runAdk();
   }
   document.querySelector("#kit-adk-sample-btn")?.addEventListener("click", () => {
     if (adkSrc) adkSrc.value = SAMPLE_GOOGLE_ADK_CONFIG;
-    runAdk();
+    void runAdk();
   });
-  document.querySelector("#kit-adk-convert-btn")?.addEventListener("click", runAdk);
+  document.querySelector("#kit-adk-convert-btn")?.addEventListener("click", () => {
+    void runAdk();
+  });
   adkDl?.addEventListener("click", () => {
     if (!lastAdkBundle) return;
     downloadText(
@@ -431,6 +470,48 @@ function initKit() {
     const text = await file.text();
     if (bundleTa) bundleTa.value = text;
     await runVerifyBundle(text);
+  });
+
+  // Tool 6: Pre-Execution Peer Instruction Firewall & TOFU Rug-Pull Diff
+  const fwSrc = document.querySelector("#kit-fw-src");
+  const fwOut = document.querySelector("#kit-fw-out");
+  const fwStatus = document.querySelector("#kit-fw-status");
+  const kitTofu = new PeerTofuRegistry();
+  let lastCleanNet = SAMPLE_CLEAN_PEER_BUNDLE.networkJson;
+
+  const runFwScan = async () => {
+    try {
+      const bundle = JSON.parse(fwSrc?.value || "{}");
+      const rep = await inspectPeerNetworkSafety(bundle);
+      const tofu = kitTofu.verifyOrPin(rep);
+      const diff = diffPeerNetworks(lastCleanNet, bundle.networkJson || {});
+      if (rep.safe) lastCleanNet = bundle.networkJson || lastCleanNet;
+      if (fwOut) {
+        fwOut.value = JSON.stringify({ inspection: rep, tofuCheck: tofu, diffFromBaseline: diff }, null, 2);
+      }
+      if (fwStatus) {
+        fwStatus.textContent = rep.safe
+          ? `✓ Verdict: ${rep.verdict} · TOFU: ${tofu.status} (${rep.bundleSha256.slice(0, 23)}… · ${rep.agentsScanned} agent(s) clean)`
+          : `🛡 BLOCKED (${rep.verdict}): ${rep.criticalCount} critical threat(s) [${rep.findings.map((f) => f.ruleId).join(", ")}] — peer prevented from touching caller BYOK router.`;
+      }
+    } catch (err) {
+      if (fwStatus) fwStatus.textContent = `✕ Invalid peer JSON: ${err.message}`;
+    }
+  };
+  if (fwSrc) {
+    fwSrc.value = JSON.stringify(SAMPLE_CLEAN_PEER_BUNDLE, null, 2);
+    void runFwScan();
+  }
+  document.querySelector("#kit-fw-clean-btn")?.addEventListener("click", () => {
+    if (fwSrc) fwSrc.value = JSON.stringify(SAMPLE_CLEAN_PEER_BUNDLE, null, 2);
+    void runFwScan();
+  });
+  document.querySelector("#kit-fw-attack-btn")?.addEventListener("click", () => {
+    if (fwSrc) fwSrc.value = JSON.stringify(SAMPLE_RUGPULL_PEER_BUNDLE, null, 2);
+    void runFwScan();
+  });
+  document.querySelector("#kit-fw-scan-btn")?.addEventListener("click", () => {
+    void runFwScan();
   });
 }
 
