@@ -17,7 +17,7 @@ run(
   [
     "commit",
     "-m",
-    "feat: pinned-key BroadcastChannel guard, chained multi-wave replanning, 30 Chaos scenarios, 82 tests & complete TITAN Phase 20 report",
+    "feat: live hybrid .ics peer execution, 4-peer firewall & local AI parity, 4-primitive ZK audit bundle, WCAG 100x6 zero-failure audit & 86 tests",
   ],
   { stdio: "inherit" },
 );

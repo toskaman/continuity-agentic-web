@@ -102,8 +102,7 @@ export function renderMissionGraphSvg(page) {
     const ariaLabel = `${node.title}, ${meta.label}, scheduled ${node.scheduled_date}, €${node.price_eur}${isPinned ? ", date pinned untouched" : ""}`;
 
     parts.push(
-      `<g class="graph-node-group" role="button" tabindex="0" aria-pressed="${isSelected}" aria-label="${page.escapeXml(ariaLabel)}" data-node-id="${page.escapeXml(node.id)}">
-        <title>${page.escapeXml(`${node.title}: ${meta.label}, scheduled ${node.scheduled_date}, €${node.price_eur}`)}</title>
+      `<g class="graph-node-group" role="button" tabindex="0" aria-pressed="${isSelected}" data-node-id="${page.escapeXml(node.id)}">
         <rect x="${pos.x}" y="${pos.y}" width="225" height="90" rx="10" fill="${pal.fill}" stroke="${pal.stroke}" stroke-width="${strokeW}" />
         <rect x="${pos.x + 10}" y="${pos.y + 9}" width="114" height="18" rx="5" fill="${pal.badgeBg}" />
         <text x="${pos.x + 16}" y="${pos.y + 22}" fill="#ffffff" font-size="10" font-weight="700" font-family="system-ui, sans-serif">${page.escapeXml(`${meta.icon} ${meta.badge}`)}</text>

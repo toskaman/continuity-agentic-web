@@ -62,8 +62,7 @@ export function renderParetoFrontierPlot(page, curCapEur) {
           ? "Plan C"
           : "Alt";
     parts.push(
-      `<g role="button" tabindex="0" style="cursor:pointer" data-pareto-plan="${page.escapeXml(p.plan_id)}" aria-label="${page.escapeXml(`${p.label}: €${p.metrics.totalMissionCostEur.toFixed(2)}, ${chg} changed`)}">
-        <title>${page.escapeXml(`${p.label} — €${p.metrics.totalMissionCostEur.toFixed(2)} (${chg} changed · Pareto rank ${p.paretoRank ?? 1})`)}</title>
+      `<g role="button" tabindex="0" style="cursor:pointer" data-pareto-plan="${page.escapeXml(p.plan_id)}">
         <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${isSel ? 6.5 : 5}" fill="${fill}" stroke="#ffffff" stroke-width="${isSel ? 2.2 : 1.2}" />
         <text x="${(cx + 8).toFixed(1)}" y="${(cy + labelDy).toFixed(1)}" fill="#f8fafc" font-size="9.5" font-weight="700" font-family="system-ui, sans-serif">${page.escapeXml(`${shortTag}: €${p.metrics.totalMissionCostEur.toFixed(0)} (${chg} chg)`)}</text>
       </g>`,

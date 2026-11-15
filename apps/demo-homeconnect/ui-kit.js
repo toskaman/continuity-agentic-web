@@ -2,6 +2,10 @@
 // GENERATED copy (source: design-system/peer-ui-kit.js). Presentation only:
 // it never changes business state; it reads page.getState() after each render.
 
+import { ChromeBuiltInPromptLlm, probeLocalInferenceBackends } from "./vendor/local-browser-router/index.js";
+import { inspectPeerNetworkSafety, PeerTofuRegistry } from "./vendor/peer-firewall/index.js";
+import { LlmClient } from "./runtime/llm.js";
+
 export const escapeHtml = (v) =>
   String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -324,19 +328,47 @@ export class PeerScriptedReplayLlm {
 
 export function bindPeerZeroKeyControls(engine, statusEl, greetFn) {
   if (!engine?.top || typeof document === "undefined") return;
-  let origTopLlm = null;
-  let origResolveRemote = null;
+  let origTopLlm = engine.top.llm;
+  const rawResolveRemote = engine.resolveRemote.bind(engine);
+  const tofuRegistry = new PeerTofuRegistry(
+    typeof window !== "undefined" ? window.localStorage : null,
+  );
+  engine.tofuRegistry = tofuRegistry;
+
+  // Enforce @continuity/peer-firewall + TOFU SHA-256 pinning on every cross-origin partner load!
+  const guardedResolveRemote = async (...args) => {
+    const session = await rawResolveRemote(...args);
+    if (session?.network?.config) {
+      const peerInspection = await inspectPeerNetworkSafety({
+        manifestJson: session.manifest || { networks: [{ name: session.network.name || "peer" }] },
+        networkJson: session.network.config,
+        siteBaseUrl: session.origin || String(args[0] || ""),
+      });
+      const tofu = tofuRegistry.verifyOrPin(peerInspection);
+      if (!peerInspection.safe) {
+        throw new Error(tofu.reason);
+      }
+      if (tofu.requiresReconsent) {
+        const reapproved = await engine.onConsent({
+          origin: session.origin || String(args[0] || ""),
+          purpose: `Partner artifact digest changed since first approval (${tofu.previousBundleSha256.slice(0, 16)}… → ${tofu.nextBundleSha256.slice(0, 16)}…). Re-approve updated network?`,
+        });
+        if (!reapproved) {
+          throw new Error("Visitor declined re-consent after partner artifact digest change.");
+        }
+        tofuRegistry.approveUpdatedPin(peerInspection);
+      }
+    }
+    return session;
+  };
+  engine.resolveRemote = guardedResolveRemote;
 
   const activateReplay = () => {
-    if (!origTopLlm) {
-      origTopLlm = engine.top.llm;
-      origResolveRemote = engine.resolveRemote.bind(engine);
-    }
     engine.mockLLM = true;
     engine.userRouter = { baseUrl: "browser://mock", mock: true };
     engine.top.llm = new PeerScriptedReplayLlm(engine.trace);
     engine.resolveRemote = async (...args) => {
-      const session = await origResolveRemote(...args);
+      const session = await guardedResolveRemote(...args);
       if (session && engine.mockLLM) {
         session.llm = new PeerScriptedReplayLlm(engine.trace, session.network);
       }
@@ -351,14 +383,87 @@ export function bindPeerZeroKeyControls(engine, statusEl, greetFn) {
     if (settings) settings.open = false;
     const btn = document.querySelector("#peer-zero-key-btn");
     if (btn) btn.textContent = "✓ Zero-Key Replay Active";
+    const localBtn = document.querySelector("#peer-local-ai-btn");
+    if (localBtn) localBtn.textContent = "On-device / local AI";
     if (statusEl) {
       statusEl.textContent =
-        "Zero-Key Deterministic Replay active: runs this site's real Neuro SAN network, website_* tools, confirmation dialog, and cross-origin CONTINUITY consent card without an API key.";
+        "Zero-Key Deterministic Replay active: runs this site's real Neuro SAN network, website_* tools, confirmation dialog, and cross-origin CONTINUITY consent card (protected by @continuity/peer-firewall) without an API key.";
     }
     greetFn?.();
   };
 
+  const activateLocalAi = async () => {
+    if (statusEl) {
+      statusEl.textContent = "Probing on-device Chrome LanguageModel (Gemini Nano) and local Ollama (127.0.0.1:11434)…";
+    }
+    const probe = await probeLocalInferenceBackends();
+    const badge = document.querySelector("#agent-app .ns-llmbadge");
+    const settings = document.querySelector("#agent-app .ns-settings");
+    const localBtn = document.querySelector("#peer-local-ai-btn");
+    const replayBtn = document.querySelector("#peer-zero-key-btn");
+
+    if (probe.preferredBackend === "chrome-prompt-api") {
+      engine.mockLLM = true;
+      engine.userRouter = { baseUrl: "browser://chrome-language-model", mock: true };
+      engine.top.llm = new ChromeBuiltInPromptLlm({ trace: engine.trace });
+      engine.resolveRemote = async (...args) => {
+        const session = await guardedResolveRemote(...args);
+        if (session) session.llm = new ChromeBuiltInPromptLlm({ trace: engine.trace });
+        return session;
+      };
+      if (badge) {
+        badge.className = "ns-llmbadge real";
+        badge.textContent = "🧠 On-Device Gemini Nano (Zero Cloud Egress)";
+      }
+      if (settings) settings.open = false;
+      if (localBtn) localBtn.textContent = "✓ On-device AI active";
+      if (replayBtn) replayBtn.textContent = "Try without a key";
+      if (statusEl) {
+        statusEl.textContent = `On-device Chrome LanguageModel (${probe.chromeBuiltIn.status}) connected with JSON-Schema tool-calling constraint and zero cloud egress.`;
+      }
+      greetFn?.();
+      return;
+    }
+
+    if (probe.preferredBackend === "ollama-loopback") {
+      const model = probe.ollamaLoopback.recommendedModel;
+      const baseUrl = probe.ollamaLoopback.baseUrl;
+      engine.mockLLM = true;
+      engine.modelOverride = model;
+      engine.userRouter = { baseUrl, mock: true };
+      const makeOllama = () => new LlmClient({ baseUrl, apiKey: "ollama-local", trace: engine.trace, mock: true });
+      engine.top.llm = makeOllama();
+      engine.resolveRemote = async (...args) => {
+        const session = await guardedResolveRemote(...args);
+        if (session) session.llm = makeOllama();
+        return session;
+      };
+      if (badge) {
+        badge.className = "ns-llmbadge real";
+        badge.textContent = `🖥 Local Ollama (${model})`;
+      }
+      if (settings) settings.open = false;
+      if (localBtn) localBtn.textContent = `✓ Local Ollama (${model})`;
+      if (replayBtn) replayBtn.textContent = "Try without a key";
+      if (statusEl) {
+        statusEl.textContent = `Local loopback Ollama (${model}) connected at ${baseUrl} with zero external cloud egress.`;
+      }
+      greetFn?.();
+      return;
+    }
+
+    // Restore original router state if neither local backend is available
+    engine.top.llm = origTopLlm;
+    if (statusEl) {
+      statusEl.textContent =
+        "No on-device Chrome LanguageModel or local Ollama (127.0.0.1:11434) detected on this device. Click 'Try without a key' for instant deterministic replay, or connect Otari / OpenRouter in ⚙ AI model settings.";
+    }
+  };
+
   document.querySelector("#peer-zero-key-btn")?.addEventListener("click", activateReplay);
+  document.querySelector("#peer-local-ai-btn")?.addEventListener("click", () => {
+    void activateLocalAi();
+  });
   document.querySelectorAll(".peer-prompt-chip").forEach((chip) => {
     chip.addEventListener("click", () => {
       const promptText = chip.getAttribute("data-prompt") || "";

@@ -146,17 +146,43 @@ export class ContinuityCoordinatorPage {
     return this.activeScenarioId === "home_relocation" && this.mission.mission_id === "move_paris_lyon_001";
   }
 
+  hasLivePeerCommitments() {
+    const liveIds = new Set(["moveco", "permitflow", "homeconnect", "powerflow"]);
+    return (this.mission?.commitments || []).some((c) => liveIds.has(c.provider_id));
+  }
+
   async ensureProviderClients() {
     if (this._peerProbePromise) {
       await this._peerProbePromise;
     }
     if (!this.isRelocationScenario()) {
-      if (!this.providerHarnessPromise) {
-        this.providerHarnessPromise = buildScenarioPeerHarness(this.mission, {
-          rippleFailureInjected: this.rippleFailureInjected,
-        });
+      const baseHarness = await (this.providerHarnessPromise ||= buildScenarioPeerHarness(this.mission, {
+        rippleFailureInjected: this.rippleFailureInjected,
+      }));
+      if (this.hasLivePeerCommitments() && (this.livePeersDetected || this.crossOriginBridgeConnected)) {
+        try {
+          const liveHarness = this.livePeersDetected
+            ? await this.buildLiveHttpProviderClients()
+            : this.crossOriginBridge.buildSagaHarness();
+          const mergedClients = { ...baseHarness.clients, ...liveHarness.clients };
+          const mergedVerifier = new ReceiptVerifier();
+          for (const [pid, keyDesc] of baseHarness.verifier.trustedByProvider?.entries?.() || []) {
+            mergedVerifier.registerTrustedProviderKey(pid, keyDesc.keyId, keyDesc.publicJwk);
+          }
+          for (const [pid, keyDesc] of liveHarness.verifier.trustedByProvider?.entries?.() || []) {
+            mergedVerifier.registerTrustedProviderKey(pid, keyDesc.keyId, keyDesc.publicJwk);
+          }
+          return {
+            clients: mergedClients,
+            verifier: mergedVerifier,
+            buildOffersForNode: baseHarness.buildOffersForNode,
+            liveClientIds: new Set(Object.keys(liveHarness.clients)),
+          };
+        } catch {
+          // Fall back cleanly to baseHarness if live peer read fails
+        }
       }
-      return this.providerHarnessPromise;
+      return baseHarness;
     }
 
     if (this.livePeersDetected) {
@@ -502,7 +528,7 @@ export class ContinuityCoordinatorPage {
     this.providerHarnessPromise = null;
     this.version += 1;
 
-    if (this.isRelocationScenario()) {
+    if (this.isRelocationScenario() || this.hasLivePeerCommitments()) {
       if (this.livePeersDetected) {
         for (const [pid, origin] of Object.entries(this.peerOrigins)) {
           try {
@@ -586,13 +612,29 @@ export class ContinuityCoordinatorPage {
         keyExposure: "NONE (LLM BYOK key stays on caller router)",
       });
 
-      if (this.isRelocationScenario() && (this.livePeersDetected || this.crossOriginBridgeConnected) && clients[contact.providerId]?.quote) {
+      const useLivePeerClient =
+        (this.livePeersDetected || this.crossOriginBridgeConnected)
+        && typeof clients[contact.providerId]?.quote === "function"
+        && (this.isRelocationScenario() || harness.liveClientIds?.has(contact.providerId));
+
+      if (useLivePeerClient) {
         const quoteResp = await clients[contact.providerId].quote(node.booking_ref, targetDate);
         if (quoteResp.primary_refused && quoteResp.refusal_reason) {
           this.providerAlerts.push(`MoveCo Alert: ${quoteResp.refusal_reason}`);
         }
-        for (const rawOffer of quoteResp.offers || []) {
-          normalizedOffers.push(normalizePeerOffer(rawOffer));
+        const liveRawOffers = Array.isArray(quoteResp.offers) ? quoteResp.offers : [];
+        if (liveRawOffers.length > 0) {
+          for (const rawOffer of liveRawOffers) {
+            normalizedOffers.push(
+              normalizePeerOffer({
+                ...rawOffer,
+                commitment_id: node.id,
+                provider_id: node.provider_id,
+              }),
+            );
+          }
+        } else if (typeof harness.buildOffersForNode === "function") {
+          normalizedOffers.push(...harness.buildOffersForNode(node, targetDate, this.graph));
         }
       } else if (!this.isRelocationScenario() && typeof harness.buildOffersForNode === "function") {
         const customOffers = harness.buildOffersForNode(node, targetDate, this.graph);
@@ -625,7 +667,17 @@ export class ContinuityCoordinatorPage {
         for (const c of candImpact.providersToContact) {
           const n = this.graph.nodes.get(c.commitmentId);
           if (!n) continue;
-          if (!this.isRelocationScenario() && typeof harness.buildOffersForNode === "function") {
+          if (!this.isRelocationScenario() && harness.liveClientIds?.has(n.provider_id)) {
+            outOffers.push(
+              ...buildFallbackOffersForRelocationNode({
+                node: n,
+                targetDate: candDate,
+                peerOrigins: this.peerOrigins,
+                rippleFailureInjected: this.rippleFailureInjected,
+                providerAlerts: [],
+              }).map((o) => ({ ...o, commitment_id: n.id, provider_id: n.provider_id })),
+            );
+          } else if (!this.isRelocationScenario() && typeof harness.buildOffersForNode === "function") {
             outOffers.push(...harness.buildOffersForNode(n, candDate, this.graph));
           } else {
             outOffers.push(
@@ -1159,6 +1211,7 @@ export class ContinuityCoordinatorPage {
       operations: this.preparedOps,
       auditLog: this.saga?.ledger?.getHistory() || [],
       trustedProviderKeys: this.saga?.receiptVerifier?.trustedByProvider || null,
+      zkBudgetAttestation: this.zkBudgetAttestation || null,
     });
   }
 
@@ -1177,8 +1230,11 @@ export class ContinuityCoordinatorPage {
     const el = typeof document !== "undefined" ? document.querySelector("#bundle-verify-status") : null;
     if (el) {
       el.hidden = false;
+      const zkNote = report.zkBudgetValid
+        ? " · ZK Hash-Ladder: VERIFIED (ceiling hidden)"
+        : "";
       el.textContent = report.valid
-        ? `✓ Zero-Trust Audit Bundle Verified: JCS SHA-256 ${report.computedBundleSha256.slice(0, 16)}… · ${report.sagaEventsChecked} hash-chained Saga event(s) · ${report.receiptsVerifiedCount}/${report.receiptsTotalCommitted} Ed25519 provider receipt(s) verified (${report.keyTrustMode}).`
+        ? `✓ Zero-Trust Audit Bundle Verified: JCS SHA-256 ${report.computedBundleSha256.slice(0, 16)}… · ${report.sagaEventsChecked} hash-chained Saga event(s) · ${report.receiptsVerifiedCount}/${report.receiptsTotalCommitted} Ed25519 provider receipt(s) verified (${report.keyTrustMode})${zkNote}.`
         : `✕ Bundle Verification Failed: ${report.errors.join(" | ")}`;
     }
     return report;
@@ -1197,6 +1253,10 @@ export class ContinuityCoordinatorPage {
     }
     if (Array.isArray(tampered.immutable_saga_log) && tampered.immutable_saga_log.length > 0) {
       tampered.immutable_saga_log[0].reason += " [forged]";
+    }
+    if (tampered.zk_budget_attestation) {
+      tampered.zk_budget_attestation.publicSpentUnitsEur =
+        Number(tampered.zk_budget_attestation.publicSpentUnitsEur || 0) + 500;
     }
     const report = await verifyExportedAuditBundle(tampered, {
       externalPinnedKeys: this.saga?.receiptVerifier?.trustedByProvider || undefined,

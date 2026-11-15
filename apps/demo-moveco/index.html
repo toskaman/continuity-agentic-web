@@ -19,7 +19,7 @@
   <a class="skip-link" href="#availability">Skip to available dates</a>
   <header class="site-header">
     <div class="container header-bar">
-      <a class="brand-lockup" href="#top" aria-label="MoveCo Express home">
+      <a class="brand-lockup" href="#top">
         <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
           <rect width="36" height="36" rx="10" fill="#2043C4"/>
           <path d="M7 13h13v10H7zM20 16h5l4 4v3H20z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
@@ -156,6 +156,7 @@
             <a href="./moveco_dispatch.network.json" target="_blank" rel="noopener">moveco_dispatch.network.json</a>
             <a href="./.well-known/agent-card.json" target="_blank" rel="noopener">agent-card.json</a>
             <a href="./.well-known/ai-catalog.json" target="_blank" rel="noopener">ai-catalog.json</a>
+            <a href="./.well-known/poppy.json" target="_blank" rel="noopener">poppy.json</a>
             <a href="./facts/agent-manifest.json" target="_blank" rel="noopener">facts/</a>
           </div>
         </section>
@@ -173,6 +174,7 @@
             </div>
             <div class="peer-assistant-actions">
               <span class="mono-tag">moveco_dispatch</span>
+              <button id="peer-local-ai-btn" type="button" class="secondary-btn btn-sm" title="Auto-detects Chrome Built-in Gemini Nano (LanguageModel) or local loopback Ollama with zero cloud egress">On-device / local AI</button>
               <button id="peer-zero-key-btn" type="button" class="btn btn-primary btn-sm">Try without a key</button>
             </div>
           </div>

@@ -91,11 +91,11 @@ function syncWall(page, states) {
   if (!document.querySelector("#live-wall")) return;
   const scenNote = document.querySelector("#live-wall-scenario-note");
   if (scenNote) {
-    const isReloc = page.isRelocationScenario?.() ?? true;
-    scenNote.hidden = isReloc;
-    if (!isReloc) {
+    const hasLivePeers = page.hasLivePeerCommitments?.() ?? page.isRelocationScenario?.() ?? true;
+    scenNote.hidden = hasLivePeers;
+    if (!hasLivePeers) {
       scenNote.textContent =
-        "These four live cross-origin websites (MoveCo, PermitFlow, HomeConnect, PowerFlow) power the Home relocation ecosystem. Switch back to 'Home relocation · 6 bookings · live peers' in the Workspace above to watch live cross-origin signed receipt commits across all four frames.";
+        "These four live cross-origin websites (MoveCo, PermitFlow, HomeConnect, PowerFlow) power the Home relocation & Hybrid .ics ecosystems. Switch to 'Home relocation' or load 'Hybrid .ics (Agentic + Legacy)' in the Workspace above to watch live cross-origin signed receipt commits.";
     }
   }
   if (!wall.loaded && !page.compiledProposal) return;
@@ -159,14 +159,14 @@ function showOutcome(page) {
            <button type="button" class="btn btn-sm btn-ghost" data-outcome="reset">Run it again</button>
          </div>
        </div>
-       <button type="button" class="outcome-close" aria-label="Close">×</button>`
+       <button type="button" class="outcome-close" aria-label="Close"><span aria-hidden="true">×</span></button>`
     : `<div class="outcome-icon" aria-hidden="true">!</div>
        <div class="outcome-body">
          <strong>Stopped safely</strong>
          <span>${e(page.lastSagaExecution?.partialFailureReason || "Some operations could not be confirmed.")} Nothing else was changed; details are in the Trust center.</span>
          <div class="outcome-actions"><a class="btn btn-sm" href="#trust" data-open-tab="tab-btn-timeline">Open the saga log</a></div>
        </div>
-       <button type="button" class="outcome-close" aria-label="Close">×</button>`;
+       <button type="button" class="outcome-close" aria-label="Close"><span aria-hidden="true">×</span></button>`;
   document.body.append(panel);
   if (ok) {
     wall.justCommitted = true;

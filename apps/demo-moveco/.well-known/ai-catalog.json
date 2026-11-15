@@ -35,7 +35,7 @@
           "manifestUrl": "http://127.0.0.1:8081/agent-manifest.json",
           "networkUrl": "http://127.0.0.1:8081/moveco_dispatch.network.json",
           "factsManifestUrl": "http://127.0.0.1:8081/facts/agent-manifest.json",
-          "factsNetworkDigest": "sha256:a461309d6255e8665ed90565044a355f68c5c5b7092cf52d0628f8b2eaca8455"
+          "factsNetworkDigest": "sha256:71c6b79ad16f02f42b110bc1e9088c5c9a01a51b2e1c8d181d5e300d7a5bc748"
         }
       }
     }

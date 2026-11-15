@@ -8,7 +8,14 @@ import {
   SAMPLE_GOOGLE_ADK_CONFIG,
 } from "./vendor/adk-hocon-converter/index.js";
 import { buildFactsNetworkBundle } from "./vendor/facts-publisher/index.js";
-import { verifyExportedAuditBundle } from "./vendor/intake-compiler/index.js";
+import { exportVerifiableAuditBundle, verifyExportedAuditBundle } from "./vendor/intake-compiler/index.js";
+import { createSignatureMoveMission } from "./vendor/mission-core/index.js";
+import { OperationLedger } from "./vendor/outcome-reconciliation/index.js";
+import { generateDemoProviderKeyPair, signProviderReceipt } from "./vendor/proof-verifier/index.js";
+import {
+  createBlindedBudgetCommitment,
+  proveSpendWithinBlindedCeiling,
+} from "./vendor/zk-budget-attestation/index.js";
 import {
   auditOpenAgenticSite,
   validateA2aAgentCard,
@@ -399,26 +406,52 @@ function initKit() {
 
   // Tool 4: Multi-Agent Graph -> Portable Neuro SAN Converter
   let lastAdkBundle = null;
+  let emitScopedMode = false;
+  const SCOPED_ADK_WITH_SECRET_SAMPLE = JSON.stringify(
+    {
+      ...JSON.parse(SAMPLE_GOOGLE_ADK_CONFIG),
+      instruction:
+        "Coordinate arrival schedules. Never leak internal token sk-live-demo9876543210abcdef in public prompts.",
+      sub_agents: [
+        {
+          ...JSON.parse(SAMPLE_GOOGLE_ADK_CONFIG).sub_agents[0],
+          site_actions: ["get_housing_state", "hold_faculty_room"],
+        },
+        {
+          ...JSON.parse(SAMPLE_GOOGLE_ADK_CONFIG).sub_agents[1],
+          site_actions: ["check_badge_lead_time"],
+        },
+      ],
+    },
+    null,
+    2,
+  );
   const adkSrc = document.querySelector("#kit-adk-src");
   const adkOut = document.querySelector("#kit-adk-out");
   const adkStatus = document.querySelector("#kit-adk-status");
   const adkDl = document.querySelector("#kit-adk-dl-btn");
   const runAdk = async () => {
     try {
-      const res = await convertAgentFrameworkToHoconBundle(adkSrc?.value || "{}");
+      const res = await convertAgentFrameworkToHoconBundle(adkSrc?.value || "{}", {
+        emitScopedToolboxes: emitScopedMode,
+      });
       lastAdkBundle = res;
       if (adkOut) {
         adkOut.value = JSON.stringify(
           {
             [`${res.networkName}.network.json`]: res.networkJson,
             "agent-manifest.json": res.manifestJson,
+            ...(res.toolboxScoping ? { toolboxScopingMetrics: res.toolboxScoping.metrics } : {}),
           },
           null,
           2,
         );
       }
       if (adkStatus) {
-        adkStatus.textContent = `✓ Converted "${res.networkName}" (${res.equivalenceReport.sourceAgentsCount} agents -> ${res.equivalenceReport.emittedAgentsCount} portable Neuro SAN agents · ${res.scrubbedSecretsCount} leaked secret(s) scrubbed).`;
+        const scopeNote = res.toolboxScoping
+          ? ` · Scoped toolboxes saved ${res.toolboxScoping.metrics.savedCharsPerTurn} chars/turn (-${res.toolboxScoping.metrics.reductionPercent}%)`
+          : "";
+        adkStatus.textContent = `✓ Converted "${res.networkName}" (${res.equivalenceReport.sourceAgentsCount} agents -> ${res.equivalenceReport.emittedAgentsCount} portable Neuro SAN agents · ${res.scrubbedSecretsCount} leaked secret(s) scrubbed${scopeNote}).`;
       }
       if (adkDl) adkDl.hidden = false;
     } catch (err) {
@@ -432,7 +465,13 @@ function initKit() {
     void runAdk();
   }
   document.querySelector("#kit-adk-sample-btn")?.addEventListener("click", () => {
+    emitScopedMode = false;
     if (adkSrc) adkSrc.value = SAMPLE_GOOGLE_ADK_CONFIG;
+    void runAdk();
+  });
+  document.querySelector("#kit-adk-scoped-btn")?.addEventListener("click", () => {
+    emitScopedMode = true;
+    if (adkSrc) adkSrc.value = SCOPED_ADK_WITH_SECRET_SAMPLE;
     void runAdk();
   });
   document.querySelector("#kit-adk-convert-btn")?.addEventListener("click", () => {
@@ -450,19 +489,115 @@ function initKit() {
   // Tool 5: Offline Zero-Trust Cryptographic Audit Bundle Verifier
   const bundleTa = document.querySelector("#kit-bundle-json");
   const bundleStatus = document.querySelector("#kit-bundle-status");
+  let sampleSignedBundle = null;
+
+  const buildSampleSignedBundle = async () => {
+    const mission = createSignatureMoveMission();
+    const movecoKey = await generateDemoProviderKeyPair("moveco");
+    const ledger = new OperationLedger();
+    ledger.createOperation({ operation_id: "op_sample_mc_1", commitment_id: "cmt_moveco_van" });
+    ledger.transition("op_sample_mc_1", "PROPOSED", "Plan A proposed");
+    ledger.transition("op_sample_mc_1", "PREPARED", "15-min crew hold placed");
+    ledger.transition("op_sample_mc_1", "AWAITING_APPROVAL", "SHA-256 approval hash bound");
+    ledger.transition("op_sample_mc_1", "APPROVED", "Human confirmed bound package");
+    ledger.transition("op_sample_mc_1", "DISPATCHED", "Dispatched idempotent commit");
+    ledger.transition("op_sample_mc_1", "COMMITTED", "Ed25519 provider receipt verified");
+    const receiptEnv = await signProviderReceipt(
+      {
+        receipt_id: "rcpt_kit_mc_8841",
+        provider_id: "moveco",
+        booking_ref: "MC-8841",
+        scheduled_date: "2026-11-20",
+        window: "09:30–14:30",
+        total_charged_eur: 420,
+      },
+      movecoKey,
+    );
+    const zkCom = await createBlindedBudgetCommitment({
+      ceilingEur: 700,
+      missionId: mission.mission_id,
+    });
+    const zkPrf = await proveSpendWithinBlindedCeiling({
+      publicCommitment: zkCom.publicCommitment,
+      privateOpening: zkCom.privateOpening,
+      spentEur: 659,
+    });
+    return await exportVerifiableAuditBundle({
+      mission,
+      selectedPlan: {
+        plan_id: "PLAN_A_MINIMAL_CHANGE",
+        label: "Plan A — Minimum Disruption",
+        paretoOptimal: true,
+        metrics: {
+          changedCount: 3,
+          unchangedCount: 3,
+          totalMissionCostEur: 659,
+          maxBudgetEur: 700,
+        },
+      },
+      operations: [
+        {
+          operation_id: "op_sample_mc_1",
+          commitment_id: "cmt_moveco_van",
+          provider_id: "moveco",
+          provider_name: "MoveCo Express (Demo)",
+          state: "COMMITTED",
+          proposed_date: "2026-11-20",
+          window: "09:30–14:30",
+          receipt_envelope: receiptEnv,
+        },
+      ],
+      auditLog: ledger.getHistory(),
+      trustedProviderKeys: { moveco: { keyId: movecoKey.keyId, publicJwk: movecoKey.publicJwk } },
+      zkBudgetAttestation: zkPrf.attestation,
+    });
+  };
+
   const runVerifyBundle = async (rawText) => {
     try {
       const parsed = JSON.parse(rawText || "{}");
       const rep = await verifyExportedAuditBundle(parsed);
       if (bundleStatus) {
+        const zkText = rep.zkBudgetValid
+          ? " · ZK Hash-Ladder: VERIFIED (private ceiling hidden)"
+          : "";
         bundleStatus.textContent = rep.valid
-          ? `✓ VERIFIED INTACT: JCS SHA-256 ${rep.computedBundleSha256.slice(0, 16)}… · ${rep.sagaEventsChecked} hash-chained Saga event(s) · ${rep.receiptsVerifiedCount}/${rep.receiptsTotalCommitted} Ed25519 receipt(s) verified (${rep.keyTrustMode}).`
-          : `✕ TAMPERED / INVALID: ${rep.errors.join(" | ")}`;
+          ? `✓ VERIFIED INTACT: JCS SHA-256 ${rep.computedBundleSha256.slice(0, 16)}… · ${rep.sagaEventsChecked} hash-chained Saga event(s) · ${rep.receiptsVerifiedCount}/${rep.receiptsTotalCommitted} Ed25519 receipt(s) verified (${rep.keyTrustMode})${zkText}.`
+          : `✕ TAMPERED / INVALID (${rep.errors.length} alarm(s)): ${rep.errors.join(" | ")}`;
       }
     } catch (err) {
       if (bundleStatus) bundleStatus.textContent = `✕ Invalid JSON: ${err.message}`;
     }
   };
+
+  if (bundleTa) {
+    void buildSampleSignedBundle().then((b) => {
+      sampleSignedBundle = b;
+      bundleTa.value = JSON.stringify(b, null, 2);
+      return runVerifyBundle(bundleTa.value);
+    });
+  }
+
+  document.querySelector("#kit-bundle-sample-btn")?.addEventListener("click", async () => {
+    sampleSignedBundle = sampleSignedBundle || (await buildSampleSignedBundle());
+    if (bundleTa) {
+      bundleTa.value = JSON.stringify(sampleSignedBundle, null, 2);
+      await runVerifyBundle(bundleTa.value);
+    }
+  });
+  document.querySelector("#kit-bundle-tamper-btn")?.addEventListener("click", async () => {
+    sampleSignedBundle = sampleSignedBundle || (await buildSampleSignedBundle());
+    const tampered = JSON.parse(JSON.stringify(sampleSignedBundle));
+    tampered.operations[0].receipt_envelope.receipt_body.total_charged_eur = 420.01;
+    tampered.immutable_saga_log[0].reason += " [forged]";
+    if (tampered.zk_budget_attestation) {
+      tampered.zk_budget_attestation.publicSpentUnitsEur = 999;
+    }
+    if (bundleTa) {
+      bundleTa.value = JSON.stringify(tampered, null, 2);
+      await runVerifyBundle(bundleTa.value);
+    }
+  });
   document.querySelector("#kit-bundle-verify-btn")?.addEventListener("click", () => {
     void runVerifyBundle(bundleTa?.value || "");
   });

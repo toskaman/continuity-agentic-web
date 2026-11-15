@@ -13,6 +13,7 @@
  */
 
 import { canonicalizeJson, isPlainObject, sanitizeJson, sha256Hex } from "../shared-schemas/index.js";
+import { compileScopedToolboxNetwork } from "../toolbox-scoper/index.js";
 
 export const SAMPLE_GOOGLE_ADK_CONFIG = JSON.stringify(
   {
@@ -169,6 +170,13 @@ export async function convertAgentFrameworkToHoconBundle(rawSource, options = {}
           required: ["inquiry"],
         };
 
+    const siteActions = Array.isArray(node.site_actions)
+      ? node.site_actions.map((a) => String(a).trim()).filter(Boolean)
+      : [];
+    const scopedActionRefs = options.emitScopedToolboxes
+      ? siteActions.map((act) => `website_${act}`)
+      : [];
+
     flatAgents.set(name, {
       name,
       function: {
@@ -176,7 +184,8 @@ export async function convertAgentFrameworkToHoconBundle(rawSource, options = {}
         parameters: inputSchema,
       },
       instructions: cleanInstr,
-      tools: [...childNames, ...externalRefs],
+      tools: [...childNames, ...externalRefs, ...scopedActionRefs],
+      _siteActions: siteActions,
     });
 
     visiting.delete(name);
@@ -196,12 +205,21 @@ export async function convertAgentFrameworkToHoconBundle(rawSource, options = {}
   }
 
   // Order front_man first in `tools[]` for readability
+  const allSiteActions = new Set();
   const orderedAgents = [
     flatAgents.get(frontMan),
     ...Array.from(flatAgents.entries())
       .filter(([k]) => k !== frontMan)
       .map(([, v]) => v),
-  ];
+  ].map((ag) => {
+    const { _siteActions = [], ...cleanAg } = ag;
+    for (const act of _siteActions) allSiteActions.add(act);
+    return cleanAg;
+  });
+
+  const toolboxEntries = options.emitScopedToolboxes
+    ? Array.from(allSiteActions).map((act) => ({ name: `website_${act}`, toolbox: act }))
+    : [];
 
   const networkJson = sanitizeJson({
     metadata: {
@@ -216,7 +234,7 @@ export async function convertAgentFrameworkToHoconBundle(rawSource, options = {}
     cruse: {
       version: 1,
     },
-    tools: orderedAgents,
+    tools: [...orderedAgents, ...toolboxEntries],
   });
 
   const manifestJson = sanitizeJson({
@@ -230,6 +248,14 @@ export async function convertAgentFrameworkToHoconBundle(rawSource, options = {}
         tags: ["agentified-website", "open-agentic-web", "converted-from-adk"],
       },
     ],
+    ...(allSiteActions.size > 0
+      ? {
+          actions: {
+            module: "./site-actions.js",
+            agentTools: Array.from(allSiteActions),
+          },
+        }
+      : {}),
     llm_router: {
       base_url: routerUrl,
       mock: false,
@@ -264,11 +290,27 @@ export async function convertAgentFrameworkToHoconBundle(rawSource, options = {}
     notes: conversionNotes,
   };
 
+  const toolboxScoping =
+    options.emitScopedToolboxes && allSiteActions.size > 0
+      ? compileScopedToolboxNetwork({
+          networkJson,
+          manifestJson,
+          actionDefinitions: Array.from(allSiteActions).map((name) => ({
+            name,
+            description: `Grounded website action ${name} on the active page.`,
+            inputSchema: { type: "object", properties: { targetDate: { type: "string" } } },
+          })),
+          isTopSite: true,
+        })
+      : null;
+
   return {
     ok: true,
     networkName,
     networkJson,
     manifestJson,
+    scrubbedSecretsCount: redactedCount,
+    toolboxScoping,
     equivalenceReport,
   };
 }

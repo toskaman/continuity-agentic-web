@@ -1,5 +1,7 @@
 import { App } from "./script.js";
 import { bindPeerZeroKeyControls } from "./ui-kit.js";
+import { probeLocalInferenceBackends } from "./vendor/local-browser-router/index.js";
+import { inspectPeerNetworkSafety, PeerTofuRegistry } from "./vendor/peer-firewall/index.js";
 
 export class AssistantMount {
   static GREETING = "I can check MoveCo crew availability and reschedule fees, place a 15-minute slot hold, or confirm a date change for booking MC-8841.";
@@ -33,6 +35,9 @@ export class AssistantMount {
         ? "Add your AI provider key below, or click 'Try without a key' for instant deterministic replay."
         : "Assistant connected to this page.";
       bindPeerZeroKeyControls(booted.engine, status, AssistantMount.greet);
+      AssistantMount.tofuRegistry = booted.engine.tofuRegistry || new PeerTofuRegistry();
+      AssistantMount.inspectPeerNetworkSafety = inspectPeerNetworkSafety;
+      AssistantMount.probeLocalInferenceBackends = probeLocalInferenceBackends;
       if (!needsKey) AssistantMount.greet();
       return booted.engine;
     } catch (error) {

@@ -27,6 +27,8 @@ const PEER_VENDOR_PACKAGES = [
   "proof-verifier",
   "cross-origin-bridge",
   "webmcp-adapter",
+  "peer-firewall",
+  "local-browser-router",
 ];
 
 const isCheck = process.argv.includes("--check");

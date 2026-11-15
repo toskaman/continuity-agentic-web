@@ -362,7 +362,7 @@ export class AssistantMount {
       });
       AssistantMount.engine = booted.engine;
       AssistantMount.tofuRegistry = new PeerTofuRegistry(
-        typeof localStorage !== "undefined" ? localStorage : null,
+        typeof window !== "undefined" ? window.localStorage : null,
       );
       const rawResolveRemote = booted.engine.resolveRemote.bind(booted.engine);
       booted.engine.resolveRemote = async (...args) => {

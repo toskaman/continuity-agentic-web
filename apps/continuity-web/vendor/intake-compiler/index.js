@@ -16,6 +16,7 @@ import { EDGE_TYPES } from "../mission-graph/index.js";
 import { generateDemoProviderKeyPair, ReceiptVerifier, signProviderReceipt } from "../proof-verifier/index.js";
 import { OperationLedger } from "../outcome-reconciliation/index.js";
 import { canonicalizeJson, isPlainObject, isValidIsoDate, sanitizeJson, sha256Hex } from "../shared-schemas/index.js";
+import { verifyBlindedBudgetAttestation } from "../zk-budget-attestation/index.js";
 
 export const SAMPLE_RAW_CONFIRMATION_EMAILS = [
   "Subject: [ANCHOR] High-Speed Rail Charter Confirmed — Ref: HSR-4410",
@@ -62,14 +63,14 @@ export const SAMPLE_HYBRID_ICS_CALENDAR = [
   "DESCRIPTION:Ref: ELV-204 | Same-day courtyard access | Price: €40 | Reschedule fee: €10 | Cancel fee: €25",
   "END:VEVENT",
   "BEGIN:VEVENT",
-  "UID:HC-5520@homeconnect.demo",
+  "UID:HC-5510@homeconnect.demo",
   "DTSTART:20261117T140000Z",
   "DTEND:20261117T170000Z",
   "SUMMARY:FTTH Fiber Optic Technician Installation",
   "LOCATION:HomeConnect Fiber (Open Agentic Web Peer)",
   "URL:https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/",
   "X-AGENTIC-NETWORK:https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/homeconnect_scheduler",
-  "DESCRIPTION:Ref: HC-5520 | After arrival install | Price: €69 | Reschedule fee: €0 | Cancel fee: €35",
+  "DESCRIPTION:Ref: HC-5510 | After arrival install | Price: €49 | Reschedule fee: €0 | Cancel fee: €30",
   "END:VEVENT",
   "BEGIN:VEVENT",
   "UID:BOX-910@cityvault.example",
@@ -93,6 +94,15 @@ function normalizeSafeAgenticUrl(rawUrl) {
       return u.href;
     }
   } catch {}
+  return null;
+}
+
+function inferLivePeerProviderId(it) {
+  const hay = `${it.peerNetworkUrl || ""} ${it.providerOrigin || ""} ${it.providerName || ""}`.toLowerCase();
+  if (/moveco[-_]agentic[-_]peer|moveco_dispatch|:8081\b|:18081\b|:28081\b/.test(hay)) return "moveco";
+  if (/permitflow[-_]agentic[-_]peer|permitflow_advisor|:8082\b|:18082\b|:28082\b/.test(hay)) return "permitflow";
+  if (/homeconnect[-_]agentic[-_]peer|homeconnect_scheduler|:8083\b|:18083\b|:28083\b/.test(hay)) return "homeconnect";
+  if (/powerflow[-_]agentic[-_]peer|powerflow_grid|:8084\b|:18084\b|:28084\b/.test(hay)) return "powerflow";
   return null;
 }
 
@@ -525,26 +535,29 @@ export function compileUnstructuredIntake(rawInput, options = {}) {
   if (anchorIdx < 0) anchorIdx = 0;
 
   const anchor = items[anchorIdx];
-  const commitments = items.map((it, idx) => ({
-    id: `cmt_imp_${idx + 1}`,
-    title: it.title.slice(0, 64),
-    category: it.category,
-    provider_id: `imp_prov_${idx + 1}`,
-    provider_name: it.providerName.slice(0, 56),
-    provider_origin: it.providerOrigin || `https://imported-peer-${idx + 1}.example`,
-    peer_network_url: it.peerNetworkUrl || null,
-    booking_ref: it.bookingRef,
-    status: "CONFIRMED",
-    scheduled_date: it.scheduledDate,
-    ...(it.validUntil ? { valid_until: it.validUntil } : {}),
-    window: it.window,
-    price_eur: it.priceEur,
-    cancellation_fee_eur: it.cancelFeeEur,
-    reschedule_fee_eur: it.rescheduleFeeEur,
-    supports_hold: it.supportsHold,
-    reversible_reschedule: it.rescheduleFeeEur === 0,
-    notes: it.notes,
-  }));
+  const commitments = items.map((it, idx) => {
+    const livePeerId = inferLivePeerProviderId(it);
+    return {
+      id: `cmt_imp_${idx + 1}`,
+      title: it.title.slice(0, 64),
+      category: it.category,
+      provider_id: livePeerId || `imp_prov_${idx + 1}`,
+      provider_name: it.providerName.slice(0, 56),
+      provider_origin: it.providerOrigin || `https://imported-peer-${idx + 1}.example`,
+      peer_network_url: it.peerNetworkUrl || null,
+      booking_ref: it.bookingRef,
+      status: "CONFIRMED",
+      scheduled_date: it.scheduledDate,
+      ...(it.validUntil ? { valid_until: it.validUntil } : {}),
+      window: it.window,
+      price_eur: it.priceEur,
+      cancellation_fee_eur: it.cancelFeeEur,
+      reschedule_fee_eur: it.rescheduleFeeEur,
+      supports_hold: it.supportsHold,
+      reversible_reschedule: it.rescheduleFeeEur === 0,
+      notes: it.notes,
+    };
+  });
 
   const anchorCommitment = commitments[anchorIdx];
   const dependencies = [];
@@ -1051,6 +1064,7 @@ export async function exportVerifiableAuditBundle({
   operations,
   auditLog,
   trustedProviderKeys = null,
+  zkBudgetAttestation = null,
 }) {
   const keySnapshot = {};
   if (trustedProviderKeys instanceof Map) {
@@ -1065,6 +1079,15 @@ export async function exportVerifiableAuditBundle({
     }
   }
 
+  let exportedMetrics = selectedPlan?.metrics || null;
+  if (selectedPlan?.metrics && zkBudgetAttestation) {
+    const { maxBudgetEur: _redactedCeiling, ...publicMetrics } = selectedPlan.metrics;
+    exportedMetrics = {
+      ...publicMetrics,
+      ceilingDisclosed: false,
+    };
+  }
+
   const payload = sanitizeJson({
     schema: "continuity-verifiable-audit-bundle/v1",
     exported_at: new Date().toISOString(),
@@ -1076,9 +1099,10 @@ export async function exportVerifiableAuditBundle({
           plan_id: selectedPlan.plan_id,
           label: selectedPlan.label,
           pareto_optimal: Boolean(selectedPlan.paretoOptimal),
-          metrics: selectedPlan.metrics,
+          metrics: exportedMetrics,
         }
       : null,
+    ...(zkBudgetAttestation ? { zk_budget_attestation: zkBudgetAttestation } : {}),
     operations: (operations || []).map((op) => ({
       operation_id: op.operation_id,
       commitment_id: op.commitment_id,
@@ -1187,6 +1211,28 @@ export async function verifyExportedAuditBundle(rawBundle, options = {}) {
     }
   }
 
+  let zkBudgetValid = null;
+  const zkAtt = clean.zk_budget_attestation;
+  if (zkAtt !== undefined && zkAtt !== null) {
+    const zkRes = await verifyBlindedBudgetAttestation(zkAtt);
+    let zkConsistent = zkRes.valid && zkRes.ceilingRemainsHidden;
+    if (!zkRes.valid) {
+      errors.push(`ZK_BUDGET_LADDER_INVALID: ${zkRes.reason}`);
+    }
+    const planCost = clean.selected_plan?.metrics?.totalMissionCostEur;
+    if (typeof planCost === "number" && Math.ceil(planCost) > Number(zkAtt.publicSpentUnitsEur)) {
+      zkConsistent = false;
+      errors.push(
+        `ZK_BUDGET_LADDER_MISMATCH: selected_plan totalMissionCostEur (€${planCost.toFixed(2)}) exceeds attested publicSpentUnitsEur (€${zkAtt.publicSpentUnitsEur}).`,
+      );
+    }
+    if (clean.selected_plan?.metrics?.maxBudgetEur !== undefined) {
+      zkConsistent = false;
+      errors.push("ZK_BUDGET_CEILING_LEAKED: selected_plan.metrics.maxBudgetEur must be redacted when zk_budget_attestation is present.");
+    }
+    zkBudgetValid = zkConsistent;
+  }
+
   return {
     valid: errors.length === 0,
     bundleSha256Valid,
@@ -1195,6 +1241,8 @@ export async function verifyExportedAuditBundle(rawBundle, options = {}) {
     sagaEventsChecked: chainCheck.verifiedEntries ?? (clean.immutable_saga_log?.length || 0),
     receiptsVerifiedCount,
     receiptsTotalCommitted: committedOps.length,
+    zkBudgetAttestationPresent: Boolean(zkAtt),
+    zkBudgetValid,
     keyTrustMode,
     errors,
   };

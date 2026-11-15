@@ -45,6 +45,11 @@ if (verifyIdx !== -1) {
     console.log(
       `Ed25519 Receipts   : ${report.receiptsVerifiedCount}/${report.receiptsTotalCommitted} verified (trust=${report.keyTrustMode})`,
     );
+    if (report.zkBudgetAttestationPresent) {
+      console.log(
+        `ZK Budget Ladder   : ${report.zkBudgetValid ? "PASS (private ceiling hidden)" : "FAIL"}`,
+      );
+    }
     if (report.errors.length > 0) {
       for (const e of report.errors) console.log(`  [FAIL] ${e}`);
     }

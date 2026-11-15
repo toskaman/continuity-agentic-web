@@ -264,11 +264,25 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
       document.querySelector("#kit-fw-attack-btn")?.click();
       await new Promise((r) => setTimeout(r, 120));
       const firewallBlocked = (document.querySelector("#kit-fw-status")?.textContent || "").includes("BLOCKED");
+      document.querySelector("#kit-adk-scoped-btn")?.click();
+      await new Promise((r) => setTimeout(r, 120));
+      const adkScopedOk = (document.querySelector("#kit-adk-status")?.textContent || "").includes("Scoped toolboxes saved");
+      for (let i = 0; i < 20; i++) {
+        if ((document.querySelector("#kit-bundle-status")?.textContent || "").includes("ZK Hash-Ladder: VERIFIED")) break;
+        await new Promise((r) => setTimeout(r, 80));
+      }
+      const sampleBundleVerified = (document.querySelector("#kit-bundle-status")?.textContent || "").includes("ZK Hash-Ladder: VERIFIED");
+      document.querySelector("#kit-bundle-tamper-btn")?.click();
+      await new Promise((r) => setTimeout(r, 120));
+      const sampleBundleTamperCaught = (document.querySelector("#kit-bundle-status")?.textContent || "").includes("TAMPERED / INVALID");
       return {
         modulesRows: document.querySelectorAll("#kit-modules-tbody tr").length,
         cleanCompiled,
         injectionBlocked,
         firewallBlocked,
+        adkScopedOk,
+        sampleBundleVerified,
+        sampleBundleTamperCaught,
         nandaCatalogGenerated: (document.querySelector("#kit-nanda-cat-out")?.value || "").includes("urn:air:"),
       };
     })()`);
@@ -277,6 +291,9 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
     assert.equal(kitOutcome.cleanCompiled, true);
     assert.equal(kitOutcome.injectionBlocked, true);
     assert.equal(kitOutcome.firewallBlocked, true);
+    assert.equal(kitOutcome.adkScopedOk, true);
+    assert.equal(kitOutcome.sampleBundleVerified, true);
+    assert.equal(kitOutcome.sampleBundleTamperCaught, true);
     assert.equal(kitOutcome.nandaCatalogGenerated, true);
 
     // 5. Verify 1-click Inbound Cross-Origin Peer -> CONTINUITY trigger (`?ask_continuity=1`) on MoveCo Express

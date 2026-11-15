@@ -39,16 +39,21 @@ test("Cycle 36 — README.md & DEVPOST_SUBMISSION.md counts, relative file links
 
   // 3. Verify coordinator WebMCP / agentTools count (8) & test suite count claim
   assert.equal(manifest.actions.agentTools.length, 8);
-  assert.match(readme, /82 automated tests in 25 suites/);
-  assert.match(devpost, /82 automated tests in 25 suites/);
+  assert.match(readme, /86 automated tests in 25 suites/);
+  assert.match(devpost, /86 automated tests in 25 suites/);
 
-  // 3b. Verify HTML UI pages stay synchronized with benchmark & module counts
+  // 3b. Verify HTML UI pages & security/chaos catalogs stay synchronized with codebase counts
   const coordHtml = await readFile(path.join(ROOT, "apps", "continuity-web", "index.html"), "utf8");
   const kitHtml = await readFile(path.join(ROOT, "apps", "continuity-web", "community-kit.html"), "utf8");
+  const chaosCatalog = await readFile(path.join(ROOT, "docs", "CHAOS_TEST_CATALOG.md"), "utf8");
+  const threatModel = await readFile(path.join(ROOT, "docs", "security", "THREAT_MODEL.md"), "utf8");
   assert.match(coordHtml, /WebMCP · 8 tools/);
   assert.match(coordHtml, /120 benchmark runs/);
   assert.match(coordHtml, /30 failure scenarios/);
   assert.match(kitHtml, /six browser-local developer tools and 24 zero-dependency ES modules/);
+  assert.match(chaosCatalog, /30 Deterministic Distributed Failure Scenarios/);
+  assert.match(chaosCatalog, /CHAOS_30_CONTINUOUS_MULTI_WAVE_CHAINED_REPLANNING/);
+  assert.match(threatModel, /\*\*T20\*\*/);
 
   // 4. Verify every relative local path linked in README.md exists on disk
   const linkMatches = [...readme.matchAll(/\]\((?!https?:\/\/|mailto:|#)([^)#?]+)(?:[?#][^)]*)?\)/g)];

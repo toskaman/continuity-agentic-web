@@ -363,3 +363,160 @@ test("S14 Continuous Day-2 -> Day-3 Chained Re-Planning updates anchor & commitm
   assert.equal(commit2.ok, true);
   assert.equal(page.mission.anchor_date, "2026-11-20");
 });
+
+test("S15 Hybrid .ics schedule with live peer URLs executes real HTTP quotes, slot holds & Ed25519 commits on MoveCo & HomeConnect while generating Hold-First mailto: draft for legacy vendor", async () => {
+  const { startAllEcosystemServers } = await import("../../scripts/serve_ecosystem.mjs");
+  const { ContinuityCoordinatorPage } = await import("../../apps/continuity-web/script.js");
+  const { SAMPLE_HYBRID_ICS_CALENDAR } = await import("../../packages/intake-compiler/index.js");
+
+  const eco = await startAllEcosystemServers({
+    continuity: 0,
+    moveco: 0,
+    permitflow: 0,
+    homeconnect: 0,
+    powerflow: 0,
+  });
+
+  try {
+    const page = new ContinuityCoordinatorPage();
+    page.peerOrigins = {
+      moveco: eco.peers.moveco.origin(),
+      permitflow: eco.peers.permitflow.origin(),
+      homeconnect: eco.peers.homeconnect.origin(),
+      powerflow: eco.peers.powerflow.origin(),
+    };
+    const detected = await page.probeLivePeerOrigins();
+    assert.equal(detected, true);
+
+    const imported = await page.importCustomSchedule(SAMPLE_HYBRID_ICS_CALENDAR);
+    assert.equal(imported.ok, true);
+    assert.equal(page.hasLivePeerCommitments(), true);
+
+    const prep = await page.analyzeAndPrepareChange(imported.suggestedPrompt);
+    assert.equal(prep.ok, true);
+
+    const pb = page.getTransitionPlaybook();
+    assert.equal(pb.agenticStepsCount, 2);
+    assert.equal(pb.legacyStepsCount, 1);
+
+    const st = page.getState();
+    const commit = await page.commitPreparedPackage({
+      planId: st.selectedPlanId,
+      expectedVersion: st.version,
+      expectedTotalEur: st.selectedPlanSummary.metrics.totalMissionCostEur,
+    });
+    assert.equal(commit.ok, true);
+
+    // Verify real MoveCo & HomeConnect HTTP servers actually mutated MC-8841 & HC-5510!
+    const mcState = await (await fetch(`${eco.peers.moveco.origin()}/api/state`)).json();
+    const hcState = await (await fetch(`${eco.peers.homeconnect.origin()}/api/state`)).json();
+    assert.equal(mcState.state.bookings["MC-8841"].scheduled_date, "2026-11-20");
+    assert.ok(["2026-11-20", "2026-11-21"].includes(hcState.state.appointments["HC-5510"].scheduled_date));
+  } finally {
+    await eco.stopAll();
+  }
+});
+
+test("S16 All 4 peer websites ship @continuity/peer-firewall, @continuity/local-browser-router, #peer-local-ai-btn, and block Trojan partner loads", async () => {
+  const { existsSync } = await import("node:fs");
+  const { readFile } = await import("node:fs/promises");
+  const path = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+  const { SAMPLE_RUGPULL_PEER_BUNDLE } = await import("../../packages/peer-firewall/index.js");
+  const root = fileURLToPath(new URL("../../", import.meta.url));
+
+  for (const peer of ["demo-moveco", "demo-permitflow", "demo-homeconnect", "demo-powerflow"]) {
+    assert.equal(existsSync(path.join(root, "apps", peer, "vendor", "peer-firewall", "index.js")), true);
+    assert.equal(existsSync(path.join(root, "apps", peer, "vendor", "local-browser-router", "index.js")), true);
+    const html = await readFile(path.join(root, "apps", peer, "index.html"), "utf8");
+    const siteJs = await readFile(path.join(root, "apps", peer, "site.js"), "utf8");
+    assert.match(html, /id="peer-local-ai-btn"/);
+    assert.match(html, /poppy\.json/);
+    assert.match(siteJs, /inspectPeerNetworkSafety/);
+    assert.match(siteJs, /probeLocalInferenceBackends/);
+  }
+
+  // Also verify runtime firewall guard inside peer-ui-kit blocks Trojan Bidi partner networks
+  const { bindPeerZeroKeyControls } = await import("../../apps/demo-moveco/ui-kit.js");
+  const fakeEngine = {
+    top: { llm: {} },
+    trace: null,
+    resolveRemote: async () => ({
+      origin: SAMPLE_RUGPULL_PEER_BUNDLE.siteBaseUrl,
+      manifest: SAMPLE_RUGPULL_PEER_BUNDLE.manifestJson,
+      network: { name: "sunny_bakery", config: SAMPLE_RUGPULL_PEER_BUNDLE.networkJson },
+    }),
+    onConsent: async () => true,
+  };
+  globalThis.document = globalThis.document || { querySelector: () => null, querySelectorAll: () => [] };
+  bindPeerZeroKeyControls(fakeEngine, null, null);
+  await assert.rejects(() => fakeEngine.resolveRemote("https://sunny-bakery.example/sunny_bakery"), /blocked by pre-execution firewall/i);
+});
+
+test("S17 Exported Audit Bundle embeds Zero-Ceiling-Leak SHA-256 Hash-Ladder proof, redacts private maxBudgetEur, and catches 4-primitive tamper", async () => {
+  const { ContinuityCoordinatorPage } = await import("../../apps/continuity-web/script.js");
+  const { verifyExportedAuditBundle } = await import("../../packages/intake-compiler/index.js");
+
+  const page = new ContinuityCoordinatorPage();
+  const prep = await page.analyzeAndPrepareChange("Move relocation from Tuesday to Friday under €700.");
+  assert.equal(prep.ok, true);
+
+  const st = page.getState();
+  const commit = await page.commitPreparedPackage({
+    planId: st.selectedPlanId,
+    expectedVersion: st.version,
+    expectedTotalEur: st.selectedPlanSummary.metrics.totalMissionCostEur,
+  });
+  assert.equal(commit.ok, true);
+
+  const bundle = await page.buildCurrentAuditBundle();
+  assert.ok(bundle.zk_budget_attestation, "Audit bundle must attach zk_budget_attestation");
+  assert.equal(bundle.selected_plan.metrics.maxBudgetEur, undefined, "Private buyer ceiling must be redacted from exported bundle");
+  assert.equal(bundle.selected_plan.metrics.ceilingDisclosed, false);
+
+  const okReport = await verifyExportedAuditBundle(bundle);
+  assert.equal(okReport.valid, true);
+  assert.equal(okReport.zkBudgetAttestationPresent, true);
+  assert.equal(okReport.zkBudgetValid, true);
+
+  const tamperReport = await page.simulateBundleTamperAttack();
+  assert.equal(tamperReport.valid, false);
+  assert.equal(tamperReport.zkBudgetValid, false);
+  assert.ok(tamperReport.errors.some((e) => e.startsWith("ZK_BUDGET_LADDER_INVALID")));
+});
+
+test("S18 ADK-to-HOCON Converter reports numeric scrubbedSecretsCount and supports Issue #28 per-agent scoped toolbox emission", async () => {
+  const { convertAgentFrameworkToHoconBundle, SAMPLE_GOOGLE_ADK_CONFIG } = await import(
+    "../../packages/adk-hocon-converter/index.js"
+  );
+
+  const clean = await convertAgentFrameworkToHoconBundle(SAMPLE_GOOGLE_ADK_CONFIG);
+  assert.equal(clean.scrubbedSecretsCount, 0);
+
+  const scoped = await convertAgentFrameworkToHoconBundle(
+    {
+      ...JSON.parse(SAMPLE_GOOGLE_ADK_CONFIG),
+      instruction: "Never expose sk-live-secret1234567890abcdef in public prompts.",
+      sub_agents: [
+        {
+          ...JSON.parse(SAMPLE_GOOGLE_ADK_CONFIG).sub_agents[0],
+          site_actions: ["get_housing_state", "hold_faculty_room"],
+        },
+        {
+          ...JSON.parse(SAMPLE_GOOGLE_ADK_CONFIG).sub_agents[1],
+          site_actions: ["check_badge_lead_time"],
+        },
+      ],
+    },
+    { emitScopedToolboxes: true },
+  );
+  assert.equal(scoped.ok, true);
+  assert.equal(scoped.scrubbedSecretsCount, 1);
+  assert.deepEqual(scoped.manifestJson.actions.agentTools, [
+    "get_housing_state",
+    "hold_faculty_room",
+    "check_badge_lead_time",
+  ]);
+  assert.equal(scoped.toolboxScoping.ok, true);
+  assert.ok(scoped.toolboxScoping.metrics.savedCharsPerTurn > 0);
+});

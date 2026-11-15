@@ -267,6 +267,8 @@ fieldset.ns-w-row{min-width:0;margin:0;padding:0;border:0}
 .ns-settings-body button.ghost{background:transparent;color:var(--ns-muted,#666);border:1px solid var(--ns-border,#ccc)}
 .ns-profile-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .ns-key-help{padding:10px;border:1px solid color-mix(in srgb,var(--ns-primary,#2563eb) 30%,var(--ns-border,#ccc));border-radius:8px;background:color-mix(in srgb,var(--ns-primary,#2563eb) 6%,var(--ns-panelbg,#fff));display:flex;flex-direction:column;gap:6px}
+.ns-key-help #ns-openrouter-pkce{background:var(--ns-panelbg,#fff);color:var(--ns-fg,#111827);font-weight:600;border-color:color-mix(in srgb,var(--ns-primary,#2563eb) 40%,var(--ns-border,#ccc))}
+.ns-key-help .ns-hint{color:var(--ns-fg,#334155)}
 .ns-key-help[hidden]{display:none}
 .ns-key-help p{margin:0;line-height:1.45}
 .ns-key-help>a{color:var(--ns-primary,#2563eb);font-weight:600}
