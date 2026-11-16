@@ -17,17 +17,114 @@
  *    without credentials in URLs.
  */
 
-import { canonicalizeJson, isPlainObject, sanitizeJson, sha256Hex } from "../shared-schemas/index.js";
+import {
+  canonicalizeJson,
+  isPlainObject,
+  sanitizeJson,
+  sha256Hex,
+  timingSafeEqualString,
+} from "../shared-schemas/index.js";
 
 const ALLOWED_METHODS = new Set(["artifact", "gateway"]);
+const MAX_AUDIT_RESPONSE_BYTES = 524_288; // 512 KB bounded response guard
+const MAX_TRACKED_SUBJECTS = 2048;
+const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000;
+const LEAKED_KEY_RE =
+  /\b(?:sk-[a-zA-Z0-9_-]{16,}|otk_[a-zA-Z0-9_-]{12,}|AIza[0-9A-Za-z_-]{20,}|AQ\.[0-9A-Za-z._-]{20,}|gsk_[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{24,}|github_pat_[0-9A-Za-z_]{24,}|xoxb-[0-9A-Za-z-]{20,}|Bearer\s+[a-zA-Z0-9._-]{16,})\b/;
 
-async function safeFetchJsonObject(fetchImpl, url) {
-  const res = await fetchImpl(url, { headers: { Accept: "application/json" } });
+/**
+ * Validate that a URL uses HTTPS (or explicit loopback HTTP) and does NOT target cloud metadata,
+ * RFC 1918 / CGNAT / link-local private subnets, IPv6-mapped private IPs, or embed credentials.
+ *
+ * @param {string} rawUrl
+ * @param {{ allowLoopback?: boolean }} [options]
+ * @returns {{ safe: boolean, reason?: string, url?: URL }}
+ */
+export function isSafePublicOrLoopbackUrl(rawUrl, options = {}) {
+  const allowLoopback = options.allowLoopback !== false;
+  const trimmedRaw = String(rawUrl || "").trim();
+  // Reject obfuscated integer/hex/octal IP authorities before WHATWG URL normalizes them into 127.0.0.1!
+  if (/^https?:\/\/(?:0x[0-9a-f]+|0\d+|\d+)(?:[:/?#]|$)/i.test(trimmedRaw)) {
+    return { safe: false, reason: "Obfuscated numeric/hex IP literal rejected (SSRF guard)." };
+  }
+  let u;
+  try {
+    u = new URL(trimmedRaw);
+  } catch {
+    return { safe: false, reason: "Invalid URL syntax." };
+  }
+  if (u.username || u.password) {
+    return { safe: false, reason: "URL must not embed credentials." };
+  }
+  const host = u.hostname.toLowerCase();
+  const isLoopback = host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+  if (isLoopback) {
+    if (!allowLoopback) return { safe: false, reason: "Loopback URL disallowed in public-only mode." };
+    if (u.protocol !== "http:" && u.protocol !== "https:") {
+      return { safe: false, reason: "Unsupported protocol on loopback URL." };
+    }
+    return { safe: true, url: u };
+  }
+  if (u.protocol !== "https:") {
+    return { safe: false, reason: "Public non-loopback URL must use HTTPS." };
+  }
+  // Reject integer/hex IP literals (e.g. 2130706433, 0x7f000001) and 0.0.0.0
+  if (/^(?:0x[0-9a-f]+|\d+)$/i.test(host) || host === "0.0.0.0") {
+    return { safe: false, reason: `Disallowed numeric/unspecified host "${host}".` };
+  }
+  // Check IPv4 private / metadata / loopback / CGNAT ranges
+  const ipv4Match = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const [a, b] = [Number(ipv4Match[1]), Number(ipv4Match[2])];
+    if (
+      a === 0
+      || a === 10
+      || a === 127
+      || (a === 169 && b === 254)
+      || (a === 172 && b >= 16 && b <= 31)
+      || (a === 192 && b === 168)
+      || (a === 100 && b >= 64 && b <= 127)
+    ) {
+      return { safe: false, reason: `Private or cloud-metadata IPv4 "${host}" blocked (SSRF guard).` };
+    }
+  }
+  // Check IPv6 link-local, ULA,unspecified, or IPv6-mapped IPv4 (`[::ffff:...]`)
+  if (host.startsWith("[")) {
+    const v6 = host.slice(1, -1);
+    if (
+      v6 === "::"
+      || v6.startsWith("fe80:")
+      || v6.startsWith("fc")
+      || v6.startsWith("fd")
+      || v6.includes("::ffff:")
+    ) {
+      return { safe: false, reason: `Private or mapped IPv6 "${host}" blocked (SSRF guard).` };
+    }
+  }
+  return { safe: true, url: u };
+}
+
+async function safeFetchJsonObject(fetchImpl, url, { timeoutMs = 8000 } = {}) {
+  const urlCheck = isSafePublicOrLoopbackUrl(url);
+  if (!urlCheck.safe) {
+    return { ok: false, status: 0, reason: urlCheck.reason };
+  }
+  const signal = typeof AbortSignal?.timeout === "function" ? AbortSignal.timeout(timeoutMs) : undefined;
+  const res = await fetchImpl(url, { headers: { Accept: "application/json" }, ...(signal ? { signal } : {}) });
+  if (res.url) {
+    const redirCheck = isSafePublicOrLoopbackUrl(res.url);
+    if (!redirCheck.safe) {
+      return { ok: false, status: 0, reason: `Unsafe redirect blocked: ${redirCheck.reason}` };
+    }
+  }
   if (!res.ok) {
     return { ok: false, status: res.status, reason: `HTTP ${res.status}` };
   }
   const ct = String(res.headers?.get?.("content-type") || "").toLowerCase();
   const rawText = await res.text();
+  if (rawText.length > MAX_AUDIT_RESPONSE_BYTES) {
+    return { ok: false, status: res.status, reason: `Response exceeds ${MAX_AUDIT_RESPONSE_BYTES} byte limit.` };
+  }
   const trimmed = rawText.trimStart();
   if (ct.includes("text/html") || trimmed.startsWith("<!doctype") || trimmed.startsWith("<html") || trimmed.startsWith("<")) {
     return {
@@ -38,7 +135,7 @@ async function safeFetchJsonObject(fetchImpl, url) {
     };
   }
   try {
-    return { ok: true, status: res.status, rawText, json: sanitizeJson(JSON.parse(rawText)) };
+    return { ok: true, status: res.status, rawText, json: sanitizeJson(JSON.parse(rawText), MAX_AUDIT_RESPONSE_BYTES) };
   } catch (err) {
     return { ok: false, status: res.status, reason: `Invalid JSON: ${err.message}` };
   }
@@ -66,7 +163,15 @@ export function validateAirUrn(urn) {
   const domain = parts[2];
   const shortName = parts[parts.length - 1];
   const namespace = parts.slice(3, -1).join(":");
-  if (!domain || !/^[a-z0-9.-]+$/i.test(domain) || domain.startsWith(".") || domain.endsWith(".")) {
+  if (
+    !domain
+    || domain.length > 253
+    || !/^[a-z0-9.-]+$/i.test(domain)
+    || domain.startsWith(".")
+    || domain.endsWith(".")
+    || domain.includes("..")
+    || domain.split(".").some((lbl) => !lbl || lbl.length > 63 || lbl.startsWith("-") || lbl.endsWith("-"))
+  ) {
     return { valid: false, reason: `Invalid publisher FQDN "${domain}" in AIR URN.` };
   }
   if (!namespace || !/^[a-z0-9:._-]+$/i.test(namespace)) {
@@ -164,6 +269,7 @@ export function validateNandaAiCatalog(catalog) {
     return { valid: false, errors };
   }
 
+  const seenUrns = new Set();
   catalog.entries.forEach((entry, idx) => {
     if (!isPlainObject(entry)) {
       errors.push(`entries[${idx}] must be an object.`);
@@ -172,6 +278,13 @@ export function validateNandaAiCatalog(catalog) {
     const urnCheck = validateAirUrn(entry.identifier);
     if (!urnCheck.valid) {
       errors.push(`entries[${idx}].identifier invalid: ${urnCheck.reason}`);
+    } else if (seenUrns.has(entry.identifier)) {
+      errors.push(`entries[${idx}].identifier "${entry.identifier}" is duplicated in catalog.`);
+    } else {
+      seenUrns.add(entry.identifier);
+    }
+    if (entry.targetDigest !== undefined && !/^sha256:[0-9a-f]{64}$/i.test(String(entry.targetDigest))) {
+      errors.push(`entries[${idx}].targetDigest must match "sha256:<64-hex>".`);
     }
     if (typeof entry.displayName !== "string" || !entry.displayName.trim()) {
       errors.push(`entries[${idx}].displayName is required.`);
@@ -349,6 +462,7 @@ export function validateA2aAgentCard(card) {
   if (!Array.isArray(card.skills)) {
     errors.push("skills must be an array.");
   } else {
+    const seenSkills = new Set();
     card.skills.forEach((skill, idx) => {
       if (!isPlainObject(skill)) {
         errors.push(`skills[${idx}] must be an object.`);
@@ -358,6 +472,12 @@ export function validateA2aAgentCard(card) {
         if (typeof skill[req] !== "string" || !skill[req].trim()) {
           errors.push(`skills[${idx}].${req} must be a nonempty string.`);
         }
+      }
+      if (typeof skill.id === "string" && skill.id.trim()) {
+        if (seenSkills.has(skill.id)) {
+          errors.push(`skills[${idx}].id "${skill.id}" is duplicated.`);
+        }
+        seenSkills.add(skill.id);
       }
       if (!Array.isArray(skill.tags) || skill.tags.some((t) => typeof t !== "string" || !t.trim())) {
         errors.push(`skills[${idx}].tags must be an array of nonempty strings.`);
@@ -425,15 +545,9 @@ export class AuthorityBoundResolver {
       };
     }
 
-    let parsedUrl;
-    try {
-      parsedUrl = new URL(clean.targetUrl);
-    } catch {
-      return { ok: false, code: "malformed-response", reason: "Invalid targetUrl." };
-    }
-    const isLoopback = ["127.0.0.1", "localhost", "[::1]"].includes(parsedUrl.hostname);
-    if (parsedUrl.protocol !== "https:" && !(parsedUrl.protocol === "http:" && isLoopback)) {
-      return { ok: false, code: "policy-rejected", reason: "Public targetUrl requires HTTPS." };
+    const urlSafety = isSafePublicOrLoopbackUrl(clean.targetUrl);
+    if (!urlSafety.safe) {
+      return { ok: false, code: "policy-rejected", reason: `Unsafe targetUrl: ${urlSafety.reason}` };
     }
 
     if (!Number.isInteger(clean.sequence) || clean.sequence < 0) {
@@ -444,6 +558,9 @@ export class AuthorityBoundResolver {
     const expiresMs = Date.parse(clean.expiresAt);
     if (!Number.isFinite(issuedMs) || !Number.isFinite(expiresMs) || expiresMs <= issuedMs) {
       return { ok: false, code: "malformed-response", reason: "Invalid issuedAt/expiresAt bounds." };
+    }
+    if (issuedMs > nowMs + MAX_FUTURE_SKEW_MS) {
+      return { ok: false, code: "malformed-response", reason: "issuedAt exceeds maximum allowed future clock skew." };
     }
     if (nowMs >= expiresMs) {
       return { ok: false, code: "stale", reason: `Binding expired at ${clean.expiresAt}.` };
@@ -460,6 +577,12 @@ export class AuthorityBoundResolver {
         code: "unverifiable",
         reason: "Missing subject-specific Authority Evidence (registry provenance alone is insufficient).",
       };
+    }
+    if (auth.evidenceUrl !== undefined) {
+      const evCheck = isSafePublicOrLoopbackUrl(auth.evidenceUrl);
+      if (!evCheck.safe) {
+        return { ok: false, code: "policy-rejected", reason: `Unsafe authority.evidenceUrl: ${evCheck.reason}` };
+      }
     }
 
     // Enforce email vs DNS zone rule (§4.5 & §7.2): DNS zone control does NOT authorize individual email accounts
@@ -483,7 +606,7 @@ export class AuthorityBoundResolver {
 
     if (clean.targetDigest && options.fetchedArtifact !== undefined) {
       const computed = `sha256:${await sha256Hex(canonicalizeJson(options.fetchedArtifact))}`;
-      if (computed !== clean.targetDigest) {
+      if (!timingSafeEqualString(computed.toLowerCase(), String(clean.targetDigest).toLowerCase())) {
         return {
           ok: false,
           code: "unverifiable",
@@ -492,6 +615,10 @@ export class AuthorityBoundResolver {
       }
     }
 
+    if (this.observedSequences.size >= MAX_TRACKED_SUBJECTS && !this.observedSequences.has(scopeKey)) {
+      const oldest = this.observedSequences.keys().next().value;
+      this.observedSequences.delete(oldest);
+    }
     this.observedSequences.set(scopeKey, clean.sequence);
     return {
       ok: true,
@@ -522,32 +649,30 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
   let manifestDigest = null;
   let networkDigest = null;
 
-  try {
-    const parsedBase = new URL(base);
-    const isHttpsOrLoopback =
-      parsedBase.protocol === "https:"
-      || (parsedBase.protocol === "http:" && ["127.0.0.1", "localhost"].includes(parsedBase.hostname));
-    checks.push({
-      id: "MVP-HTTPS",
-      check: "Transport Security (HTTPS or Loopback)",
-      status: isHttpsOrLoopback ? "PASS" : "FAIL",
-      detail: isHttpsOrLoopback ? `Valid origin ${parsedBase.origin}` : `Insecure non-loopback HTTP ${base}`,
-    });
-  } catch {
+  let parsedBase;
+  const baseSafety = isSafePublicOrLoopbackUrl(base);
+  if (!baseSafety.safe) {
     return {
       ok: false,
       siteBaseUrl: base,
-      score: "0 / 7",
-      checks: [{ id: "MVP-URL", check: "Valid Site URL", status: "FAIL", detail: `Invalid URL "${siteBaseUrl}"` }],
+      score: "0 / 9",
+      checks: [{ id: "MVP-HTTPS", check: "Transport Security & SSRF Guard", status: "FAIL", detail: baseSafety.reason }],
     };
   }
+  parsedBase = baseSafety.url;
+  checks.push({
+    id: "MVP-HTTPS",
+    check: "Transport Security (HTTPS or Loopback)",
+    status: "PASS",
+    detail: `Valid origin ${parsedBase.origin}`,
+  });
 
   // 1. Fetch & validate agent-manifest.json
   try {
     const mUrl = new URL("agent-manifest.json", base).href;
-    const res = await fetchImpl(mUrl, { headers: { Accept: "application/json" } });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    manifest = sanitizeJson(await res.json());
+    const mFetch = await safeFetchJsonObject(fetchImpl, mUrl);
+    if (!mFetch.ok) throw new Error(mFetch.reason);
+    manifest = mFetch.json;
     manifestDigest = `sha256:${(await sha256Hex(canonicalizeJson(manifest))).slice(0, 16)}`;
     const firstNet = Array.isArray(manifest.networks) ? manifest.networks[0] : null;
     const validManifest = Boolean(firstNet?.name && firstNet?.front_man && firstNet?.hocon);
@@ -560,19 +685,22 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
         : "Missing networks[0].name, front_man, or hocon path.",
     });
 
-    // 2. Fetch & validate resolved .network.json
+    // 2. Fetch & validate resolved .network.json (must stay on same origin!)
     if (validManifest) {
-      const nUrl = new URL(firstNet.hocon, base).href;
-      const nRes = await fetchImpl(nUrl, { headers: { Accept: "application/json" } });
-      if (!nRes.ok) throw new Error(`Network fetch HTTP ${nRes.status}`);
-      const rawNetText = await nRes.text();
-      networkJson = sanitizeJson(JSON.parse(rawNetText));
+      const nUrlObj = new URL(firstNet.hocon, base);
+      if (nUrlObj.origin !== parsedBase.origin) {
+        throw new Error(`Cross-origin network hocon path "${firstNet.hocon}" rejected.`);
+      }
+      const nFetch = await safeFetchJsonObject(fetchImpl, nUrlObj.href);
+      if (!nFetch.ok) throw new Error(`Network fetch ${nFetch.reason}`);
+      const rawNetText = nFetch.rawText;
+      networkJson = nFetch.json;
       networkDigest = `sha256:${(await sha256Hex(canonicalizeJson(networkJson))).slice(0, 16)}`;
 
       const toolsArr = Array.isArray(networkJson.tools) ? networkJson.tools : [];
       const hasFrontMan = toolsArr.some((t) => t?.name === firstNet.front_man);
       const hasUnresolvedInclude = /\binclude\s+["']/.test(rawNetText);
-      const hasLeakedKey = /\bsk-[a-zA-Z0-9]{16,}|\bBearer\s+[a-zA-Z0-9._-]{16,}/.test(rawNetText);
+      const hasLeakedKey = LEAKED_KEY_RE.test(rawNetText);
 
       checks.push({
         id: "MVP-NETWORK",
@@ -621,10 +749,15 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
     });
   }
 
-  // 5. Action Bridge Check
+  // 5. Action Bridge Check (same-origin enforced)
   try {
     const bridgeRel = manifest?.actions?.bridge || "./bridge/action-bridge.html";
-    const bRes = await fetchImpl(new URL(bridgeRel, base).href);
+    const bUrlObj = new URL(bridgeRel, base);
+    if (bUrlObj.origin !== parsedBase.origin) {
+      throw new Error(`Cross-origin bridge "${bridgeRel}" rejected.`);
+    }
+    const signal = typeof AbortSignal?.timeout === "function" ? AbortSignal.timeout(8000) : undefined;
+    const bRes = await fetchImpl(bUrlObj.href, signal ? { signal } : undefined);
     checks.push({
       id: "MVP-BRIDGE",
       check: "Isolated Cross-Site Action Bridge Frame",
@@ -714,9 +847,14 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
     if (fManFetch.ok) {
       const fManifest = fManFetch.json;
       const fNetEntry = fManifest?.networks?.[0];
-      const fNetFetch = fNetEntry?.hocon
-        ? await safeFetchJsonObject(fetchImpl, new URL(fNetEntry.hocon, new URL("facts/", base).href).href)
-        : null;
+      let fNetFetch = null;
+      if (fNetEntry?.hocon) {
+        const fUrlObj = new URL(fNetEntry.hocon, new URL("facts/", base).href);
+        fNetFetch =
+          fUrlObj.origin === parsedBase.origin
+            ? await safeFetchJsonObject(fetchImpl, fUrlObj.href)
+            : { ok: false, reason: "Cross-origin facts hocon rejected." };
+      }
       if (fNetFetch?.ok) {
         const fNet = fNetFetch.json;
         const fAgent = fNet?.tools?.[0];
@@ -824,11 +962,11 @@ export function validatePoppyReachDeclaration(poppyJson) {
     if (
       !Array.isArray(item.message_topics)
       || item.message_topics.length === 0
-      || item.message_topics.some((t) => typeof t !== "string" || !t.trim())
+      || item.message_topics.some((t) => typeof t !== "string" || !/^[a-z0-9_.:-]{2,64}$/i.test(t.trim()))
     ) {
-      errors.push(`reach[${idx}].message_topics must be a nonempty string array.`);
+      errors.push(`reach[${idx}].message_topics must be a nonempty array of valid topic identifiers.`);
     }
-    if (typeof item.sender !== "string" || !item.sender.includes("@")) {
+    if (typeof item.sender !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item.sender.trim())) {
       errors.push(`reach[${idx}].sender must be a recognizable sender address.`);
     }
   });
@@ -984,6 +1122,17 @@ export async function resolveAndRouteNandaReach({
   }
 
   const targetAgent = card.agents.find((a) => a.id === matchedRule.deliver_to);
+  if (targetAgent?.inbox && /^https?:\/\//i.test(String(targetAgent.inbox.address || ""))) {
+    const inboxCheck = isSafePublicOrLoopbackUrl(targetAgent.inbox.address);
+    if (!inboxCheck.safe) {
+      return {
+        ok: false,
+        delivered: false,
+        code: "unsafe-inbox-url",
+        reason: `Blocked unsafe inbox URL on resolved NANDA Reach card: ${inboxCheck.reason}`,
+      };
+    }
+  }
   return {
     ok: true,
     delivered: true,

@@ -30,10 +30,6 @@ import {
 } from "./vendor/constraint-solver/index.js";
 import { ReceiptVerifier } from "./vendor/proof-verifier/index.js";
 import { SagaCoordinator } from "./vendor/saga-engine/index.js";
-import {
-  createSimulatedProviderHarness,
-  runAllChaosScenarios,
-} from "./vendor/chaos-lab/index.js";
 import { CrossOriginBridgeClient } from "./vendor/cross-origin-bridge/index.js";
 import {
   buildScenarioPeerHarness,
@@ -196,7 +192,9 @@ export class ContinuityCoordinatorPage {
       return this.crossOriginBridge.buildSagaHarness();
     }
     if (!this.providerHarnessPromise) {
-      this.providerHarnessPromise = createSimulatedProviderHarness();
+      this.providerHarnessPromise = import("./vendor/chaos-lab/index.js").then((m) =>
+        m.createSimulatedProviderHarness(),
+      );
     }
     return this.providerHarnessPromise;
   }
@@ -874,6 +872,7 @@ export class ContinuityCoordinatorPage {
       missionId: this.mission.mission_id,
       plan: chosen,
       maximumBudgetEur: this.compiledProposal.invariants.maximum_budget_eur,
+      mandateSha256: this.activeMandate?.mandate_sha256 || undefined,
       providerClients: clients,
     });
 
@@ -1119,6 +1118,7 @@ export class ContinuityCoordinatorPage {
   }
 
   async executeChaosSuite() {
+    const { runAllChaosScenarios } = await import("./vendor/chaos-lab/index.js");
     this.chaosReport = await runAllChaosScenarios();
     this.renderChaosTable();
     return this.chaosReport;
@@ -1447,9 +1447,19 @@ export class ContinuityCoordinatorPage {
     const initialProbe = this.probeLivePeerOrigins();
     this.render();
 
+    try {
+      const savedTheme = typeof window !== "undefined" ? window.sessionStorage?.getItem("nsweb-continuity-theme") : null;
+      if (savedTheme === "dark" || savedTheme === "light") {
+        document.documentElement.setAttribute("data-theme", savedTheme);
+      }
+    } catch {}
     document.querySelector("#theme-toggle-btn")?.addEventListener("click", () => {
       const root = document.documentElement;
-      root.setAttribute("data-theme", root.getAttribute("data-theme") === "light" ? "dark" : "light");
+      const next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+      root.setAttribute("data-theme", next);
+      try {
+        window.sessionStorage?.setItem("nsweb-continuity-theme", next);
+      } catch {}
     });
 
     document.querySelector("#inject-ripple-btn")?.addEventListener("click", () => {

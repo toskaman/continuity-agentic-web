@@ -356,3 +356,24 @@ if (new URLSearchParams(location.search).get("demo") === "1") {
 }
 
 chrome();
+
+// Global keyboard shortcuts: Escape dismisses completion toast; "/" focuses #mission-input when idle.
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape" && !document.querySelector("dialog[open]")) {
+    const toast = document.querySelector("#outcome-panel");
+    if (toast) {
+      toast.remove();
+      ev.preventDefault();
+    }
+    return;
+  }
+  if (ev.key === "/" && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+    const tag = document.activeElement?.tagName?.toLowerCase() || "";
+    if (["input", "textarea", "select"].includes(tag) || document.activeElement?.isContentEditable) return;
+    const input = document.querySelector("#mission-input");
+    if (input) {
+      ev.preventDefault();
+      input.focus();
+    }
+  }
+});

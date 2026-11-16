@@ -54,8 +54,8 @@
   <text x="482" y="613" fill="#cbd5e1" font-size="12" font-family="Inter, Segoe UI, sans-serif">UNKNOWN reconciler &amp; Ed25519 receipt verification.</text>
 
   <rect x="95" y="645" width="720" height="72" rx="8" fill="#1b263b" stroke="#f59e0b"/>
-  <text x="115" y="673" fill="#fbbf24" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/nanda-resolver + @continuity/peer-firewall + @continuity/chaos-lab (30 Scenarios)</text>
-  <text x="115" y="697" fill="#cbd5e1" font-size="12.5" font-family="Inter, Segoe UI, sans-serif">9/9 Spec + NANDA Reach Poppy v1 · Pre-Execution Firewall &amp; ZK Hash-Ladder · 30/30 Chaos recoveries.</text>
+  <text x="115" y="673" fill="#fbbf24" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/nanda-resolver + @continuity/peer-firewall + @continuity/chaos-lab (36 Scenarios)</text>
+  <text x="115" y="697" fill="#cbd5e1" font-size="12.5" font-family="Inter, Segoe UI, sans-serif">9/9 Spec + NANDA Reach Poppy v1 · Pre-Execution Firewall &amp; ZK Hash-Ladder · 36/36 Chaos recoveries.</text>
 
   <!-- Right Column: Otari Router -->
   <rect x="935" y="115" width="420" height="145" rx="14" fill="#1e1b4b" stroke="#818cf8" stroke-width="2"/>

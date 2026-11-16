@@ -7,6 +7,7 @@
   <meta name="theme-color" content="#0B1220">
   <title>CONTINUITY — One change. Every commitment re-aligned.</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://gpaschercher-sudo.github.io" crossorigin>
   <link rel="preload" href="assets/fonts/inter-var-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="script.js"></script>
@@ -152,7 +153,7 @@
             <p class="proof-big">2 decisions <small>one request, one approval</small></p>
             <ul class="proof-facts">
               <li><strong>4</strong> providers asked, <strong>2</strong> never contacted</li>
-              <li><strong>0</strong> cancel calls in 120 benchmark runs</li>
+              <li><strong>0</strong> cancel calls in 150 benchmark runs</li>
               <li><strong>3 / 3</strong> commits return a verified signed receipt</li>
             </ul>
             <a class="badge badge-ok" href="https://github.com/toskaman/continuity-agentic-web/blob/main/docs/benchmarks/BEFORE_AFTER.md" target="_blank" rel="noopener">Measured · see the benchmark ↗</a>
@@ -459,7 +460,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
         <div class="trust-tiles reveal">
           <button type="button" class="trust-tile" data-open-tab="tab-btn-timeline"><span class="tt-icon" aria-hidden="true">⛓</span><strong>Hash-chained log</strong><span>Tamper-evident history of every step</span></button>
           <button type="button" class="trust-tile" data-open-tab="tab-btn-privacy"><span class="tt-icon" aria-hidden="true">◎</span><strong>Data minimization</strong><span>Exactly what each provider received</span></button>
-          <button type="button" class="trust-tile" data-open-tab="tab-btn-chaos"><span class="tt-icon" aria-hidden="true">⚡</span><strong>Chaos Lab</strong><span>30 failure scenarios, run in your browser</span></button>
+          <button type="button" class="trust-tile" data-open-tab="tab-btn-chaos"><span class="tt-icon" aria-hidden="true">⚡</span><strong>Chaos Lab</strong><span>36 failure scenarios, run in your browser</span></button>
           <button type="button" class="trust-tile" data-open-tab="tab-btn-auditor"><span class="tt-icon" aria-hidden="true">✓</span><strong>Spec &amp; NANDA audit</strong><span>Live checks of all 5 sites</span></button>
         </div>
 
@@ -540,9 +541,9 @@ Do not cancel anything or approve additional fees without my confirmation.</text
             <div class="chaos-header">
               <div>
                 <strong>Chaos Lab — isolated simulation sandbox</strong>
-                <p class="panel-sub">Thirty distributed failures, injected on purpose: timeouts after commit, price drift after approval, forged and cross-origin spoofed receipts, BroadcastChannel sub-origin forgeries, Unicode Trojan peer instructions, TOFU rug-pulls, NANDA Reach 410 card migrations, hash-ladder overspend forgeries, sub-agent toolbox escalations, chained multi-wave replans, and post-export bundle tampering. Your live mission is never touched.</p>
+                <p class="panel-sub">Thirty-six distributed failures, injected on purpose: timeouts after commit, price drift after approval, forged and cross-origin spoofed receipts, BroadcastChannel sub-origin forgeries, SSRF &amp; cross-origin manifest escapes, Unicode Tag &amp; Markdown beacon exfiltrations, TOFU rug-pulls, NANDA Reach 410 card migrations, hash-ladder overspend &amp; cross-mission replays, Ed25519 key revocations, partial hold rollbacks, and post-export bundle tampering. Your live mission is never touched.</p>
               </div>
-              <button id="run-chaos-suite-btn" type="button" class="cta-btn">Run all 30 scenarios</button>
+              <button id="run-chaos-suite-btn" type="button" class="cta-btn">Run all 36 scenarios</button>
             </div>
             <div id="chaos-summary" class="chaos-summary" role="status">Run the suite to verify every reliability rule in your browser.</div>
             <div class="table-wrap">

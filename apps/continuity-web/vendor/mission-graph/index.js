@@ -9,9 +9,9 @@
  * Enforces bounded graph depth and cycle detection.
  */
 
-import { sanitizeJson } from "../shared-schemas/index.js";
+import { deepFreezeJson, sanitizeJson } from "../shared-schemas/index.js";
 
-export const GRAPH_VISUAL_STATES = Object.freeze({
+export const GRAPH_VISUAL_STATES = deepFreezeJson({
   UNCHANGED: { code: "UNCHANGED", label: "Unchanged (Preserved)", badge: "PRESERVED", icon: "●" },
   AFFECTED: { code: "AFFECTED", label: "Affected by Change", badge: "AFFECTED", icon: "◆" },
   EVALUATING: { code: "EVALUATING", label: "Under Evaluation", badge: "EVALUATING", icon: "◌" },
@@ -102,6 +102,9 @@ export class MissionGraph {
     if (!Object.values(EDGE_TYPES).includes(clean.type)) {
       throw new Error(`Unsupported edge type "${clean.type}".`);
     }
+    if (this.edges.some((e) => e.from === clean.from && e.to === clean.to && e.type === clean.type)) {
+      return this;
+    }
 
     // Check cycle before inserting
     this.edges.push(clean);
@@ -175,6 +178,43 @@ export class MissionGraph {
     return this.edges.filter((e) => e.from === nodeId);
   }
 
+  incomingEdges(nodeId) {
+    return this.edges.filter((e) => e.to === nodeId);
+  }
+
+  topologicalOrder() {
+    const ids = Array.from(this.nodes.keys());
+    const indeg = new Map(ids.map((id) => [id, 0]));
+    const adj = new Map(ids.map((id) => [id, []]));
+    for (const e of this.edges) {
+      if (e.type === EDGE_TYPES.ALTERNATIVE_PROVIDER || e.type === EDGE_TYPES.COMPENSATION_LINK) continue;
+      if (adj.has(e.from) && indeg.has(e.to)) {
+        adj.get(e.from).push(e.to);
+        indeg.set(e.to, indeg.get(e.to) + 1);
+      }
+    }
+    const queue = ids.filter((id) => indeg.get(id) === 0).sort();
+    const order = [];
+    while (queue.length > 0) {
+      const u = queue.shift();
+      order.push(u);
+      for (const v of (adj.get(u) || []).slice().sort()) {
+        indeg.set(v, indeg.get(v) - 1);
+        if (indeg.get(v) === 0) queue.push(v);
+      }
+    }
+    return order.length === ids.length ? order : ids;
+  }
+
+  clone() {
+    const copy = new MissionGraph({ missionId: this.missionId });
+    for (const [id, n] of this.nodes.entries()) {
+      copy.nodes.set(id, sanitizeJson(n));
+    }
+    copy.edges = this.edges.map((e) => sanitizeJson(e));
+    return copy;
+  }
+
   /**
    * Update a node's state immutably in the map.
    * @param {string} nodeId
@@ -184,6 +224,9 @@ export class MissionGraph {
     const existing = this.nodes.get(nodeId);
     if (!existing) {
       throw new Error(`Node "${nodeId}" not found.`);
+    }
+    if (patch.visual_state !== undefined && !Object.hasOwn(GRAPH_VISUAL_STATES, patch.visual_state)) {
+      throw new Error(`Invalid visual_state "${patch.visual_state}".`);
     }
     const updated = sanitizeJson({ ...existing, ...patch });
     this.nodes.set(nodeId, updated);

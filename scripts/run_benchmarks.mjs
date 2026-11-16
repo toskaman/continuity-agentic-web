@@ -472,11 +472,11 @@ try {
     await runSingleLiveTrial(false);
     await runSingleLiveTrial(true);
   }
-  for (let i = 0; i < SAMPLES; i++) {
+  for (let i = 0; i < 35; i++) {
     normalRuns.push(await runSingleLiveTrial(false));
     rippleRuns.push(await runSingleLiveTrial(true));
   }
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 25; i++) {
     surgeryRuns.push(
       await runMultiDomainScenarioTrial(
         "outpatient_surgery",
@@ -489,6 +489,8 @@ try {
         "Move expo freight arrival from Tuesday to Friday under €2600.",
       ),
     );
+  }
+  for (let i = 0; i < 30; i++) {
     hybridIcsRuns.push(await runHybridColdStartIcsTrial());
   }
 
@@ -533,7 +535,7 @@ try {
 
 **Date measured:** ${benchmarkData.measuredAtIso}
 **Hardware / runtime:** Node.js \`${benchmarkData.environment.nodeVersion}\` on \`${benchmarkData.environment.platform}\` (${benchmarkData.environment.cpuModel.trim()}, ${benchmarkData.environment.cpuCores} logical cores)
-**Sample size:** \`N = ${totalMeasuredSagas}\` measured end-to-end sagas (\`30\` Normal Relocation + \`30\` Ripple Failure Recovery over 5 live HTTP origins, plus \`20\` Outpatient Surgery + \`20\` International Expo Freight + \`20\` Hybrid Cold-Start \`.ics\` Agentic+Legacy runs, after \`${WARMUP}\` excluded JIT warm-up runs).
+**Sample size:** \`N = ${totalMeasuredSagas}\` measured end-to-end sagas (\`35\` Normal Relocation + \`35\` Ripple Failure Recovery over 5 live HTTP origins, plus \`25\` Outpatient Surgery + \`25\` International Expo Freight + \`30\` Hybrid Cold-Start \`.ics\` Agentic+Legacy runs, after \`${WARMUP}\` excluded JIT warm-up runs).
 **Raw data:** [\`docs/benchmarks/benchmark_results.json\`](./benchmark_results.json) · **Reproduce:** \`node scripts/run_benchmarks.mjs\`
 
 Every number in sections 1, 2, and 3 is computed by the script in this run, except the action-count row explicitly labeled **Estimate (task model)**.
@@ -572,7 +574,7 @@ ${[
 
 ---
 
-## 3. Multi-domain & Cold-Start Hybrid \`.ics\` generality (\`N = 20\` sagas per domain)
+## 3. Multi-domain & Cold-Start Hybrid \`.ics\` generality (\`N = 25..30\` sagas per domain)
 
 | Scenario | Commitments | Changed / Preserved | Baseline → Committed Total | Verified Ed25519 Receipts | Median Full Saga (ms) | Completion |
 | --- | --- | --- | --- | --- | --- | --- |

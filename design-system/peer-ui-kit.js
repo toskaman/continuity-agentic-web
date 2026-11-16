@@ -464,6 +464,17 @@ export function bindPeerZeroKeyControls(engine, statusEl, greetFn) {
   document.querySelector("#peer-local-ai-btn")?.addEventListener("click", () => {
     void activateLocalAi();
   });
+  document.addEventListener?.("keydown", (ev) => {
+    if (ev.key === "/" && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+      const tag = document.activeElement?.tagName?.toLowerCase() || "";
+      if (["input", "textarea", "select"].includes(tag) || document.activeElement?.isContentEditable) return;
+      const input = document.querySelector("#ns-input");
+      if (input) {
+        ev.preventDefault();
+        input.focus();
+      }
+    }
+  });
   document.querySelectorAll(".peer-prompt-chip").forEach((chip) => {
     chip.addEventListener("click", () => {
       const promptText = chip.getAttribute("data-prompt") || "";

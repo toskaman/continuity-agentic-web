@@ -114,7 +114,12 @@ export function renderMissionGraphSvg(page) {
     );
   }
 
+  const prevFocusedNodeId =
+    document.activeElement?.closest?.("#mission-graph-svg .graph-node-group")?.getAttribute("data-node-id") || null;
   svg.innerHTML = parts.join("\n");
+  if (prevFocusedNodeId) {
+    svg.querySelector(`[data-node-id="${prevFocusedNodeId}"]`)?.focus({ preventScroll: true });
+  }
   const groups = Array.from(svg.querySelectorAll(".graph-node-group"));
   groups.forEach((el, idx) => {
     const nid = el.getAttribute("data-node-id");

@@ -12,6 +12,7 @@
 
 import { diffDaysIso } from "../mission-core/index.js";
 import { EDGE_TYPES } from "../mission-graph/index.js";
+import { deepFreezeJson, isValidIsoDate } from "../shared-schemas/index.js";
 
 /**
  * Evaluate whether a dependent node (`targetNode`) is violated or requires re-alignment
@@ -23,6 +24,9 @@ import { EDGE_TYPES } from "../mission-graph/index.js";
  * @returns {{ affected: boolean, hardViolation: boolean, reason: string }}
  */
 export function evaluateEdgeImpact(edge, proposedSourceDate, targetNode) {
+  if (!isValidIsoDate(proposedSourceDate)) {
+    throw new Error(`Invalid proposedSourceDate "${proposedSourceDate}" in evaluateEdgeImpact.`);
+  }
   const targetDate = targetNode.scheduled_date;
 
   if (edge.type === EDGE_TYPES.SAME_DAY_REQUIRED) {
@@ -76,11 +80,20 @@ export function evaluateEdgeImpact(edge, proposedSourceDate, targetNode) {
 
   if (edge.type === EDGE_TYPES.ON_OR_BEFORE) {
     const offset = diffDaysIso(proposedSourceDate, targetDate); // target - source (>=0 means source is ON_OR_BEFORE target!)
-    if (offset < 0) {
+    const minOffset = edge.rule?.minOffsetDays ?? 0;
+    const maxOffset = edge.rule?.maxOffsetDays ?? 365;
+    if (offset < minOffset) {
       return {
         affected: true,
         hardViolation: true,
-        reason: `Prerequisite ${edge.from} (${proposedSourceDate}) occurs AFTER dependent ${targetNode.title} (${targetDate}).`,
+        reason: `Prerequisite ${edge.from} (${proposedSourceDate}) violates ${minOffset}-day lead before ${targetNode.title} (${targetDate}).`,
+      };
+    }
+    if (offset > maxOffset) {
+      return {
+        affected: true,
+        hardViolation: false,
+        reason: `Prerequisite (${proposedSourceDate}) exceeds preferred ${maxOffset}-day window before ${targetNode.title} (${targetDate}).`,
       };
     }
     return {
@@ -191,19 +204,17 @@ export function analyzeMissionImpact(graph, compiledProposal) {
       const prevDecision = decisions.get(depNode.id);
 
       if (evalResult.affected) {
-        const nextStatus =
-          evalResult.hardViolation || prevDecision?.status === "AFFECTED_HARD"
-            ? "AFFECTED_HARD"
-            : "AFFECTED_SOFT";
-        const combinedReasons = [...(prevDecision?.reasons || []), evalResult.reason];
+        const wasHard = prevDecision?.status === "AFFECTED_HARD";
+        const nextStatus = evalResult.hardViolation || wasHard ? "AFFECTED_HARD" : "AFFECTED_SOFT";
+        const combinedReasons = Array.from(new Set([...(prevDecision?.reasons || []), evalResult.reason]));
         decisions.set(depNode.id, {
           status: nextStatus,
           reasons: combinedReasons,
           projectedDate,
         });
 
-        // Only propagate hard date shifts downstream; a soft candidate may keep its original schedule
-        if (evalResult.hardViolation && !visitedInQueue.has(depNode.id)) {
+        // Propagate hard date shifts downstream (including diamond-DAG upgrades from SOFT -> HARD!)
+        if (evalResult.hardViolation && (!visitedInQueue.has(depNode.id) || !wasHard)) {
           visitedInQueue.add(depNode.id);
           queue.push({ nodeId: depNode.id, projectedDate, depth: depth + 1 });
         }
@@ -281,13 +292,15 @@ export function analyzeMissionImpact(graph, compiledProposal) {
     providersToContact,
     providersSkipped,
     nodeDecisions,
-    metrics: {
+    metrics: deepFreezeJson({
       totalNodes: graph.nodes.size,
       nodesExamined,
       edgesEvaluated,
       providersContactedCount: providersToContact.length,
       unnecessaryOperationsAvoided: unaffectedIds.length,
+      blastRadiusRatio:
+        graph.nodes.size > 0 ? Number((hardAffectedIds.length / graph.nodes.size).toFixed(3)) : 0,
       computationDurationMs,
-    },
+    }),
   };
 }

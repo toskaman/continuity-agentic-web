@@ -35,7 +35,9 @@ function isLiveAgenticCommitment(commitment) {
 }
 
 function buildMailtoHref(subject, body) {
-  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const cleanSubj = String(subject || "").replace(/[\r\n]+/g, " ").trim();
+  const cleanBody = String(body || "").replace(/\r\n/g, "\n");
+  return `mailto:?subject=${encodeURIComponent(cleanSubj)}&body=${encodeURIComponent(cleanBody)}`;
 }
 
 /**
@@ -54,11 +56,25 @@ export function buildHybridTransitionPlaybook({ mission, plan, preparedOps = [] 
   const commitmentsById = new Map((mission.commitments || []).map((c) => [c.id, c]));
   const opsByCommitmentId = new Map((preparedOps || []).map((op) => [op.commitment_id, op]));
 
-  // Order operations: anchor commitment first, then non-reversible hard bookings, then reversible drafts
+  // Compute topological depth from mission.dependencies when present so A -> B -> C orders cleanly
+  const topoDepth = new Map((mission.commitments || []).map((c) => [c.id, 0]));
+  if (Array.isArray(mission.dependencies)) {
+    for (let pass = 0; pass < (mission.commitments?.length || 1); pass++) {
+      for (const dep of mission.dependencies) {
+        const dFrom = topoDepth.get(dep.from) ?? 0;
+        const dTo = topoDepth.get(dep.to) ?? 0;
+        if (dTo <= dFrom) topoDepth.set(dep.to, dFrom + 1);
+      }
+    }
+  }
+
+  // Order operations: anchor commitment first, then topological prerequisite depth, then non-reversible hard bookings
   const orderedPlanOps = (plan.operations || []).slice().sort((a, b) => {
     const aAnchor = a.commitment_id === mission.anchor_commitment_id ? 0 : 1;
     const bAnchor = b.commitment_id === mission.anchor_commitment_id ? 0 : 1;
     if (aAnchor !== bAnchor) return aAnchor - bAnchor;
+    const depthDiff = (topoDepth.get(a.commitment_id) ?? 0) - (topoDepth.get(b.commitment_id) ?? 0);
+    if (depthDiff !== 0) return depthDiff;
     const aRev = a.offer?.reversible ? 1 : 0;
     const bRev = b.offer?.reversible ? 1 : 0;
     if (aRev !== bRev) return aRev - bRev;
@@ -117,6 +133,7 @@ export function buildHybridTransitionPlaybook({ mission, plan, preparedOps = [] 
           : "Dependent service: confirm only after Step 1 anchor replacement is held/confirmed.",
       subject,
       messageDraft,
+      shortSmsDraft: `Ref ${planOp.original_booking_ref}: Please hold ${newDateFmt} (${windowStr}) BEFORE releasing ${oldDateFmt}, and confirm fee.`,
       mailtoHref: buildMailtoHref(subject, messageDraft),
     });
   });

@@ -12,9 +12,16 @@
  *    flagged `NEEDS_USER` rather than falsely reported as mission success.
  */
 
-import { canonicalizeJson, sanitizeJson, sha256Hex, sha256PureHex } from "../shared-schemas/index.js";
+import {
+  canonicalizeJson,
+  sanitizeJson,
+  sha256Hex,
+  sha256PureHex,
+  timingSafeEqualHex,
+} from "../shared-schemas/index.js";
 
 const GENESIS_CHAIN_HASH = "0".repeat(64);
+const MAX_LEDGER_HISTORY = 4096;
 
 export const OP_STATES = Object.freeze({
   DRAFT: "DRAFT",
@@ -62,7 +69,13 @@ export const VALID_STATE_TRANSITIONS = Object.freeze({
  * @param {string} spec.proposedDate
  */
 export async function deriveIdempotencyKey({ missionId, commitmentId, offerId, proposedDate }) {
-  const raw = canonicalizeJson({ missionId, commitmentId, offerId, proposedDate });
+  const raw = canonicalizeJson({
+    domain: "continuity-idem-v1",
+    missionId,
+    commitmentId,
+    offerId,
+    proposedDate,
+  });
   const digest = await sha256Hex(raw);
   return `idem_${commitmentId}_${digest.slice(0, 20)}`;
 }
@@ -84,8 +97,8 @@ export class OperationLedger {
    */
   createOperation(opInit) {
     const clean = sanitizeJson(opInit);
-    if (!clean.operation_id) {
-      throw new Error("operation_id is required.");
+    if (!clean.operation_id || typeof clean.operation_id !== "string" || clean.operation_id.length > 160) {
+      throw new Error("Valid operation_id (<= 160 chars) is required.");
     }
     if (this.operations.has(clean.operation_id)) {
       throw new Error(`Duplicate operation_id "${clean.operation_id}" rejected.`);
@@ -137,6 +150,9 @@ export class OperationLedger {
   }
 
   _recordEvent(operationId, fromState, toState, reason, timestamp, evidenceSummary) {
+    if (this.history.length >= MAX_LEDGER_HISTORY) {
+      throw new Error(`OperationLedger history limit (${MAX_LEDGER_HISTORY}) reached.`);
+    }
     const prevHash =
       this.history.length > 0
         ? this.history[this.history.length - 1].entry_hash
@@ -171,7 +187,12 @@ export class OperationLedger {
     let expectedPrev = GENESIS_CHAIN_HASH;
     for (let i = 0; i < history.length; i++) {
       const item = history[i];
-      if (!item || item.seq !== i + 1 || item.prev_hash !== expectedPrev) {
+      if (
+        !item
+        || item.seq !== i + 1
+        || typeof item.prev_hash !== "string"
+        || !timingSafeEqualHex(item.prev_hash, expectedPrev)
+      ) {
         return {
           valid: false,
           verifiedEntries: i,
@@ -181,7 +202,7 @@ export class OperationLedger {
       }
       const { entry_hash, ...core } = item;
       const recomputed = sha256PureHex(canonicalizeJson(core));
-      if (entry_hash !== recomputed) {
+      if (typeof entry_hash !== "string" || !timingSafeEqualHex(entry_hash, recomputed)) {
         return {
           valid: false,
           verifiedEntries: i,
@@ -210,6 +231,16 @@ export class OperationLedger {
 
   getHistory() {
     return sanitizeJson(this.history);
+  }
+
+  exportCompactMerkleTip() {
+    const length = this.history.length;
+    const headHash = length > 0 ? this.history[length - 1].entry_hash : GENESIS_CHAIN_HASH;
+    return Object.freeze({
+      length,
+      headHash,
+      genesisAnchored: length === 0 || this.history[0]?.prev_hash === GENESIS_CHAIN_HASH,
+    });
   }
 }
 
@@ -258,20 +289,48 @@ export async function reconcileOperationOutcome({ expectedOp, providerStatus, re
     };
   }
 
-  // Case B: Provider reports operation was committed — verify receipt, date, amount, and invariants!
-  if (providerStatus.execution_state === "COMMITTED" || providerStatus.status === "CONFIRMED" || providerStatus.status === "PREPARED_DOSSIER") {
+  // Case B: Provider reports operation was committed — verify receipt, date, amount, booking_ref, and invariants!
+  if (
+    providerStatus.execution_state === "COMMITTED"
+    || providerStatus.execution_state === "ALREADY_COMMITTED"
+    || providerStatus.status === "CONFIRMED"
+    || providerStatus.status === "PREPARED_DOSSIER"
+  ) {
     let proofResult = null;
-    if (receiptVerifier && providerStatus.receipt_envelope) {
-      proofResult = await receiptVerifier.verifyReceipt(
-        expectedOp.provider_id,
-        providerStatus.receipt_envelope,
-      );
-      if (!proofResult.valid) {
-        discrepancies.push(`Receipt verification failed (${proofResult.level}): ${proofResult.detail}`);
+    if (receiptVerifier) {
+      if (!providerStatus.receipt_envelope) {
+        if (expectedOp.requires_signed_receipt !== false) {
+          discrepancies.push("Missing signed receipt_envelope from provider when ReceiptVerifier is active.");
+        }
+      } else {
+        proofResult = await receiptVerifier.verifyReceipt(
+          expectedOp.provider_id,
+          providerStatus.receipt_envelope,
+        );
+        if (!proofResult.valid) {
+          discrepancies.push(`Receipt verification failed (${proofResult.level}): ${proofResult.detail}`);
+        }
       }
     }
 
     const observedBody = providerStatus.receipt_envelope?.receipt_body || providerStatus;
+
+    if (observedBody.provider_id && expectedOp.provider_id && observedBody.provider_id !== expectedOp.provider_id) {
+      discrepancies.push(
+        `Receipt provider_id "${observedBody.provider_id}" does not match expected "${expectedOp.provider_id}".`,
+      );
+    }
+
+    if (
+      observedBody.booking_ref
+      && expectedOp.original_booking_ref
+      && !expectedOp.is_replacement_provider
+      && observedBody.booking_ref !== expectedOp.original_booking_ref
+    ) {
+      discrepancies.push(
+        `Receipt booking_ref "${observedBody.booking_ref}" does not match "${expectedOp.original_booking_ref}".`,
+      );
+    }
 
     if (observedBody.scheduled_date && observedBody.scheduled_date !== expectedOp.proposed_date) {
       discrepancies.push(
@@ -279,16 +338,26 @@ export async function reconcileOperationOutcome({ expectedOp, providerStatus, re
       );
     }
 
+    const expectedBasePlusFeeEur =
+      Number(expectedOp.base_price_eur) + Number(expectedOp.change_fee_eur || 0);
     const expectedTotalOpEur =
-      Number(expectedOp.base_price_eur)
-      + Number(expectedOp.change_fee_eur || 0)
-      + Number(expectedOp.cancellation_penalty_eur || 0);
+      expectedBasePlusFeeEur + Number(expectedOp.cancellation_penalty_eur || 0);
+
     if (
       typeof observedBody.total_charged_eur === "number"
       && Math.abs(observedBody.total_charged_eur - expectedTotalOpEur) > 0.01
     ) {
       discrepancies.push(
         `Provider total €${observedBody.total_charged_eur.toFixed(2)} differs from approved €${expectedTotalOpEur.toFixed(2)}.`,
+      );
+    } else if (
+      observedBody.total_charged_eur === undefined
+      && typeof observedBody.total_price_eur === "number"
+      && Math.abs(observedBody.total_price_eur - expectedTotalOpEur) > 0.01
+      && Math.abs(observedBody.total_price_eur - expectedBasePlusFeeEur) > 0.01
+    ) {
+      discrepancies.push(
+        `Provider total_price_eur €${observedBody.total_price_eur.toFixed(2)} differs from approved €${expectedTotalOpEur.toFixed(2)}.`,
       );
     }
 

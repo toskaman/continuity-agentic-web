@@ -1,6 +1,6 @@
 {
-  "measuredAtIso": "2026-11-15T21:25:13.039Z",
-  "totalMeasuredSagas": 120,
+  "measuredAtIso": "2026-11-16T01:01:56.371Z",
+  "totalMeasuredSagas": 150,
   "environment": {
     "nodeVersion": "v26.13.1",
     "platform": "win32 x64",
@@ -28,36 +28,36 @@
     "breakdown": "6 site logins/lookups + 6 availability checks + 6 manual reschedule/hold/verify actions"
   },
   "continuityMeasuredNormalScenario": {
-    "sampleSize": 30,
+    "sampleSize": 35,
     "compileMs": {
-      "median": 0.076,
-      "p95": 0.112,
-      "max": 0.117,
-      "mean": 0.084
+      "median": 0.08,
+      "p95": 0.13,
+      "max": 0.132,
+      "mean": 0.086
     },
     "impactMs": {
-      "median": 0.067,
-      "p95": 0.113,
-      "max": 0.116,
-      "mean": 0.077
+      "median": 0.093,
+      "p95": 0.148,
+      "max": 0.265,
+      "mean": 0.104
     },
     "quoteLatencyMs": {
-      "median": 1.637,
-      "p95": 2.452,
-      "max": 2.47,
-      "mean": 1.771
+      "median": 1.773,
+      "p95": 7.378,
+      "max": 8.93,
+      "mean": 2.34
     },
     "solveMs": {
-      "median": 0.11,
-      "p95": 0.163,
-      "max": 0.189,
-      "mean": 0.119
+      "median": 0.16,
+      "p95": 0.349,
+      "max": 0.457,
+      "mean": 0.177
     },
     "totalEndToEndMs": {
-      "median": 9.627,
-      "p95": 13.78,
-      "max": 21.896,
-      "mean": 10.156
+      "median": 8.685,
+      "p95": 26.517,
+      "max": 42.806,
+      "mean": 11.179
     },
     "baselineTotalEur": 624,
     "verifiedReceiptsPerRun": 3,
@@ -73,36 +73,36 @@
     "allSucceededRatePct": 100
   },
   "continuityMeasuredRippleRecoveryScenario": {
-    "sampleSize": 30,
+    "sampleSize": 35,
     "compileMs": {
-      "median": 0.078,
-      "p95": 0.129,
-      "max": 0.161,
-      "mean": 0.086
+      "median": 0.087,
+      "p95": 0.155,
+      "max": 0.3,
+      "mean": 0.092
     },
     "impactMs": {
-      "median": 0.073,
-      "p95": 0.121,
-      "max": 0.127,
-      "mean": 0.079
+      "median": 0.097,
+      "p95": 0.199,
+      "max": 2.086,
+      "mean": 0.159
     },
     "quoteLatencyMs": {
-      "median": 1.752,
-      "p95": 2.205,
-      "max": 2.266,
-      "mean": 1.71
+      "median": 1.622,
+      "p95": 4.679,
+      "max": 7.971,
+      "mean": 2
     },
     "solveMs": {
-      "median": 0.113,
-      "p95": 0.181,
-      "max": 0.206,
-      "mean": 0.119
+      "median": 0.156,
+      "p95": 0.423,
+      "max": 0.544,
+      "mean": 0.179
     },
     "totalEndToEndMs": {
-      "median": 9.021,
-      "p95": 12.536,
-      "max": 12.705,
-      "mean": 9.399
+      "median": 8.382,
+      "p95": 39.87,
+      "max": 48.331,
+      "mean": 11.228
     },
     "baselineTotalEur": 624,
     "verifiedReceiptsPerRun": 3,
@@ -118,36 +118,36 @@
     "allSucceededRatePct": 100
   },
   "continuityMeasuredOutpatientSurgeryScenario": {
-    "sampleSize": 20,
+    "sampleSize": 25,
     "compileMs": {
-      "median": 0.071,
-      "p95": 0.098,
-      "max": 0.134,
-      "mean": 0.075
+      "median": 0.058,
+      "p95": 0.084,
+      "max": 0.098,
+      "mean": 0.059
     },
     "impactMs": {
-      "median": 0.057,
-      "p95": 0.087,
-      "max": 0.118,
-      "mean": 0.063
+      "median": 0.076,
+      "p95": 0.106,
+      "max": 0.146,
+      "mean": 0.081
     },
     "quoteLatencyMs": {
-      "median": 0.148,
-      "p95": 0.248,
-      "max": 0.294,
-      "mean": 0.168
+      "median": 0.164,
+      "p95": 0.425,
+      "max": 3.952,
+      "mean": 0.338
     },
     "solveMs": {
-      "median": 0.1,
-      "p95": 0.175,
-      "max": 0.198,
-      "mean": 0.114
+      "median": 0.087,
+      "p95": 0.188,
+      "max": 0.221,
+      "mean": 0.098
     },
     "totalEndToEndMs": {
-      "median": 4.624,
-      "p95": 5.695,
-      "max": 5.769,
-      "mean": 4.842
+      "median": 3.931,
+      "p95": 6.317,
+      "max": 69.407,
+      "mean": 6.752
     },
     "baselineTotalEur": 480,
     "verifiedReceiptsPerRun": 3,
@@ -163,36 +163,36 @@
     "allSucceededRatePct": 100
   },
   "continuityMeasuredExpoFreightScenario": {
-    "sampleSize": 20,
+    "sampleSize": 25,
     "compileMs": {
-      "median": 0.075,
-      "p95": 0.099,
-      "max": 0.102,
-      "mean": 0.077
+      "median": 0.059,
+      "p95": 0.079,
+      "max": 0.092,
+      "mean": 0.058
     },
     "impactMs": {
-      "median": 0.07,
-      "p95": 0.138,
-      "max": 0.143,
-      "mean": 0.078
+      "median": 0.08,
+      "p95": 0.112,
+      "max": 0.142,
+      "mean": 0.085
     },
     "quoteLatencyMs": {
-      "median": 0.116,
-      "p95": 0.197,
-      "max": 0.216,
-      "mean": 0.128
+      "median": 0.132,
+      "p95": 0.217,
+      "max": 3.638,
+      "mean": 0.283
     },
     "solveMs": {
-      "median": 0.07,
-      "p95": 0.126,
-      "max": 0.145,
-      "mean": 0.08
+      "median": 0.087,
+      "p95": 0.187,
+      "max": 0.262,
+      "mean": 0.103
     },
     "totalEndToEndMs": {
-      "median": 4.666,
-      "p95": 5.265,
-      "max": 6.442,
-      "mean": 4.726
+      "median": 3.962,
+      "p95": 4.754,
+      "max": 29.408,
+      "mean": 4.97
     },
     "baselineTotalEur": 1820,
     "verifiedReceiptsPerRun": 3,
@@ -208,38 +208,38 @@
     "allSucceededRatePct": 100
   },
   "continuityMeasuredHybridIcsScenario": {
-    "sampleSize": 20,
+    "sampleSize": 30,
     "compileMs": {
-      "median": 0.054,
-      "p95": 0.079,
-      "max": 0.084,
-      "mean": 0.059
+      "median": 0.048,
+      "p95": 0.094,
+      "max": 0.19,
+      "mean": 0.057
     },
     "impactMs": {
-      "median": 0.05,
-      "p95": 0.074,
-      "max": 0.08,
-      "mean": 0.055
+      "median": 0.061,
+      "p95": 0.113,
+      "max": 0.146,
+      "mean": 0.068
     },
     "quoteLatencyMs": {
-      "median": 0.112,
-      "p95": 0.196,
-      "max": 0.201,
-      "mean": 0.127
+      "median": 0.137,
+      "p95": 0.289,
+      "max": 0.372,
+      "mean": 0.156
     },
     "solveMs": {
-      "median": 0.055,
-      "p95": 0.074,
-      "max": 0.075,
-      "mean": 0.058
+      "median": 0.069,
+      "p95": 0.154,
+      "max": 2.908,
+      "mean": 0.17
     },
     "totalEndToEndMs": {
-      "median": 4.959,
-      "p95": 6.474,
-      "max": 13.976,
-      "mean": 5.571
+      "median": 4.256,
+      "p95": 23.317,
+      "max": 27.922,
+      "mean": 7.513
     },
-    "baselineTotalEur": 594,
+    "baselineTotalEur": 574,
     "verifiedReceiptsPerRun": 3,
     "committedPerRun": 3,
     "cancelToolCallsTotal": 0,
@@ -249,7 +249,7 @@
     "unnecessaryProvidersAvoided": 1,
     "changedCommitments": 3,
     "preservedCommitments": 1,
-    "totalCostEur": 619,
+    "totalCostEur": 599,
     "allSucceededRatePct": 100
   }
 }

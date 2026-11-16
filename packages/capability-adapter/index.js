@@ -9,7 +9,19 @@
  * permit is only a draft dossier, or whether rescheduling is irreversible).
  */
 
-import { assertValidSchema, sanitizeJson } from "../shared-schemas/index.js";
+import { assertValidSchema, deepFreezeJson, sanitizeJson } from "../shared-schemas/index.js";
+
+const STRIP_INVISIBLE_OFFER_RE =
+  /[\u0000-\u001F\u007F\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF\u{E0000}-\u{E01EF}]/gu;
+
+function cleanOfferText(s, maxLen = 200) {
+  return String(s ?? "").replace(STRIP_INVISIBLE_OFFER_RE, "").trim().slice(0, maxLen);
+}
+
+function roundCents(val) {
+  const n = Number(val);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : n;
+}
 
 export const NORMALIZED_OFFER_SCHEMA = {
   type: "object",
@@ -159,21 +171,31 @@ export function normalizePeerOffer(rawPeerOffer) {
   const contract = PROVIDER_CAPABILITY_CONTRACTS[clean.provider_id];
   const capMeta = contract?.capabilities?.[clean.raw_capability];
 
+  const supportsHold = Boolean(clean.supports_hold ?? capMeta?.supportsHold ?? false);
+  const rawOrigin = cleanOfferText(clean.provider_origin, 200);
+  if (rawOrigin && rawOrigin !== "local://fixture") {
+    const u = new URL(rawOrigin);
+    const isLoopback = ["127.0.0.1", "localhost", "[::1]"].includes(u.hostname);
+    if (u.username || u.password || (u.protocol !== "https:" && !(u.protocol === "http:" && isLoopback))) {
+      throw new Error(`Unsafe provider_origin "${rawOrigin}" in peer offer.`);
+    }
+  }
+
   const normalized = {
-    offer_id: String(clean.offer_id || ""),
-    commitment_id: String(clean.commitment_id || ""),
-    provider_id: String(clean.provider_id || ""),
-    provider_name: String(clean.provider_name || contract?.providerName || ""),
-    provider_origin: String(clean.provider_origin || ""),
-    raw_capability: String(clean.raw_capability || ""),
+    offer_id: cleanOfferText(clean.offer_id, 96),
+    commitment_id: cleanOfferText(clean.commitment_id, 64),
+    provider_id: cleanOfferText(clean.provider_id, 64),
+    provider_name: cleanOfferText(clean.provider_name || contract?.providerName, 120),
+    provider_origin: rawOrigin,
+    raw_capability: cleanOfferText(clean.raw_capability, 80),
     semantic_kind: clean.semantic_kind || capMeta?.semanticKind || "RESCHEDULE_IN_PLACE",
-    proposed_date: String(clean.proposed_date || ""),
-    window: String(clean.window || ""),
-    base_price_eur: Number(clean.base_price_eur),
-    change_fee_eur: Number(clean.change_fee_eur ?? 0),
-    cancellation_penalty_eur: Number(clean.cancellation_penalty_eur ?? 0),
-    supports_hold: Boolean(clean.supports_hold ?? capMeta?.supportsHold ?? false),
-    hold_ttl_seconds: Number.isInteger(clean.hold_ttl_seconds) ? clean.hold_ttl_seconds : 0,
+    proposed_date: cleanOfferText(clean.proposed_date, 16),
+    window: cleanOfferText(clean.window, 80),
+    base_price_eur: roundCents(clean.base_price_eur),
+    change_fee_eur: roundCents(clean.change_fee_eur ?? 0),
+    cancellation_penalty_eur: roundCents(clean.cancellation_penalty_eur ?? 0),
+    supports_hold: supportsHold,
+    hold_ttl_seconds: supportsHold && Number.isInteger(clean.hold_ttl_seconds) ? clean.hold_ttl_seconds : 0,
     reversible: Boolean(clean.reversible ?? capMeta?.reversible ?? false),
     creates_final_booking: Boolean(clean.creates_final_booking ?? capMeta?.createsFinalBooking ?? true),
     requires_user_approval: Boolean(clean.requires_user_approval ?? true),
@@ -182,9 +204,9 @@ export function normalizePeerOffer(rawPeerOffer) {
       clean.supports_status_reconciliation ?? capMeta?.supportsStatusReconciliation ?? false,
     ),
     is_replacement_provider: Boolean(clean.is_replacement_provider ?? false),
-    ...(clean.expires_at ? { expires_at: String(clean.expires_at) } : {}),
-    ...(clean.disclosure_note ? { disclosure_note: String(clean.disclosure_note).slice(0, 300) } : {}),
+    ...(clean.expires_at ? { expires_at: cleanOfferText(clean.expires_at, 64) } : {}),
+    ...(clean.disclosure_note ? { disclosure_note: cleanOfferText(clean.disclosure_note, 300) } : {}),
   };
 
-  return assertValidSchema(NORMALIZED_OFFER_SCHEMA, normalized, "NormalizedPeerOffer");
+  return deepFreezeJson(assertValidSchema(NORMALIZED_OFFER_SCHEMA, normalized, "NormalizedPeerOffer"));
 }

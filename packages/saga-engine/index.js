@@ -33,6 +33,29 @@ export class SagaCoordinator {
     this.approvalEngine = approvalEngine || new ApprovalEngine();
     this.ledger = ledger || new OperationLedger();
     this.receiptVerifier = receiptVerifier || null;
+    this._executing = false;
+  }
+
+  static summarizeExecution(execResult) {
+    const ops = Array.isArray(execResult?.operations) ? execResult.operations : [];
+    const committedOps = ops.filter((o) => o.state === OP_STATES.COMMITTED);
+    return Object.freeze({
+      status: execResult?.status || "UNKNOWN",
+      committedCount: committedOps.length,
+      haltedCount: Array.isArray(execResult?.haltedOperationIds) ? execResult.haltedOperationIds.length : 0,
+      verifiedSignatureCount: committedOps.filter(
+        (o) => o.proof_verification?.level === "VERIFIED_ED25519_DEMO_PROVIDER_SIGNATURE",
+      ).length,
+      totalCommittedSpendEur: Number(
+        committedOps
+          .reduce(
+            (s, o) =>
+              s + Number(o.base_price_eur || 0) + Number(o.change_fee_eur || 0) + Number(o.cancellation_penalty_eur || 0),
+            0,
+          )
+          .toFixed(2),
+      ),
+    });
   }
 
   /**
@@ -46,12 +69,20 @@ export class SagaCoordinator {
    * @param {Record<string, any>} params.providerClients - Map of `providerId -> { prepareHold?, executeCommit, queryStatus, compensate? }`
    * @param {string} [params.nowIso]
    */
-  async preparePlan({ missionId, plan, maximumBudgetEur, providerClients, nowIso }) {
+  async preparePlan({ missionId, plan, maximumBudgetEur, providerClients, nowIso, mandateSha256, signal }) {
+    if (!plan || !Array.isArray(plan.operations)) {
+      throw new Error("preparePlan requires a valid plan with operations[].");
+    }
+    if (!Number.isFinite(Number(maximumBudgetEur)) || Number(maximumBudgetEur) <= 0) {
+      throw new Error("preparePlan requires a positive finite maximumBudgetEur.");
+    }
     const now = nowIso || new Date().toISOString();
     const defaultExpiry = new Date(Date.parse(now) + 15 * 60 * 1000).toISOString();
     const preparedOperations = [];
+    const placedHoldRefs = [];
 
     for (const item of plan.operations) {
+      signal?.throwIfAborted?.();
       const offer = item.offer;
       const opId = `op_${missionId}_${item.commitment_id}_${offer.offer_id}`;
       const idempotencyKey = await deriveIdempotencyKey({
@@ -65,6 +96,7 @@ export class SagaCoordinator {
         mission_id: missionId,
         operation_id: opId,
         idempotency_key: idempotencyKey,
+        ...(mandateSha256 ? { mandate_sha256: String(mandateSha256) } : {}),
         commitment_id: item.commitment_id,
         commitment_title: item.commitment_title,
         original_booking_ref: item.original_booking_ref,
@@ -118,6 +150,7 @@ export class SagaCoordinator {
       let holdInfo = null;
 
       if (offer.supports_hold && client && typeof client.prepareHold === "function") {
+        const tHold0 = performance.now();
         const holdRes = await client.prepareHold({
           commitmentId: item.commitment_id,
           bookingRef: item.original_booking_ref,
@@ -126,14 +159,34 @@ export class SagaCoordinator {
           window: offer.window,
           idempotencyKey,
         });
+        const holdElapsedMs = Number((performance.now() - tHold0).toFixed(2));
         if (!holdRes.ok) {
           this.ledger.transition(opId, OP_STATES.FAILED, `Hold preparation refused: ${holdRes.reason}`, {
             updated_at: now,
           });
           this.graph.updateNode(item.commitment_id, { visual_state: "FAILED" });
+          // Clean up any temporary holds placed in earlier steps of this same preparePlan call!
+          const rolledBackHoldIds = [];
+          for (const prev of placedHoldRefs) {
+            try {
+              const prevClient = providerClients[prev.providerId];
+              if (typeof prevClient?.releaseHold === "function") {
+                await prevClient.releaseHold({ holdId: prev.holdId, bookingRef: prev.bookingRef });
+              }
+              this.ledger.transition(prev.opId, OP_STATES.COMPENSATION_PENDING, "Rolling back partial pre-commit hold", {
+                updated_at: now,
+              });
+              this.ledger.transition(prev.opId, OP_STATES.COMPENSATED, "Released partial hold after downstream refusal", {
+                updated_at: now,
+              });
+              this.graph.updateNode(prev.commitmentId, { visual_state: "UNCHANGED" });
+              rolledBackHoldIds.push(prev.holdId);
+            } catch {}
+          }
           return {
             ok: false,
             failedOperationId: opId,
+            rolledBackHoldIds,
             reason: `Preparation failed at ${offer.provider_name}: ${holdRes.reason}. Original reservations remain completely untouched.`,
             operations: this.ledger.getAllOperations(),
           };
@@ -141,11 +194,18 @@ export class SagaCoordinator {
         holdInfo = holdRes;
         opSpec.expires_at = holdRes.expires_at || opSpec.expires_at;
         opSpec.arguments.hold_id = holdRes.hold_id;
+        placedHoldRefs.push({
+          opId,
+          commitmentId: item.commitment_id,
+          providerId: offer.provider_id,
+          holdId: holdRes.hold_id,
+          bookingRef: item.original_booking_ref,
+        });
         this.ledger.transition(
           opId,
           OP_STATES.PREPARED,
           `Temporary slot hold ${holdRes.hold_id} secured (original booking ${item.original_booking_ref} kept intact)`,
-          { hold_id: holdRes.hold_id, expires_at: opSpec.expires_at, updated_at: now },
+          { hold_id: holdRes.hold_id, hold_elapsed_ms: holdElapsedMs, expires_at: opSpec.expires_at, updated_at: now },
         );
       } else {
         this.ledger.transition(
@@ -207,10 +267,20 @@ export class SagaCoordinator {
 
       const client = providerClients[op.provider_id];
       if (op.hold_id && client && typeof client.releaseHold === "function") {
-        await client.releaseHold({
-          holdId: op.hold_id,
-          bookingRef: op.original_booking_ref,
-        });
+        try {
+          await client.releaseHold({
+            holdId: op.hold_id,
+            bookingRef: op.original_booking_ref,
+          });
+        } catch (err) {
+          this.ledger.transition(
+            op.operation_id,
+            OP_STATES.NEEDS_USER,
+            `Hold release transport error (${err.message}); original booking ${op.original_booking_ref} remains uncommitted.`,
+            { updated_at: now },
+          );
+          continue;
+        }
       }
 
       this.ledger.transition(
@@ -278,13 +348,26 @@ export class SagaCoordinator {
    * @param {Record<string, any>} params.providerClients
    * @param {string} [params.nowIso]
    */
-  async executeApprovedSaga({ approvedItems, providerClients, nowIso }) {
+  async executeApprovedSaga({ approvedItems, providerClients, nowIso, signal }) {
+    if (this._executing) {
+      throw new Error("Concurrent executeApprovedSaga re-entrancy blocked.");
+    }
+    this._executing = true;
+    try {
+      return await this._executeApprovedSagaInner({ approvedItems, providerClients, nowIso, signal });
+    } finally {
+      this._executing = false;
+    }
+  }
+
+  async _executeApprovedSagaInner({ approvedItems, providerClients, nowIso, signal }) {
     const now = nowIso || new Date().toISOString();
     const committed = [];
     const halted = [];
     let partialFailureReason = null;
 
     for (let i = 0; i < approvedItems.length; i++) {
+      signal?.throwIfAborted?.();
       const { operationId, approvalId, currentOpOverride } = approvedItems[i];
       const storedOp = this.ledger.getOperation(operationId);
       if (!storedOp) {
@@ -484,6 +567,7 @@ export class SagaCoordinator {
 
     this.ledger.transition(storedOp.operation_id, OP_STATES.COMMITTED, reconciled.summary, {
       receipt_envelope: providerResponse?.receipt_envelope || null,
+      ...(providerResponse?.handoff_token ? { handoff_token: providerResponse.handoff_token } : {}),
       proof_verification: reconciled.proofResult || null,
       evidence_summary: `${newBookingRef} -> ${storedOp.proposed_date} (${reconciled.proofResult?.level || "VERIFIED_STATE"})`,
       updated_at: now,

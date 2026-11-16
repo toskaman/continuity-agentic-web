@@ -15,7 +15,7 @@
  *     prices, hold TTLs, and policies in a single model call without needing an action bridge.
  */
 
-import { sha256Hex } from "../shared-schemas/index.js";
+import { deepFreezeJson, sha256Hex, timingSafeEqualHex } from "../shared-schemas/index.js";
 
 const FORBIDDEN_TAGS = new Set([
   "script",
@@ -28,13 +28,24 @@ const FORBIDDEN_TAGS = new Set([
   "option",
   "button",
   "iframe",
+  "form",
 ]);
 
+const TROJAN_FACT_UNICODE_RE = /[\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2069\u2800\u3164\uFE00-\uFE0F\uFEFF\uFFA0\u{E0000}-\u{E01EF}]/u;
+
 const CREDENTIAL_PATTERN =
-  /\b(sk-[a-zA-Z0-9_-]{16,}|otk_[a-zA-Z0-9_-]{12,}|AIza[0-9A-Za-z_-]{20,}|AQ\.[0-9A-Za-z_-]{20,}|Bearer\s+[A-Za-z0-9._-]{16,})\b/;
+  /\b(sk-[a-zA-Z0-9_-]{16,}|otk_[a-zA-Z0-9_-]{12,}|AIza[0-9A-Za-z_-]{20,}|AQ\.[0-9A-Za-z._-]{20,}|gsk_[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{24,}|github_pat_[0-9A-Za-z_]{24,}|xoxb-[0-9A-Za-z-]{20,}|Bearer\s+[A-Za-z0-9._-]{16,})\b/;
 
 function decodeHtmlEntities(str) {
   return String(str)
+    .replace(/&#x([0-9a-f]{1,6});/gi, (_m, hex) => {
+      const cp = parseInt(hex, 16);
+      return cp >= 0x20 && cp <= 0x10ffff ? String.fromCodePoint(cp) : " ";
+    })
+    .replace(/&#(\d{1,7});/g, (_m, dec) => {
+      const cp = parseInt(dec, 10);
+      return cp >= 0x20 && cp <= 0x10ffff ? String.fromCodePoint(cp) : " ";
+    })
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
     .replace(/&lt;/gi, "<")
@@ -68,6 +79,14 @@ function hasHidingAttribute(attrString) {
     if (/display\s*:\s*none/i.test(css)) return "style display:none";
     if (/visibility\s*:\s*hidden/i.test(css)) return "style visibility:hidden";
     if (/opacity\s*:\s*0(?:\D|$)/i.test(css)) return "style opacity:0";
+    if (/font-size\s*:\s*0(?:px|rem|em|pt|%)?(?:\s*;|\s*$)/i.test(css)) return "style font-size:0";
+    if (/(?:^|;)\s*(?:width|height|max-height|max-width)\s*:\s*0(?:px)?(?:\s*;|\s*$)/i.test(css)) {
+      return "style zero-dimension";
+    }
+    if (/clip-path\s*:\s*inset\s*\(/i.test(css)) return "style clip-path:inset";
+    if (/(?:text-indent|left|top)\s*:\s*-\d{3,}/i.test(css)) return "style offscreen-offset";
+    if (/transform\s*:\s*scale\s*\(\s*0\s*\)/i.test(css)) return "style scale(0)";
+    if (/color\s*:\s*transparent/i.test(css)) return "style color:transparent";
   }
   return null;
 }
@@ -84,20 +103,30 @@ export async function extractMarkedPageFacts(htmlText) {
     throw new Error("HTML source is empty.");
   }
 
-  // Reject any data-agent-facts placed inside closed <details> blocks
-  const detailsRegex = /<details\b([^>]*)>([\s\S]*?)<\/details>/gi;
+  // Reject any data-agent-facts placed inside closed <details> or closed <dialog> or hidden parent blocks
+  const detailsRegex = /<(details|dialog)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
   let dm;
   while ((dm = detailsRegex.exec(html)) !== null) {
-    const detailsAttrs = dm[1] || "";
-    const detailsBody = dm[2] || "";
+    const containerTag = dm[1].toLowerCase();
+    const detailsAttrs = dm[2] || "";
+    const detailsBody = dm[3] || "";
     if (/data-agent-facts\s*=/i.test(detailsBody) && !/\bopen(?:\s*=|\s|$)/i.test(detailsAttrs)) {
-      throw new Error("Marked data-agent-facts element is folded inside a closed <details> element.");
+      throw new Error(`Marked data-agent-facts element is folded inside a closed <${containerTag}> element.`);
+    }
+  }
+  const hiddenParentRe =
+    /<(div|section|article|aside|span|p)\b([^>]*\b(?:hidden|inert|aria-hidden\s*=\s*["']?true["']?|style\s*=\s*["'][^"']*display\s*:\s*none)[^>]*)>([\s\S]*?)<\/\1>/gi;
+  let hm;
+  while ((hm = hiddenParentRe.exec(html)) !== null) {
+    if (/data-agent-facts\s*=/i.test(hm[3] || "")) {
+      throw new Error(`Marked data-agent-facts element is nested inside a hidden <${hm[1]}> ancestor.`);
     }
   }
 
   // Reject self-closing or void forbidden tags carrying data-agent-facts (e.g. <input data-agent-facts="...">)
   const anyMarkedTagRegex = /<([a-zA-Z0-9-]+)\b([^>]*\bdata-agent-facts\s*=\s*(["'])([^"']+)\3[^>]*)>/gi;
   const entries = [];
+  const seenTopics = new Set();
   let match;
 
   while ((match = anyMarkedTagRegex.exec(html)) !== null) {
@@ -108,6 +137,10 @@ export async function extractMarkedPageFacts(htmlText) {
     if (!topic || !/^[a-z0-9][a-z0-9_-]{0,47}$/i.test(topic)) {
       throw new Error(`Invalid data-agent-facts topic "${topic}".`);
     }
+    if (seenTopics.has(topic.toLowerCase())) {
+      throw new Error(`Duplicate data-agent-facts topic "${topic}" in HTML.`);
+    }
+    seenTopics.add(topic.toLowerCase());
     if (FORBIDDEN_TAGS.has(tag)) {
       throw new Error(`data-agent-facts="${topic}" is not allowed on <${tag}> elements.`);
     }
@@ -149,6 +182,9 @@ export async function extractMarkedPageFacts(htmlText) {
     }
     if (CREDENTIAL_PATTERN.test(text)) {
       throw new Error(`Credential pattern detected inside data-agent-facts="${topic}".`);
+    }
+    if (TROJAN_FACT_UNICODE_RE.test(text)) {
+      throw new Error(`Invisible Unicode Trojan/Tag characters rejected inside data-agent-facts="${topic}".`);
     }
 
     entries.push({ topic, tag, text });
@@ -319,8 +355,15 @@ export async function buildFactsNetworkBundle(options) {
     sourceHtmlSha256,
     instructionChars: instructions.length,
     markedCount: entries.length,
-    networkJson,
-    manifestJson,
-    linksJson,
+    networkJson: deepFreezeJson(networkJson),
+    manifestJson: deepFreezeJson(manifestJson),
+    linksJson: deepFreezeJson(linksJson),
   };
+}
+
+export async function verifyFactsProvenance(htmlText, publishedFactsNetwork) {
+  const computedHtmlSha256 = await sha256Hex(String(htmlText || ""));
+  const recordedSha256 = publishedFactsNetwork?.metadata?.source_html_sha256 || "";
+  const valid = Boolean(recordedSha256) && timingSafeEqualHex(computedHtmlSha256, recordedSha256);
+  return { valid, computedHtmlSha256, recordedSha256 };
 }

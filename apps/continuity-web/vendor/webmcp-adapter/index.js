@@ -69,6 +69,8 @@ export function exposeActionsToWebMcp(registerActionsFn, options = {}) {
       return false;
     });
 
+  const activeIrreversibleLocks = new Set();
+
   const invokeTool = async (name, rawArgs = {}) => {
     const def = defs.get(name);
     if (!def) {
@@ -80,9 +82,18 @@ export function exposeActionsToWebMcp(registerActionsFn, options = {}) {
       : cleanArgs;
 
     if (def.effect === "irreversible") {
-      const approved = await confirmGate(def, validated);
-      if (!approved) {
-        return { ok: false, cancelled: true, reason: "User declined irreversible WebMCP action confirmation." };
+      if (activeIrreversibleLocks.has(name)) {
+        return { ok: false, cancelled: true, reason: `Concurrent confirmation already pending for "${name}".` };
+      }
+      activeIrreversibleLocks.add(name);
+      try {
+        const approved = await confirmGate(def, validated);
+        if (!approved) {
+          return { ok: false, cancelled: true, reason: "User declined irreversible WebMCP action confirmation." };
+        }
+        return await def.execute(validated);
+      } finally {
+        activeIrreversibleLocks.delete(name);
       }
     }
 
@@ -150,13 +161,29 @@ export function exposeActionsToWebMcp(registerActionsFn, options = {}) {
   };
 
   if (typeof globalThis !== "undefined") {
+    globalThis.__continuityWebMcpNamespaces ||= {};
+    globalThis.__continuityWebMcpNamespaces[namespace] = summaryCatalog;
     globalThis.__continuityWebMcpCatalog = summaryCatalog;
   }
+
+  const unregister = () => {
+    for (const mc of targets) {
+      for (const tool of webMcpTools) {
+        try {
+          mc.unregisterTool?.(tool.name);
+        } catch {}
+      }
+    }
+    if (typeof globalThis !== "undefined" && globalThis.__continuityWebMcpNamespaces) {
+      delete globalThis.__continuityWebMcpNamespaces[namespace];
+    }
+  };
 
   return {
     namespace,
     nativeWebMcpDetected,
     registeredTools: summaryCatalog.tools,
     invokeTool,
+    unregister,
   };
 }

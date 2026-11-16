@@ -88,7 +88,7 @@ const COMMUNITY_MODULES = [
   ["@continuity/toolbox-scoper", "Least-privilege per-agent website_* toolbox compiler, partner zero-action isolator & prompt-token optimizer", "compileScopedToolboxNetwork"],
   ["@continuity/zk-budget-attestation", "Preimage-sound SHA-256 Hash-Ladder Range Proof verifying spend <= private ceiling with zero ceiling disclosure", "createBlindedBudgetCommitment, proveSpendWithinBlindedCeiling, verifyBlindedBudgetAttestation"],
   ["@continuity/transition-playbook", "Hybrid Open Agentic Web + Legacy Vendor Hold-First Playbook & mailto: reschedule draft generator", "buildHybridTransitionPlaybook"],
-  ["@continuity/chaos-lab", "30 deterministic distributed-failure scenarios in an isolated simulation sandbox", "runAllChaosScenarios, CHAOS_SCENARIOS"],
+  ["@continuity/chaos-lab", "36 deterministic distributed-failure scenarios in an isolated simulation sandbox", "runAllChaosScenarios, CHAOS_SCENARIOS"],
 ];
 
 function esc(s) {
@@ -322,9 +322,19 @@ async function generateKitNanda() {
 }
 
 function initKit() {
+  try {
+    const savedTheme = typeof window !== "undefined" ? window.sessionStorage?.getItem("nsweb-continuity-theme") : null;
+    if (savedTheme === "dark" || savedTheme === "light") {
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  } catch {}
   document.querySelector("#kit-theme-btn")?.addEventListener("click", () => {
     const root = document.documentElement;
-    root.setAttribute("data-theme", root.getAttribute("data-theme") === "light" ? "dark" : "light");
+    const next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+    root.setAttribute("data-theme", next);
+    try {
+      window.sessionStorage?.setItem("nsweb-continuity-theme", next);
+    } catch {}
   });
 
   const modsBody = document.querySelector("#kit-modules-tbody");

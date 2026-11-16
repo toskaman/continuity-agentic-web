@@ -11,13 +11,30 @@
  * approval expires), `verifyApprovalBinding()` rejects execution and forces fresh user consent.
  */
 
-import { canonicalizeJson, sanitizeJson, sha256Hex } from "../shared-schemas/index.js";
+import {
+  canonicalizeJson,
+  deepFreezeJson,
+  sanitizeJson,
+  sha256Hex,
+  timingSafeEqualHex,
+} from "../shared-schemas/index.js";
+
+const MAX_APPROVAL_RECORDS = 1024;
+
+function toEurFromCents(val) {
+  const n = Number(val);
+  if (!Number.isFinite(n) || n < 0) {
+    throw new Error("Approval monetary fields must be finite non-negative numbers.");
+  }
+  return Math.round(n * 100) / 100;
+}
 
 /**
  * Extract the exact canonical fields bound to a human approval decision.
  * @param {Record<string, any>} opSpec
  */
 export function buildCanonicalApprovalPayload(opSpec) {
+  const holdId = opSpec.hold_id ?? opSpec.arguments?.hold_id ?? null;
   return sanitizeJson({
     version: "continuity-approval/v1",
     mission_id: String(opSpec.mission_id),
@@ -27,18 +44,33 @@ export function buildCanonicalApprovalPayload(opSpec) {
     provider_id: String(opSpec.provider_id),
     capability: String(opSpec.capability),
     arguments: opSpec.arguments || {},
+    ...(holdId ? { hold_id: String(holdId) } : {}),
+    ...(opSpec.mandate_sha256 ? { mandate_sha256: String(opSpec.mandate_sha256) } : {}),
     proposed_date: String(opSpec.proposed_date),
-    base_price_eur: Number(opSpec.base_price_eur),
-    change_fee_eur: Number(opSpec.change_fee_eur ?? 0),
-    cancellation_penalty_eur: Number(opSpec.cancellation_penalty_eur ?? 0),
-    maximum_budget_eur: Number(opSpec.maximum_budget_eur),
+    base_price_eur: toEurFromCents(opSpec.base_price_eur),
+    change_fee_eur: toEurFromCents(opSpec.change_fee_eur ?? 0),
+    cancellation_penalty_eur: toEurFromCents(opSpec.cancellation_penalty_eur ?? 0),
+    maximum_budget_eur: toEurFromCents(opSpec.maximum_budget_eur),
     expires_at: String(opSpec.expires_at),
   });
 }
 
+export function computeApprovalDiff(approvedPayload, candidatePayload) {
+  const driftedFields = [];
+  const beforeAfter = {};
+  const allKeys = new Set([...Object.keys(approvedPayload || {}), ...Object.keys(candidatePayload || {})]);
+  for (const key of allKeys) {
+    if (canonicalizeJson(approvedPayload[key] ?? null) !== canonicalizeJson(candidatePayload[key] ?? null)) {
+      driftedFields.push(key);
+      beforeAfter[key] = { approved: approvedPayload[key] ?? null, candidate: candidatePayload[key] ?? null };
+    }
+  }
+  return { driftedFields, beforeAfter };
+}
+
 /**
  * Create a cryptographically bound approval token after explicit user consent.
- * Also tracks consumed approvals to prevent replay on unrelated or duplicate executions.
+ * Also tracks consumed and revoked approvals to prevent replay on unrelated or duplicate executions.
  */
 export class ApprovalEngine {
   constructor() {
@@ -46,6 +78,14 @@ export class ApprovalEngine {
     this.approvals = new Map();
     /** @type {Set<string>} */
     this.consumedOperationIds = new Set();
+    /** @type {Set<string>} */
+    this.revokedApprovalIds = new Set();
+  }
+
+  revokeApproval(approvalId) {
+    if (!this.approvals.has(approvalId)) return false;
+    this.revokedApprovalIds.add(approvalId);
+    return true;
   }
 
   /**
@@ -56,10 +96,15 @@ export class ApprovalEngine {
   async createBoundApproval(opSpec, meta = {}) {
     const nowIso = meta.nowIso || new Date().toISOString();
     const payload = buildCanonicalApprovalPayload(opSpec);
+    const nowMs = Date.parse(nowIso);
+    const expMs = Date.parse(payload.expires_at);
+    if (!Number.isFinite(nowMs) || !Number.isFinite(expMs) || expMs <= nowMs) {
+      throw new Error(`Approval expires_at "${payload.expires_at}" must be a valid future ISO timestamp.`);
+    }
     const canonicalString = canonicalizeJson(payload);
     const approvalHash = await sha256Hex(canonicalString);
 
-    const record = {
+    const record = deepFreezeJson({
       approval_id: `appr_${payload.operation_id}_${approvalHash.slice(0, 12)}`,
       operation_id: payload.operation_id,
       approval_hash: approvalHash,
@@ -67,14 +112,18 @@ export class ApprovalEngine {
       approved_at: nowIso,
       approved_by: meta.approvedBy || "human_visitor",
       expires_at: payload.expires_at,
-    };
+    });
 
+    if (this.approvals.size >= MAX_APPROVAL_RECORDS && !this.approvals.has(record.approval_id)) {
+      const oldest = this.approvals.keys().next().value;
+      this.approvals.delete(oldest);
+    }
     this.approvals.set(record.approval_id, record);
     return record;
   }
 
   /**
-   * Verify that an execution candidate matches a valid, unconsumed, non-expired approval.
+   * Verify that an execution candidate matches a valid, unconsumed, non-revoked, non-expired approval.
    * @param {string} approvalId
    * @param {Record<string, any>} currentOpSpec
    * @param {{ nowIso?: string, consume?: boolean }} [options]
@@ -87,6 +136,9 @@ export class ApprovalEngine {
     const record = this.approvals.get(approvalId);
     if (!record) {
       return { valid: false, reason: `Approval "${approvalId}" not found or forged.` };
+    }
+    if (this.revokedApprovalIds.has(approvalId)) {
+      return { valid: false, reason: `Approval "${approvalId}" was explicitly revoked by the user.` };
     }
 
     if (this.consumedOperationIds.has(record.operation_id)) {
@@ -109,18 +161,18 @@ export class ApprovalEngine {
       };
     }
 
-    const currentPayload = buildCanonicalApprovalPayload(currentOpSpec);
+    let currentPayload;
+    try {
+      currentPayload = buildCanonicalApprovalPayload(currentOpSpec);
+    } catch (err) {
+      if (consume) this.consumedOperationIds.delete(record.operation_id);
+      return { valid: false, reason: `Invalid candidate operation payload: ${err.message}` };
+    }
     const currentHash = await sha256Hex(canonicalizeJson(currentPayload));
 
-    if (currentHash !== record.approval_hash) {
+    if (!timingSafeEqualHex(currentHash, record.approval_hash)) {
       if (consume) this.consumedOperationIds.delete(record.operation_id);
-      // Pinpoint exact field that drifted for transparent user reporting
-      const driftedFields = [];
-      for (const key of Object.keys(record.canonical_payload)) {
-        if (canonicalizeJson(record.canonical_payload[key]) !== canonicalizeJson(currentPayload[key])) {
-          driftedFields.push(key);
-        }
-      }
+      const { driftedFields } = computeApprovalDiff(record.canonical_payload, currentPayload);
       return {
         valid: false,
         reason: `Approval invalidated because proposal changed after user approval in field(s): [${driftedFields.join(", ")}].`,

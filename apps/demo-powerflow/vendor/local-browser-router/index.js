@@ -70,12 +70,17 @@ export async function probeLocalInferenceBackends(options = {}) {
   let ollamaLoopback = { supported: false, baseUrl: ollamaBaseUrl, models: [], recommendedModel: null };
   // Security boundary: ONLY probe explicit loopback addresses automatically
   let isSafeLoopback = false;
-  try {
-    const parsed = new URL(ollamaBaseUrl);
-    isSafeLoopback =
-      parsed.protocol === "http:" && ["127.0.0.1", "localhost", "[::1]"].includes(parsed.hostname);
-  } catch {
-    isSafeLoopback = false;
+  if (!/^https?:\/\/(?:0x[0-9a-f]+|0\d+|\d+)(?:[:/?#]|$)/i.test(ollamaBaseUrl)) {
+    try {
+      const parsed = new URL(ollamaBaseUrl);
+      isSafeLoopback =
+        !parsed.username
+        && !parsed.password
+        && parsed.protocol === "http:"
+        && ["127.0.0.1", "localhost", "[::1]"].includes(parsed.hostname);
+    } catch {
+      isSafeLoopback = false;
+    }
   }
 
   if (isSafeLoopback && typeof fetchImpl === "function") {
@@ -164,6 +169,13 @@ export function buildNanoToolDecisionSchema(tools = []) {
  * Serialize OpenAI-compatible `messages` + `tools` into a compact, grounded prompt
  * suitable for on-device context windows (4k–8k tokens) without leaking credentials.
  */
+const LOCAL_SECRET_SCRUB_RE =
+  /\b(sk-[a-zA-Z0-9_-]{16,}|otk_[a-zA-Z0-9_-]{12,}|AIza[0-9A-Za-z_-]{20,}|AQ\.[0-9A-Za-z._-]{20,}|gsk_[0-9A-Za-z]{20,}|Bearer\s+[a-zA-Z0-9._-]{16,})\b/g;
+
+function scrubLocalPromptText(s, maxLen) {
+  return String(s || "").replace(LOCAL_SECRET_SCRUB_RE, "[REDACTED_KEY]").slice(0, maxLen);
+}
+
 export function formatMessagesForOnDeviceModel(messages = [], tools = []) {
   const systemParts = [];
   const transcriptParts = [];
@@ -171,20 +183,20 @@ export function formatMessagesForOnDeviceModel(messages = [], tools = []) {
   for (const m of messages) {
     if (!m) continue;
     if (m.role === "system") {
-      systemParts.push(String(m.content || "").slice(0, 3200));
+      systemParts.push(scrubLocalPromptText(m.content, 3200));
     } else if (m.role === "user") {
-      transcriptParts.push(`USER: ${String(m.content || "").slice(0, 1500)}`);
+      transcriptParts.push(`USER: ${scrubLocalPromptText(m.content, 1500)}`);
     } else if (m.role === "assistant") {
       if (Array.isArray(m.tool_calls) && m.tool_calls.length > 0) {
         const summary = m.tool_calls
-          .map((tc) => `${tc.function?.name}(${tc.function?.arguments || "{}"})`)
+          .map((tc) => `${tc.function?.name}(${scrubLocalPromptText(tc.function?.arguments || "{}", 600)})`)
           .join(", ");
         transcriptParts.push(`ASSISTANT_TOOL_CALL: ${summary}`);
       } else if (m.content) {
-        transcriptParts.push(`ASSISTANT: ${String(m.content).slice(0, 1200)}`);
+        transcriptParts.push(`ASSISTANT: ${scrubLocalPromptText(m.content, 1200)}`);
       }
     } else if (m.role === "tool") {
-      transcriptParts.push(`TOOL_RESULT (${m.name || "tool"}): ${String(m.content || "").slice(0, 2200)}`);
+      transcriptParts.push(`TOOL_RESULT (${m.name || "tool"}): ${scrubLocalPromptText(m.content, 2200)}`);
     }
   }
 
@@ -258,7 +270,11 @@ export class ChromeBuiltInPromptLlm {
           responseConstraint: schema,
           signal,
         });
-        const parsed = sanitizeJson(JSON.parse(String(raw || "{}")));
+        const unwrapped = String(raw || "{}")
+          .trim()
+          .replace(/^```(?:json)?\s*/i, "")
+          .replace(/\s*```$/, "");
+        const parsed = sanitizeJson(JSON.parse(unwrapped || "{}"));
         const allowedNames = new Set(tools.map((t) => t?.function?.name).filter(Boolean));
 
         if (parsed?.decision === "call_tool" && allowedNames.has(parsed.toolName)) {

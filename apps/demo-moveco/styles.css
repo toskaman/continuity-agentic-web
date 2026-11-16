@@ -473,6 +473,15 @@ body > dialog button { margin-right: 8px; }
   .assistant-review dd { margin-bottom: 8px; }
 }
 
+@media print {
+  .site-header, .skip-link, .assistant-shell, .outcome-panel, #live-wall, .btn-row, .workspace-tools, .scenario-strip { display: none !important; }
+  body { background: #fff !important; color: #000 !important; font-size: 11pt; }
+  .hero { background: #fff !important; color: #000 !important; padding: 12px 0 !important; border-bottom: 2px solid #000; }
+  .hero h1, .hero h1 span, .hero-sub, .hero-lead { color: #000 !important; -webkit-text-fill-color: #000 !important; background: none !important; }
+  .card, .panel-card { box-shadow: none !important; border: 1px solid #bbb !important; break-inside: avoid; }
+  .reveal-armed { opacity: 1 !important; transform: none !important; }
+}
+
 /* ==========================================================================
    Peer site layer — shared layout for MoveCo, PermitFlow, HomeConnect, PowerFlow
    ========================================================================== */

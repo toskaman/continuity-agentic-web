@@ -11,7 +11,7 @@
  *    with idempotency key deduplication, schema validation, and Ed25519 signed receipts.
  */
 
-import { readFile, realpath } from "node:fs/promises";
+import { readFile, realpath, stat } from "node:fs/promises";
 import { once } from "node:events";
 import http from "node:http";
 import path from "node:path";
@@ -21,16 +21,38 @@ import { encodeSignedReceiptHandoff } from "../../packages/cross-origin-bridge/i
 import { handleFederatedResolutionRequest } from "../../packages/nanda-resolver/index.js";
 
 const WORKER_CSP = "default-src 'none'; script-src blob:; connect-src 'none'; worker-src 'none'";
+const MAX_PROVIDER_STORE_ENTRIES = 1024;
+
+function createBoundedMap(maxEntries = MAX_PROVIDER_STORE_ENTRIES) {
+  const map = new Map();
+  const origSet = map.set.bind(map);
+  map.set = (k, v) => {
+    if (map.size >= maxEntries && !map.has(k)) {
+      const oldest = map.keys().next().value;
+      map.delete(oldest);
+    }
+    return origSet(k, v);
+  };
+  return map;
+}
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".mjs": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
+  ".sarif": "application/sarif+json; charset=utf-8",
+  ".webmanifest": "application/manifest+json; charset=utf-8",
   ".css": "text/css; charset=utf-8",
+  ".woff2": "font/woff2",
   ".svg": "image/svg+xml",
   ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
   ".ico": "image/x-icon",
+  ".ics": "text/calendar; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
   ".md": "text/markdown; charset=utf-8",
 };
 
@@ -53,8 +75,8 @@ export class IndependentProviderHost {
     this.server = null;
     this.keyPair = null;
     this.state = null;
-    this.holds = new Map();
-    this.idempotencyStore = new Map();
+    this.holds = createBoundedMap();
+    this.idempotencyStore = createBoundedMap();
     this.publicFiles = new Set([
       "/agent-manifest.json",
       "/agent-card.json",
@@ -112,8 +134,17 @@ export class IndependentProviderHost {
     await this.init();
     this.server = http.createServer((req, res) => {
       this.handleRequest(req, res).catch((err) => {
-        res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(JSON.stringify({ ok: false, error: err.message }));
+        const status = err?.httpStatus || 500;
+        res.writeHead(status, {
+          "Content-Type": "application/json; charset=utf-8",
+          "X-Content-Type-Options": "nosniff",
+        });
+        res.end(
+          JSON.stringify({
+            ok: false,
+            error: status < 500 ? err.message : "Internal provider server error.",
+          }),
+        );
       });
     });
     this.server.listen(this.config.port, this.config.host || "127.0.0.1");
@@ -128,8 +159,17 @@ export class IndependentProviderHost {
       try {
         const v6 = http.createServer((req, res) => {
           this.handleRequest(req, res).catch((err) => {
-            res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
-            res.end(JSON.stringify({ ok: false, error: err.message }));
+            const status = err?.httpStatus || 500;
+            res.writeHead(status, {
+              "Content-Type": "application/json; charset=utf-8",
+              "X-Content-Type-Options": "nosniff",
+            });
+            res.end(
+              JSON.stringify({
+                ok: false,
+                error: status < 500 ? err.message : "Internal provider server error.",
+              }),
+            );
           });
         });
         v6.on("error", () => {});
@@ -168,25 +208,39 @@ export class IndependentProviderHost {
     for await (const chunk of req) {
       total += chunk.length;
       if (total > 65_536) {
-        throw new Error("Request body exceeds 64 KB limit.");
+        const err = new Error("Request body exceeds 64 KB limit.");
+        err.httpStatus = 413;
+        throw err;
       }
       chunks.push(chunk);
     }
     const text = Buffer.concat(chunks).toString("utf8");
-    return text ? JSON.parse(text) : {};
+    if (!text.trim()) return {};
+    try {
+      return JSON.parse(text);
+    } catch {
+      const err = new Error("Malformed JSON request body.");
+      err.httpStatus = 400;
+      err.isJsonParseError = true;
+      throw err;
+    }
   }
 
-  sendCorsJson(res, status, payload) {
+  sendCorsJson(res, status, payload, method = "GET") {
+    const body = JSON.stringify(payload);
     res.writeHead(status, {
       "Content-Type": "application/json; charset=utf-8",
+      "Content-Length": String(Buffer.byteLength(body)),
       "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
       "Access-Control-Allow-Headers":
         "Content-Type, Accept, MCP-Protocol-Version, Mcp-Session-Id, Idempotency-Key",
       "Access-Control-Expose-Headers": "Mcp-Session-Id",
     });
-    res.end(JSON.stringify(payload));
+    res.end(method === "HEAD" ? undefined : body);
   }
 
   async handleRequest(req, res) {
@@ -256,11 +310,16 @@ export class IndependentProviderHost {
     }
 
     // 1. Public Provider Key Metadata (independent verification discovery)
-    if (req.method === "GET" && pathname === "/api/public-key") {
-      this.sendCorsJson(res, 200, {
-        simulation_service: true,
-        ...this.publicKeyDescriptor(),
-      });
+    if ((req.method === "GET" || req.method === "HEAD") && pathname === "/api/public-key") {
+      this.sendCorsJson(
+        res,
+        200,
+        {
+          simulation_service: true,
+          ...this.publicKeyDescriptor(),
+        },
+        req.method,
+      );
       return;
     }
 
@@ -298,8 +357,34 @@ export class IndependentProviderHost {
 
     // 4. Official MCP JSON-RPC 2.0 HTTP Streamable Endpoint (`2025-06-18`)
     if (req.method === "POST" && pathname === "/mcp") {
-      const rpc = await this.readJsonBody(req);
+      let rpc;
+      try {
+        rpc = await this.readJsonBody(req);
+      } catch (err) {
+        if (err?.isJsonParseError) {
+          this.sendCorsJson(res, 400, {
+            jsonrpc: "2.0",
+            id: null,
+            error: { code: -32700, message: "Parse error: malformed JSON." },
+          });
+          return;
+        }
+        throw err;
+      }
+      if (!rpc || typeof rpc !== "object" || Array.isArray(rpc) || rpc.jsonrpc !== "2.0") {
+        this.sendCorsJson(res, 400, {
+          jsonrpc: "2.0",
+          id: null,
+          error: { code: -32600, message: "Invalid JSON-RPC 2.0 request object." },
+        });
+        return;
+      }
       const id = Object.hasOwn(rpc, "id") ? rpc.id : null;
+
+      if (rpc.method === "ping") {
+        this.sendCorsJson(res, 200, { jsonrpc: "2.0", id, result: {} });
+        return;
+      }
 
       if (rpc.method === "notifications/initialized") {
         res.writeHead(202, {
@@ -390,21 +475,53 @@ export class IndependentProviderHost {
       return;
     }
 
-    let relPath = decodeURIComponent(pathname);
+    if (pathname.includes("\0")) {
+      res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("Bad Request");
+      return;
+    }
+    let relPath;
+    try {
+      relPath = decodeURIComponent(pathname);
+    } catch {
+      res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("Malformed URI");
+      return;
+    }
+    if (relPath.includes("\0")) {
+      res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("Bad Request");
+      return;
+    }
     if (relPath.endsWith("/")) relPath += "index.html";
     const resolved = path.resolve(this.root, `.${relPath}`);
     if (!resolved.startsWith(this.root + path.sep) && resolved !== this.root) {
-      res.writeHead(403);
+      res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
       res.end("Forbidden");
       return;
     }
 
     try {
-      const content = await readFile(resolved);
-      const ext = path.extname(resolved).toLowerCase();
+      const realTarget = await realpath(resolved);
+      if (!realTarget.startsWith(this.root + path.sep) && realTarget !== this.root) {
+        res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("Forbidden");
+        return;
+      }
+      const st = await stat(realTarget);
+      if (!st.isFile()) {
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("Not Found");
+        return;
+      }
+      const ext = path.extname(realTarget).toLowerCase();
+      const etag = `W/"${st.size.toString(16)}-${Math.trunc(st.mtimeMs).toString(16)}"`;
       const headers = {
         "Content-Type": MIME_TYPES[ext] || "application/octet-stream",
-        "Cache-Control": "no-store",
+        "Cache-Control": ext === ".woff2" ? "public, max-age=31536000, immutable" : "no-store",
+        ETag: etag,
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
       };
       if (this.publicFiles.has(relPath)) {
         headers["Access-Control-Allow-Origin"] = "*";
@@ -412,10 +529,17 @@ export class IndependentProviderHost {
       if (relPath === "/runtime/sandbox-worker.js") {
         headers["Content-Security-Policy"] = WORKER_CSP;
       }
+      if (req.headers["if-none-match"] === etag) {
+        res.writeHead(304, headers);
+        res.end();
+        return;
+      }
+      const content = req.method === "HEAD" ? null : await readFile(realTarget);
+      headers["Content-Length"] = String(st.size);
       res.writeHead(200, headers);
       res.end(req.method === "HEAD" ? undefined : content);
     } catch {
-      res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+      res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff" });
       res.end("Not Found");
     }
   }

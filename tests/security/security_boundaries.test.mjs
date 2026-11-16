@@ -197,7 +197,7 @@ test("S8 Oversized HTTP request body (> 64 KB) is rejected without server crash"
       headers: { "Content-Type": "application/json" },
       body: hugePayload,
     });
-    assert.equal(res.status, 500);
+    assert.equal(res.status, 413);
     const body = await res.json();
     assert.match(body.error || "", /64 KB/);
 

@@ -12,7 +12,8 @@
  *    Semantic Equivalence Verification Report.
  */
 
-import { canonicalizeJson, isPlainObject, sanitizeJson, sha256Hex } from "../shared-schemas/index.js";
+import { canonicalizeJson, deepFreezeJson, isPlainObject, sanitizeJson, sha256Hex } from "../shared-schemas/index.js";
+import { isSafePublicOrLoopbackUrl } from "../nanda-resolver/index.js";
 import { compileScopedToolboxNetwork } from "../toolbox-scoper/index.js";
 
 export const SAMPLE_GOOGLE_ADK_CONFIG = JSON.stringify(
@@ -63,7 +64,7 @@ function normalizeAgentIdentifier(rawName, fallback) {
 function scrubAccidentalSecrets(text) {
   let warnings = 0;
   const scrubbed = String(text || "").replace(
-    /\b(sk-[A-Za-z0-9_-]{16,}|AIza[0-9A-Za-z_-]{20,}|Bearer\s+[A-Za-z0-9._-]{16,})\b/g,
+    /\b(sk-[A-Za-z0-9_-]{16,}|otk_[A-Za-z0-9_-]{12,}|AIza[0-9A-Za-z_-]{20,}|AQ\.[0-9A-Za-z._-]{20,}|gsk_[0-9A-Za-z]{20,}|ghp_[0-9A-Za-z]{24,}|github_pat_[0-9A-Za-z_]{24,}|xoxb-[0-9A-Za-z-]{20,}|Bearer\s+[A-Za-z0-9._-]{16,})\b/g,
     () => {
       warnings += 1;
       return "[REDACTED_CREDENTIAL]";
@@ -134,16 +135,19 @@ export async function convertAgentFrameworkToHoconBundle(rawSource, options = {}
     const externalRefs = [];
     for (const rawTool of Array.isArray(node.tools) ? node.tools : []) {
       if (typeof rawTool === "string" && /^https?:\/\//i.test(rawTool)) {
-        const u = new URL(rawTool);
-        if (u.username || u.password) {
-          throw new Error(`External peer URL for "${name}" must not contain credentials.`);
+        const safety = isSafePublicOrLoopbackUrl(rawTool);
+        if (!safety.safe) {
+          throw new Error(`Unsafe external peer URL for "${name}": ${safety.reason}`);
         }
-        discoveredPeerOrigins.add(u.origin);
+        discoveredPeerOrigins.add(safety.url.origin);
         externalRefs.push(rawTool);
       } else if (isPlainObject(rawTool) && typeof (rawTool.url || rawTool.mcp_url) === "string") {
         const mcpUrl = String(rawTool.url || rawTool.mcp_url);
-        const u = new URL(mcpUrl);
-        discoveredPeerOrigins.add(u.origin);
+        const safety = isSafePublicOrLoopbackUrl(mcpUrl);
+        if (!safety.safe) {
+          throw new Error(`Unsafe MCP URL for "${name}": ${safety.reason}`);
+        }
+        discoveredPeerOrigins.add(safety.url.origin);
         externalRefs.push({
           url: mcpUrl,
           tools: Array.isArray(rawTool.tools || rawTool.allowed_tools)
@@ -311,6 +315,6 @@ export async function convertAgentFrameworkToHoconBundle(rawSource, options = {}
     manifestJson,
     scrubbedSecretsCount: redactedCount,
     toolboxScoping,
-    equivalenceReport,
+    equivalenceReport: deepFreezeJson(equivalenceReport),
   };
 }

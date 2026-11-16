@@ -70,6 +70,10 @@ export function compileScopedToolboxNetwork({
       errors.push("Toolbox entry is missing a valid name.");
       continue;
     }
+    if (toolboxMap.has(entryName)) {
+      errors.push(`Duplicate toolbox entry name "${entryName}".`);
+      continue;
+    }
     if (!allowedAgentTools.has(targetAction)) {
       errors.push(
         `Least-privilege violation: toolbox entry "${entryName}" references "${targetAction}", which is not permitted by manifest actions.agentTools.`,
@@ -149,6 +153,7 @@ export function compileScopedToolboxNetwork({
       broadcastSchemaChars,
       scopedSchemaChars,
       savedCharsPerTurn,
+      savedTokensEstimatePerTurn: Math.round(savedCharsPerTurn / 4),
       reductionPercent,
     },
   };

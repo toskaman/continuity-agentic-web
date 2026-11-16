@@ -653,13 +653,24 @@ export function compileUnstructuredIntake(rawInput, options = {}) {
 
 function parseIcsEvents(icsText) {
   const unfolded = icsText.replace(/\r?\n[ \t]/g, "");
-  const blocks = [...unfolded.matchAll(/BEGIN:VEVENT([\s\S]*?)END:VEVENT/gi)].map((m) => m[1]);
+  const rawBlocks = [...unfolded.matchAll(/BEGIN:VEVENT([\s\S]*?)END:VEVENT/gi)].map((m) =>
+    // Strip nested VALARM reminder blocks so VALARM DESCRIPTION lines never overwrite booking details!
+    m[1].replace(/BEGIN:VALARM[\s\S]*?END:VALARM/gi, ""),
+  );
   const out = [];
+  const seenRefs = new Set();
 
-  blocks.forEach((blk, i) => {
+  rawBlocks.forEach((blk, i) => {
     const field = (name) => {
       const m = blk.match(new RegExp(`^${name}(?:;[^:]*)?:(.*)$`, "im"));
-      return m ? m[1].trim().replace(/\\n/g, " ").replace(/\\,/g, ",") : "";
+      return m
+        ? m[1]
+            .trim()
+            .replace(/\\n/gi, " ")
+            .replace(/\\,/g, ",")
+            .replace(/\\;/g, ";")
+            .replace(/\\\\/g, "\\")
+        : "";
     };
     const summary = field("SUMMARY") || `Calendar Commitment ${i + 1}`;
     const desc = field("DESCRIPTION");
@@ -682,13 +693,17 @@ function parseIcsEvents(icsText) {
     const cancelFeeEur = extractMoneyField(combined, /cancel(?:lation)?(?:\s+fee)?\s*[:=]?\s*€?\s*(\d+(?:\.\d{1,2})?)/i, 35);
     const refMatch = combined.match(/\b(?:ref|booking|id)\s*[:#]?\s*([A-Z0-9-]{4,18})\b/i);
 
+    const computedRef = refMatch ? refMatch[1].toUpperCase() : (uid ? uid.slice(0, 10).toUpperCase() : `ICS-${100 + i}`);
+    if (seenRefs.has(computedRef)) return;
+    seenRefs.add(computedRef);
+
     out.push({
       explicitAnchor: /\[ANCHOR\]/i.test(combined),
       title: summary.replace(/\[ANCHOR\]\s*/i, "").trim(),
       providerName: loc || `Calendar Provider ${i + 1}`,
       providerOrigin: eventUrl ? eventUrl.replace(/\/+$/, "") : null,
       peerNetworkUrl: agenticNetUrl,
-      bookingRef: refMatch ? refMatch[1].toUpperCase() : (uid ? uid.slice(0, 10).toUpperCase() : `ICS-${100 + i}`),
+      bookingRef: computedRef,
       scheduledDate: startParsed.iso,
       validUntil,
       window:
@@ -874,6 +889,7 @@ export async function buildScenarioPeerHarness(mission, options = {}) {
           base_price_eur: basePrice,
           change_fee_eur: changeFee,
           total_price_eur: basePrice + changeFee + cancelPenalty,
+          total_charged_eur: basePrice + changeFee + cancelPenalty,
           issued_at: new Date().toISOString(),
         };
         const env = await signProviderReceipt(receiptBody, kp);
@@ -1039,14 +1055,15 @@ export function exportMissionToIcs(mission, graph, operations = []) {
       const endIso = node.valid_until || addDaysIso(activeDate, 1);
       lines.push(`DTEND;VALUE=DATE:${String(endIso).replace(/-/g, "")}`);
     }
+    const escIcs = (s) => String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
     const statusTag = op?.state === "COMMITTED" ? "RE-ALIGNED & VERIFIED" : "PRESERVED UNTOUCHED";
-    lines.push(`SUMMARY:[${statusTag}] ${node.title} (${node.booking_ref})`);
-    lines.push(`LOCATION:${node.provider_name}`);
+    lines.push(`SUMMARY:${escIcs(`[${statusTag}] ${node.title} (${node.booking_ref})`)}`);
+    lines.push(`LOCATION:${escIcs(node.provider_name)}`);
     const proofDigest = op?.receipt_envelope?.proof?.payload_sha256
       ? `Ed25519 Payload SHA-256: ${op.receipt_envelope.proof.payload_sha256}`
       : "Original Confirmed Commitment Preserved";
     lines.push(
-      `DESCRIPTION:Provider: ${node.provider_name}\\nRef: ${node.booking_ref}\\nState: ${node.visual_state}\\n${proofDigest}`,
+      `DESCRIPTION:Provider: ${escIcs(node.provider_name)}\\nRef: ${escIcs(node.booking_ref)}\\nState: ${escIcs(node.visual_state)}\\n${proofDigest}`,
     );
     lines.push("END:VEVENT");
   }
@@ -1214,7 +1231,9 @@ export async function verifyExportedAuditBundle(rawBundle, options = {}) {
   let zkBudgetValid = null;
   const zkAtt = clean.zk_budget_attestation;
   if (zkAtt !== undefined && zkAtt !== null) {
-    const zkRes = await verifyBlindedBudgetAttestation(zkAtt);
+    const zkRes = await verifyBlindedBudgetAttestation(zkAtt, {
+      expectedMissionId: clean.mission_id ? String(clean.mission_id) : undefined,
+    });
     let zkConsistent = zkRes.valid && zkRes.ceilingRemainsHidden;
     if (!zkRes.valid) {
       errors.push(`ZK_BUDGET_LADDER_INVALID: ${zkRes.reason}`);

@@ -17,7 +17,7 @@ run(
   [
     "commit",
     "-m",
-    "feat: Dark-theme WCAG 100x6, live node Ed25519 re-verifier, NSGA-II plan card metrics, WebMCP Builder Kit, Node24 CI & 88 tests",
+    "feat: complete 300-upgrade TITAN OMEGA cycle (Waves 1-5: FIPS SHA-256 fix, SSRF/Tag/Beacon guards, Ed25519 key rings, VALARM .ics, lazy code-split, 36 Chaos, N=150 benchmarks & 106 tests)",
   ],
   { stdio: "inherit" },
 );

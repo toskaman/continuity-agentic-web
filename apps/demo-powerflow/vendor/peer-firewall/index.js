@@ -12,10 +12,19 @@
  *    agent instructions between turns ("rug-pull" defense).
  */
 
-import { canonicalizeJson, isPlainObject, sanitizeJson, sha256Hex } from "../shared-schemas/index.js";
+import {
+  canonicalizeJson,
+  isPlainObject,
+  sanitizeJson,
+  sha256Hex,
+  timingSafeEqualString,
+} from "../shared-schemas/index.js";
 
-// Invisible Unicode bidirectional overrides & zero-width smuggling characters (CVE-2021-42574 class)
-const TROJAN_UNICODE_RE = /[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/;
+// Invisible Unicode bidirectional overrides, zero-width fillers, variation selectors & Tag smuggling
+const TROJAN_UNICODE_RE = /[\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2069\u2800\u3164\uFE00-\uFE0F\uFEFF\uFFA0]/;
+const UNICODE_TAG_SMUGGLING_RE = /[\u{E0000}-\u{E007F}\u{E0100}-\u{E01EF}]/u;
+const PUNYCODE_OR_MIXED_HOST_RE = /(?:^|\.)xn--|(?=.*[a-z])(?=.*[\u0370-\u04FF])/i;
+const MAX_PINNED_PEERS = 256;
 
 const INJECTION_PATTERNS = [
   {
@@ -35,6 +44,18 @@ const INJECTION_PATTERNS = [
     severity: "CRITICAL",
     label: "Stealth / User-Deception Instruction",
     re: /\b(?:do\s+not\s+(?:tell|inform|mention\s+to|show)\s+the\s+(?:user|visitor|human)|silently\s+(?:call|invoke|execute|charge|cancel))\b/i,
+  },
+  {
+    id: "PF-MARKDOWN-BEACON-EXFIL",
+    severity: "CRITICAL",
+    label: "Markdown Image / Link Exfiltration Beacon",
+    re: /!\[[^\]]*\]\(\s*https?:\/\/[^)]*(?:\{|\$|api[_-]?key|token|sly_data|secret|bearer|cookie)[^)]*\)/i,
+  },
+  {
+    id: "PF-ENCODED-PAYLOAD",
+    severity: "CRITICAL",
+    label: "Encoded / Obfuscated Instruction Payload",
+    re: /\b(?:decode\s+and\s+(?:follow|execute|obey)|atob\s*\(|Buffer\.from\s*\([^)]*base64)/i,
   },
   {
     id: "PF-PII-LURE",
@@ -112,11 +133,35 @@ export async function inspectPeerNetworkSafety({
     });
   }
 
+  const manifestSurfaceText = `${String(cleanManifest.brand || "")}\n${(Array.isArray(cleanManifest.networks) ? cleanManifest.networks : []).map((n) => String(n?.description || "")).join("\n")}`;
+  if (TROJAN_UNICODE_RE.test(manifestSurfaceText) || UNICODE_TAG_SMUGGLING_RE.test(manifestSurfaceText)) {
+    findings.push({
+      ruleId: "PF-MANIFEST-TROJAN",
+      severity: "CRITICAL",
+      agent: "(manifest)",
+      label: "Hidden Unicode Smuggling in Manifest Metadata",
+      evidence: "Manifest brand or network description contains invisible Unicode control/tag characters.",
+    });
+  }
+  for (const pat of INJECTION_PATTERNS) {
+    const mMatch = manifestSurfaceText.match(pat.re);
+    if (mMatch) {
+      findings.push({
+        ruleId: pat.id,
+        severity: pat.severity,
+        agent: "(manifest)",
+        label: pat.label,
+        evidence: `"${mMatch[0].slice(0, 96)}"`,
+      });
+    }
+  }
+
   for (const agent of agents) {
     const agentName = String(agent.name || "unnamed_agent");
     const desc = String(agent.function?.description || "");
+    const paramsText = agent.function?.parameters ? JSON.stringify(agent.function.parameters) : "";
     const instr = String(agent.instructions || "");
-    const combinedText = `${desc}\n${instr}`;
+    const combinedText = `${desc}\n${paramsText}\n${instr}`;
 
     agentInstructionHashes[agentName] = `sha256:${(await sha256Hex(combinedText)).slice(0, 16)}`;
 
@@ -127,6 +172,15 @@ export async function inspectPeerNetworkSafety({
         agent: agentName,
         label: "Hidden Unicode Bidi / Zero-Width Characters",
         evidence: `Agent "${agentName}" contains invisible Unicode control characters used to hide instructions.`,
+      });
+    }
+    if (UNICODE_TAG_SMUGGLING_RE.test(combinedText)) {
+      findings.push({
+        ruleId: "PF-TAG-SMUGGLING",
+        severity: "CRITICAL",
+        agent: agentName,
+        label: "Unicode Tag / Variation Selector ASCII Smuggling",
+        evidence: `Agent "${agentName}" embeds U+E0000..U+E01EF invisible LLM tag characters.`,
       });
     }
 
@@ -147,7 +201,27 @@ export async function inspectPeerNetworkSafety({
     for (const u of extUrls) {
       reachablePartnerUrls.add(u);
       try {
-        const extOrigin = new URL(u).origin;
+        const parsedExt = new URL(u);
+        const extOrigin = parsedExt.origin;
+        const isLoopback = ["127.0.0.1", "localhost", "[::1]"].includes(parsedExt.hostname);
+        if (parsedExt.protocol === "http:" && !isLoopback) {
+          findings.push({
+            ruleId: "PF-INSECURE-HTTP-TOOL",
+            severity: "CRITICAL",
+            agent: agentName,
+            label: "Insecure Cleartext HTTP External Tool URL",
+            evidence: `${u} uses cleartext http:// on non-loopback host.`,
+          });
+        }
+        if (PUNYCODE_OR_MIXED_HOST_RE.test(parsedExt.hostname)) {
+          findings.push({
+            ruleId: "PF-HOMOGLYPH-HOST",
+            severity: "WARN",
+            agent: agentName,
+            label: "Punycode / Mixed-Script Hostname",
+            evidence: `Hostname "${parsedExt.hostname}" uses punycode or mixed scripts.`,
+          });
+        }
         if (peerMode === "closed" && extOrigin !== selfOrigin && !allowedOrigins.has(extOrigin)) {
           findings.push({
             ruleId: "PF-UNDECLARED-PEER",
@@ -182,11 +256,13 @@ export async function inspectPeerNetworkSafety({
 
   const criticalCount = findings.filter((f) => f.severity === "CRITICAL").length;
   const warnCount = findings.filter((f) => f.severity === "WARN").length;
+  const riskScore = Math.min(100, criticalCount * 50 + warnCount * 15);
   const verdict = criticalCount > 0 ? "BLOCK" : warnCount > 0 ? "REVIEW_WARNINGS" : "ALLOW";
 
   return {
     safe: criticalCount === 0,
     verdict,
+    riskScore,
     siteBaseUrl,
     networkName: cleanManifest?.networks?.[0]?.name || "unknown_network",
     frontAgent: cleanManifest?.networks?.[0]?.front_man || agents[0]?.name || null,
@@ -251,16 +327,25 @@ export function diffPeerNetworks(previousNetwork, nextNetwork) {
   );
   const addedExternalUrls = Array.from(nextUrls).filter((u) => !prevUrls.has(u));
 
+  const modelChanged =
+    String(previousNetwork?.llm_config?.model_name || "") !== String(nextNetwork?.llm_config?.model_name || "");
+  const maxStepsChanged =
+    Number(previousNetwork?.max_steps || 0) !== Number(nextNetwork?.max_steps || 0);
+
   return {
     changed:
       addedAgents.length > 0
       || removedAgents.length > 0
       || modifiedAgents.length > 0
-      || addedExternalUrls.length > 0,
+      || addedExternalUrls.length > 0
+      || modelChanged
+      || maxStepsChanged,
     addedAgents,
     removedAgents,
     modifiedAgents,
     addedExternalUrls,
+    modelChanged,
+    maxStepsChanged,
   };
 }
 
@@ -326,6 +411,10 @@ export class PeerTofuRegistry {
           agentInstructionHashes: inspectionReport.agentInstructionHashes,
           pinnedAt: new Date().toISOString(),
         };
+        if (this.pins.size >= MAX_PINNED_PEERS && !this.pins.has(key)) {
+          const oldest = this.pins.keys().next().value;
+          this.pins.delete(oldest);
+        }
         this.pins.set(key, record);
         this._persist();
       }
@@ -337,7 +426,7 @@ export class PeerTofuRegistry {
       };
     }
 
-    if (existing.bundleSha256 === inspectionReport.bundleSha256) {
+    if (timingSafeEqualString(String(existing.bundleSha256), String(inspectionReport.bundleSha256))) {
       return {
         allowed: true,
         status: "MATCHES_PINNED_DIGEST",

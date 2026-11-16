@@ -243,8 +243,8 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
     assert.equal(fullOutcome.committedCount, 3);
     assert.equal(fullOutcome.bundleValid, true);
     assert.equal(fullOutcome.tamperCaught, true);
-    assert.equal(fullOutcome.chaosPassed, 30);
-    assert.equal(fullOutcome.chaosTotal, 30);
+    assert.equal(fullOutcome.chaosPassed, 36);
+    assert.equal(fullOutcome.chaosTotal, 36);
     assert.equal(fullOutcome.auditOk, true);
     assert.equal(fullOutcome.auditScore, "9 / 9");
 

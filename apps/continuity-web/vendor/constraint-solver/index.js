@@ -140,10 +140,16 @@ export function solveMinimalChangePlans({
       continue;
     }
 
-    const nodeOffers = normalizedOffers
-      .filter((o) => o.commitment_id === node.id)
-      .slice()
-      .sort((a, b) => a.offer_id.localeCompare(b.offer_id));
+    const rawOffers = normalizedOffers.filter((o) => o.commitment_id === node.id);
+    const seenOfferIds = new Set();
+    const nodeOffers = [];
+    for (const o of rawOffers) {
+      if (!seenOfferIds.has(o.offer_id)) {
+        seenOfferIds.add(o.offer_id);
+        nodeOffers.push(o);
+      }
+    }
+    nodeOffers.sort((a, b) => a.offer_id.localeCompare(b.offer_id));
 
     if (decision.status === "AFFECTED_SOFT") {
       // Soft candidate can either keep its existing schedule OR take a peer alignment offer
@@ -188,9 +194,31 @@ export function solveMinimalChangePlans({
   const MAX_COMBINATIONS = 4096;
   let explored = 0;
 
-  /** @param {number} idx @param {Record<string, Record<string, any>>} current */
-  const search = (idx, current) => {
+  // Precompute minimum achievable cost suffix `suffixMinCost[idx]` for exact branch-and-bound pruning!
+  const nodeMinCost = nodeIds.map((nid) => {
+    const opts = optionsByNode.get(nid) || [];
+    let minC = Infinity;
+    for (const o of opts) {
+      const c = Number(o.base_price_eur) + Number(o.change_fee_eur || 0) + Number(o.cancellation_penalty_eur || 0);
+      if (c < minC) minC = c;
+    }
+    return Number.isFinite(minC) ? minC : 0;
+  });
+  const suffixMinCost = new Array(nodeIds.length + 1).fill(0);
+  for (let k = nodeIds.length - 1; k >= 0; k--) {
+    suffixMinCost[k] = suffixMinCost[k + 1] + nodeMinCost[k];
+  }
+
+  /** @param {number} idx @param {Record<string, Record<string, any>>} current @param {number} costSoFar */
+  const search = (idx, current, costSoFar) => {
     if (explored >= MAX_COMBINATIONS) return;
+    if (idx > 0 && costSoFar + suffixMinCost[idx] > maxBudgetEur + 0.005) {
+      rejectedCount += 1;
+      rejectionReasons.add(
+        `Projected total cost exceeds hard maximum budget ceiling (€${maxBudgetEur.toFixed(2)}).`,
+      );
+      return;
+    }
     if (idx === nodeIds.length) {
       explored += 1;
       const check = validateCandidateAssignment(
@@ -216,11 +244,13 @@ export function solveMinimalChangePlans({
     const opts = optionsByNode.get(nid) || [];
     for (const opt of opts) {
       current[nid] = opt;
-      search(idx + 1, current);
+      const stepCost =
+        Number(opt.base_price_eur) + Number(opt.change_fee_eur || 0) + Number(opt.cancellation_penalty_eur || 0);
+      search(idx + 1, current, costSoFar + stepCost);
     }
   };
 
-  search(0, {});
+  search(0, {}, 0);
 
   if (feasibleAssignments.length === 0) {
     const counterfactualPrescription = _skipCounterfactual
@@ -815,6 +845,12 @@ function validateCandidateAssignment(
     };
   }
 
+  const avoidedCancellationFeesEur = Number(
+    allNodes
+      .filter((n) => assignmentMap[n.id].semantic_kind === "KEEP_EXISTING_SCHEDULE")
+      .reduce((sum, n) => sum + Number(n.cancellation_fee_eur || 0), 0)
+      .toFixed(2),
+  );
   const completionOffsetDays = maxModifiedOffsetDays;
   const signature = allNodes.map((n) => `${n.id}:${assignmentMap[n.id].offer_id}`).join("|");
 
@@ -829,6 +865,7 @@ function validateCandidateAssignment(
         totalMissionCostEur,
         netDeltaEur,
         totalFeesAndPenaltiesEur,
+        avoidedCancellationFeesEur,
         maxBudgetEur,
         budgetHeadroomEur: Number((maxBudgetEur - totalMissionCostEur).toFixed(2)),
         changedCount,

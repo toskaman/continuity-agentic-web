@@ -70,9 +70,18 @@ export function encodeSignedReceiptHandoff(signedEnvelope, keyMeta, peerOrigin) 
  */
 export async function verifySignedReceiptHandoff(expectedProviderId, rawToken, options = {}) {
   try {
+    if (typeof rawToken !== "string" || rawToken.length < 16 || rawToken.length > 8192) {
+      return { valid: false, reason: "Handoff token length out of bounds." };
+    }
     const parsed = decodeBase64UrlJson(rawToken);
     if (!parsed || parsed.v !== 1 || !parsed.publicJwk || !parsed.envelope) {
       return { valid: false, reason: "Malformed handoff token." };
+    }
+    if (parsed.peerOrigin) {
+      const originUrl = new URL(String(parsed.peerOrigin));
+      if (originUrl.username || originUrl.password) {
+        return { valid: false, reason: "Handoff peerOrigin must not embed credentials." };
+      }
     }
     if (options.expectedOrigin && parsed.peerOrigin) {
       const cleanExpected = String(options.expectedOrigin).replace(/\/+$/, "");
@@ -435,6 +444,7 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
     if (["hold_moving_slot", "hold_technician_slot"].includes(tool)) {
       const idem = String(args.idempotency_key || "");
       if (holds.has(idem)) return holds.get(idem);
+      if (holds.size >= 512) holds.delete(holds.keys().next().value);
       const prefix = providerId === "moveco" ? "hold_mc" : "hold_hc";
       const holdResp = {
         ok: true,
@@ -447,6 +457,14 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
       };
       holds.set(idem, holdResp);
       return holdResp;
+    }
+
+    if (tool === "release_hold") {
+      const hid = String(args.hold_id || "");
+      for (const [k, v] of holds.entries()) {
+        if (v.hold_id === hid) holds.delete(k);
+      }
+      return { ok: true, released: true, hold_id: hid, fee_charged_eur: 0 };
     }
 
     // 3. COMMIT TOOLS (Signed with origin-isolated Ed25519 private key!)
@@ -465,9 +483,11 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
 
       let basePrice = state.booking.base_price_eur;
       let changeFee = state.booking.change_fee_eur;
+      let cancelPenalty = 0;
       if (providerId === "moveco" && args.offer_id === "off_moveco_partner_overflow_fri") {
         basePrice = 405;
         changeFee = 0;
+        cancelPenalty = 20;
       } else if (providerId === "homeconnect" && args.offer_id === "off_homeconnect_sat_am") {
         basePrice = 39;
         changeFee = 0;
@@ -489,6 +509,7 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
         base_price_eur: basePrice,
         change_fee_eur: changeFee,
         total_price_eur: basePrice + changeFee,
+        total_charged_eur: basePrice + changeFee + cancelPenalty,
         issued_at: new Date().toISOString(),
       };
 
@@ -502,6 +523,7 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
         receipt_envelope: signedEnvelope,
         handoff_token: handoffToken,
       };
+      if (idempotencyStore.size >= 512) idempotencyStore.delete(idempotencyStore.keys().next().value);
       idempotencyStore.set(idem, fullResult);
       return fullResult;
     }
@@ -629,7 +651,15 @@ export function mountPeerRpcBridgeServer({ providerId, allowedCallerOrigins = []
   };
 
   window.addEventListener("message", onMessage);
-  return { engine, destroy: () => window.removeEventListener("message", onMessage) };
+  return {
+    engine,
+    destroy: () => {
+      window.removeEventListener("message", onMessage);
+      try {
+        channel?.close();
+      } catch {}
+    },
+  };
 }
 
 /**
@@ -664,6 +694,8 @@ export class CrossOriginBridgeClient {
     const entry = this.pending.get(msg.requestId);
     if (!entry) return;
     if (event.origin !== entry.expectedOrigin) return;
+    if (entry.expectedSourceWindow && event.source && event.source !== entry.expectedSourceWindow) return;
+    if (entry.expectedProviderId && msg.providerId && msg.providerId !== entry.expectedProviderId) return;
     clearTimeout(entry.timer);
     this.pending.delete(msg.requestId);
     if (msg.ok === false && msg.error) {
@@ -692,6 +724,8 @@ export class CrossOriginBridgeClient {
         reject,
         timer,
         expectedOrigin: frameInfo.targetOrigin,
+        expectedSourceWindow: frameInfo.iframe.contentWindow,
+        expectedProviderId: providerId,
       });
 
       frameInfo.iframe.contentWindow.postMessage(
@@ -706,7 +740,7 @@ export class CrossOriginBridgeClient {
   }
 
   /**
-   * Mount hidden sandboxed iframes to all 4 peer websites and perform origin-verified `HANDSHAKE`.
+   * Mount hidden sandboxed iframes to all 4 peer websites in parallel and perform origin-verified `HANDSHAKE`.
    * Returns `true` when all peers respond with valid Ed25519 public JWKs.
    */
   async connectAll() {
@@ -724,48 +758,50 @@ export class CrossOriginBridgeClient {
     }
 
     try {
-      for (const [pid, baseUrl] of Object.entries(this.peerOrigins)) {
-        if (!this.frames.has(pid)) {
-          const cleanBase = String(baseUrl).replace(/\/+$/, "");
-          const bridgeUrl = `${cleanBase}/peer-rpc-bridge.html`;
-          const targetOrigin = new URL(bridgeUrl).origin;
+      await Promise.all(
+        Object.entries(this.peerOrigins).map(async ([pid, baseUrl]) => {
+          if (!this.frames.has(pid)) {
+            const cleanBase = String(baseUrl).replace(/\/+$/, "");
+            const bridgeUrl = `${cleanBase}/peer-rpc-bridge.html`;
+            const targetOrigin = new URL(bridgeUrl).origin;
 
-          const iframe = document.createElement("iframe");
-          iframe.src = bridgeUrl;
-          iframe.title = `${pid} cross-origin capability bridge`;
-          iframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
-          iframe.style.display = "none";
+            const iframe = document.createElement("iframe");
+            iframe.src = bridgeUrl;
+            iframe.title = `${pid} cross-origin capability bridge`;
+            iframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
+            iframe.style.display = "none";
 
-          await new Promise((resolve, reject) => {
-            const t = setTimeout(() => reject(new Error(`Bridge load timeout: ${bridgeUrl}`)), this.timeoutMs);
-            iframe.addEventListener(
-              "load",
-              () => {
-                clearTimeout(t);
-                resolve(true);
-              },
-              { once: true },
-            );
-            iframe.addEventListener(
-              "error",
-              () => {
-                clearTimeout(t);
-                reject(new Error(`Bridge load failed: ${bridgeUrl}`));
-              },
-              { once: true },
-            );
-            container.appendChild(iframe);
-          });
+            await new Promise((resolve, reject) => {
+              const t = setTimeout(() => reject(new Error(`Bridge load timeout: ${bridgeUrl}`)), this.timeoutMs);
+              iframe.addEventListener(
+                "load",
+                () => {
+                  clearTimeout(t);
+                  resolve(true);
+                },
+                { once: true },
+              );
+              iframe.addEventListener(
+                "error",
+                () => {
+                  clearTimeout(t);
+                  reject(new Error(`Bridge load failed: ${bridgeUrl}`));
+                },
+                { once: true },
+              );
+              container.appendChild(iframe);
+            });
 
-          this.frames.set(pid, { iframe, targetOrigin });
-        }
+            this.frames.set(pid, { iframe, targetOrigin });
+          }
 
-        const hs = await this._rpc(pid, { method: "HANDSHAKE" });
-        if (!hs?.publicJwk || !hs?.keyId) {
-          throw new Error(`Invalid handshake from peer "${pid}".`);
-        }
-        this.verifier.registerTrustedProviderKey(pid, hs.keyId, hs.publicJwk);
-      }
+          const hs = await this._rpc(pid, { method: "HANDSHAKE" });
+          if (!hs?.publicJwk || !hs?.keyId) {
+            throw new Error(`Invalid handshake from peer "${pid}".`);
+          }
+          this.verifier.registerTrustedProviderKey(pid, hs.keyId, hs.publicJwk);
+        }),
+      );
 
       this.connected = true;
       return true;
@@ -864,6 +900,8 @@ export class CrossOriginBridgeClient {
                   proposed_date: proposedDate,
                   idempotency_key: idempotencyKey,
                 }),
+              releaseHold: ({ holdId, bookingRef }) =>
+                callTool("release_hold", { hold_id: holdId, booking_ref: bookingRef }),
             }
           : {}),
         executeCommit: ({ idempotencyKey, arguments: a }) =>

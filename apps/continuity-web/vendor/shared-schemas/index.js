@@ -8,6 +8,59 @@
 const FORBIDDEN_KEYS = new Set(["__proto__", "prototype", "constructor"]);
 const MAX_PAYLOAD_BYTES = 131_072; // 128 KB bounded payload guard
 const MAX_SCHEMA_DEPTH = 12;
+const MAX_CANONICAL_DEPTH = 24;
+const MAX_SHA256_CACHE_ENTRIES = 512;
+const UTF8_ENCODER = new TextEncoder();
+const LONE_SURROGATE_RE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+const BYTE_TO_HEX = Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, "0"));
+const SHA256_LRU_CACHE = new Map();
+
+/**
+ * Constant-time string equality check (prevents early-exit timing side channels on digests, nonces, and OAuth states).
+ * @param {string} a
+ * @param {string} b
+ * @returns {boolean}
+ */
+export function timingSafeEqualString(a, b) {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  const bytesA = UTF8_ENCODER.encode(a);
+  const bytesB = UTF8_ENCODER.encode(b);
+  const maxLen = Math.max(bytesA.length, bytesB.length);
+  let diff = bytesA.length ^ bytesB.length;
+  for (let i = 0; i < maxLen; i++) {
+    diff |= (bytesA[i] ?? 0) ^ (bytesB[i] ?? 0);
+  }
+  return diff === 0;
+}
+
+/**
+ * Constant-time lowercase hexadecimal digest comparison.
+ * @param {string} hexA
+ * @param {string} hexB
+ * @returns {boolean}
+ */
+export function timingSafeEqualHex(hexA, hexB) {
+  if (typeof hexA !== "string" || typeof hexB !== "string") return false;
+  return timingSafeEqualString(hexA.toLowerCase(), hexB.toLowerCase());
+}
+
+/**
+ * Deeply freeze a sanitized JSON-compatible value so authoritative invariants cannot be mutated in-place.
+ * @template T
+ * @param {T} value
+ * @returns {Readonly<T>}
+ */
+export function deepFreezeJson(value) {
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) {
+    for (const item of value) deepFreezeJson(item);
+  } else {
+    for (const key of Object.keys(value)) {
+      deepFreezeJson(value[key]);
+    }
+  }
+  return Object.freeze(value);
+}
 
 /**
  * Check whether a value is a plain JSON object.
@@ -38,7 +91,7 @@ export function sanitizeJson(value, maxBytes = MAX_PAYLOAD_BYTES) {
     throw new Error(`JSON payload exceeds maximum size (${raw.length} > ${maxBytes} chars).`);
   }
   return JSON.parse(raw, (key, val) => {
-    if (FORBIDDEN_KEYS.has(key)) {
+    if (FORBIDDEN_KEYS.has(key) || key.includes("\u0000")) {
       throw new Error(`Forbidden object key "${key}" rejected.`);
     }
     return val;
@@ -49,9 +102,13 @@ export function sanitizeJson(value, maxBytes = MAX_PAYLOAD_BYTES) {
  * Deterministically serialize any JSON-compatible value with lexicographically sorted keys
  * and normalized numbers (following RFC 8785 / JCS principles for JSON data).
  * @param {unknown} value
+ * @param {number} [depth=0]
  * @returns {string}
  */
-export function canonicalizeJson(value) {
+export function canonicalizeJson(value, depth = 0) {
+  if (depth > MAX_CANONICAL_DEPTH) {
+    throw new Error(`Canonical JSON depth exceeds maximum (${MAX_CANONICAL_DEPTH}).`);
+  }
   if (value === null) return "null";
   const type = typeof value;
   if (type === "boolean") return value ? "true" : "false";
@@ -63,10 +120,13 @@ export function canonicalizeJson(value) {
     return Object.is(value, -0) ? "0" : JSON.stringify(value);
   }
   if (type === "string") {
+    if (LONE_SURROGATE_RE.test(value)) {
+      throw new Error("RFC 8785 JCS rejects unpaired UTF-16 surrogates in canonical strings.");
+    }
     return JSON.stringify(value);
   }
   if (Array.isArray(value)) {
-    return `[${value.map((item) => canonicalizeJson(item)).join(",")}]`;
+    return `[${value.map((item) => canonicalizeJson(item, depth + 1)).join(",")}]`;
   }
   if (isPlainObject(value)) {
     const keys = Object.keys(value).sort();
@@ -75,8 +135,11 @@ export function canonicalizeJson(value) {
       if (FORBIDDEN_KEYS.has(key)) {
         throw new Error(`Forbidden key "${key}" in canonical serialization.`);
       }
+      if (LONE_SURROGATE_RE.test(key)) {
+        throw new Error("RFC 8785 JCS rejects unpaired UTF-16 surrogates in object keys.");
+      }
       if (value[key] !== undefined) {
-        parts.push(`${JSON.stringify(key)}:${canonicalizeJson(value[key])}`);
+        parts.push(`${JSON.stringify(key)}:${canonicalizeJson(value[key], depth + 1)}`);
       }
     }
     return `{${parts.join(",")}}`;
@@ -85,19 +148,39 @@ export function canonicalizeJson(value) {
 }
 
 /**
- * Compute SHA-256 hex digest using standard Web Crypto API (browser & Node >= 22).
+ * Compute SHA-256 hex digest using standard Web Crypto API (browser & Node >= 22) with bounded LRU memoization.
  * Includes a deterministic pure-JS SHA-256 fallback for non-secure HTTP contexts if subtle is absent.
  * @param {string} input
  * @returns {Promise<string>}
  */
 export async function sha256Hex(input) {
   const text = String(input);
-  if (globalThis.crypto?.subtle) {
-    const bytes = new TextEncoder().encode(text);
-    const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
-    return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+  if (text.length <= 8192 && SHA256_LRU_CACHE.has(text)) {
+    const cached = SHA256_LRU_CACHE.get(text);
+    SHA256_LRU_CACHE.delete(text);
+    SHA256_LRU_CACHE.set(text, cached);
+    return cached;
   }
-  return sha256PureHex(text);
+  let hex;
+  if (globalThis.crypto?.subtle) {
+    const bytes = UTF8_ENCODER.encode(text);
+    const digest = new Uint8Array(await globalThis.crypto.subtle.digest("SHA-256", bytes));
+    let out = "";
+    for (let i = 0; i < digest.length; i++) {
+      out += BYTE_TO_HEX[digest[i]];
+    }
+    hex = out;
+  } else {
+    hex = sha256PureHex(text);
+  }
+  if (text.length <= 8192) {
+    if (SHA256_LRU_CACHE.size >= MAX_SHA256_CACHE_ENTRIES) {
+      const oldestKey = SHA256_LRU_CACHE.keys().next().value;
+      SHA256_LRU_CACHE.delete(oldestKey);
+    }
+    SHA256_LRU_CACHE.set(text, hex);
+  }
+  return hex;
 }
 
 /**
@@ -117,18 +200,26 @@ export function sha256PureHex(asciiOrUtf8) {
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
   ];
   const rotr = (n, x) => (x >>> n) | (x << (32 - n));
-  const bytes = Array.from(new TextEncoder().encode(asciiOrUtf8));
-  const bitLen = bytes.length * 8;
-  bytes.push(0x80);
-  while ((bytes.length % 64) !== 56) bytes.push(0);
+  const srcBytes = UTF8_ENCODER.encode(asciiOrUtf8);
+  const bitLen = srcBytes.length * 8;
+  const padZeroCount = (55 - (srcBytes.length % 64) + 64) % 64;
+  const totalLen = srcBytes.length + 1 + padZeroCount + 8;
+  const bytes = new Uint8Array(totalLen);
+  bytes.set(srcBytes, 0);
+  bytes[srcBytes.length] = 0x80;
   const hi = Math.floor(bitLen / 0x100000000);
   const lo = bitLen >>> 0;
-  bytes.push(
-    (hi >>> 24) & 0xff, (hi >>> 16) & 0xff, (hi >>> 8) & 0xff, hi & 0xff,
-    (lo >>> 24) & 0xff, (lo >>> 16) & 0xff, (lo >>> 8) & 0xff, lo & 0xff,
-  );
+  const tail = totalLen - 8;
+  bytes[tail] = (hi >>> 24) & 0xff;
+  bytes[tail + 1] = (hi >>> 16) & 0xff;
+  bytes[tail + 2] = (hi >>> 8) & 0xff;
+  bytes[tail + 3] = hi & 0xff;
+  bytes[tail + 4] = (lo >>> 24) & 0xff;
+  bytes[tail + 5] = (lo >>> 16) & 0xff;
+  bytes[tail + 6] = (lo >>> 8) & 0xff;
+  bytes[tail + 7] = lo & 0xff;
   let h0 = 0x6a09e667, h1 = 0xbb67ae85, h2 = 0x3c6ef372, h3 = 0xa54ff53a;
-  let h4 = 0x310e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19;
+  let h4 = 0x510e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19;
   const W = new Array(64);
   for (let i = 0; i < bytes.length; i += 64) {
     for (let t = 0; t < 16; t++) {
@@ -236,6 +327,16 @@ export function validateAgainstSchema(schema, data, path = "$", depth = 0) {
     if (schema.maxItems !== undefined && data.length > schema.maxItems) {
       errors.push(`${path}: array exceeds maximum ${schema.maxItems} items`);
     }
+    if (schema.uniqueItems === true) {
+      const seen = new Set();
+      for (let idx = 0; idx < data.length; idx++) {
+        const key = canonicalizeJson(data[idx]);
+        if (seen.has(key)) {
+          errors.push(`${path}[${idx}]: duplicate array item violates uniqueItems`);
+        }
+        seen.add(key);
+      }
+    }
     if (schema.items) {
       data.forEach((item, idx) => {
         const sub = validateAgainstSchema(schema.items, item, `${path}[${idx}]`, depth + 1);
@@ -252,14 +353,29 @@ export function validateAgainstSchema(schema, data, path = "$", depth = 0) {
     if (schema.maxLength !== undefined && data.length > schema.maxLength) {
       errors.push(`${path}: string exceeds maxLength ${schema.maxLength}`);
     }
-    if (schema.format === "date" && !isValidIsoDate(data)) {
+    if (schema.pattern !== undefined) {
+      const re = schema.pattern instanceof RegExp ? schema.pattern : new RegExp(String(schema.pattern));
+      if (!re.test(data)) {
+        errors.push(`${path}: string does not match required pattern`);
+      }
+    }
+    if ((schema.format === "date" || schema.format === "iso-date") && !isValidIsoDate(data)) {
       errors.push(`${path}: invalid YYYY-MM-DD date "${data}"`);
     }
-    if (schema.format === "uri") {
+    if (schema.format === "uri" || schema.format === "https-or-loopback-url") {
       try {
         const u = new URL(data);
         if (!["http:", "https:"].includes(u.protocol)) {
           errors.push(`${path}: URI must use http or https`);
+        } else if (
+          schema.format === "https-or-loopback-url"
+          && u.protocol !== "https:"
+          && !["127.0.0.1", "localhost", "[::1]"].includes(u.hostname)
+        ) {
+          errors.push(`${path}: non-loopback URI must use https`);
+        }
+        if (u.username || u.password) {
+          errors.push(`${path}: URI must not embed credentials`);
         }
       } catch {
         errors.push(`${path}: invalid URI "${data}"`);
