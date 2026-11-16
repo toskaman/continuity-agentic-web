@@ -30,6 +30,7 @@ import {
   SAMPLE_RUGPULL_PEER_BUNDLE,
 } from "./vendor/peer-firewall/index.js";
 import { canonicalizeJson, sha256Hex } from "./vendor/shared-schemas/index.js";
+import { exposeActionsToWebMcp } from "./vendor/webmcp-adapter/index.js";
 
 const CLEAN_FACTS_SAMPLE_HTML = `<main>
   <h1>Harbor Kayak Co.</h1>
@@ -51,8 +52,8 @@ jobs:
       security-events: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - name: Run 9-point MVP 0.2, Facts & Project NANDA SARIF Audit
@@ -650,6 +651,112 @@ function initKit() {
   document.querySelector("#kit-fw-scan-btn")?.addEventListener("click", () => {
     void runFwScan();
   });
+
+  // Expose all 6 Community Builder Kit tools over W3C / Cognizant WebMCP (`document.modelContext` + `navigator.modelContext`)
+  exposeActionsToWebMcp(
+    (actions) => {
+      actions.register({
+        name: "audit_open_agentic_site",
+        description: "Run the 9-point Open Agentic Web MVP 0.2, Facts & Project NANDA conformance audit against an HTTPS URL.",
+        effect: "read",
+        inputSchema: {
+          type: "object",
+          additionalProperties: false,
+          required: ["url"],
+          properties: { url: { type: "string", minLength: 8, maxLength: 512 } },
+        },
+        execute: ({ url }) => auditOpenAgenticSite(url),
+      });
+      actions.register({
+        name: "compile_visible_facts",
+        description: "Extract visitor-visible data-agent-facts elements from HTML, block hidden prompt-injection vectors, and compile a 1-turn facts/ network.",
+        effect: "read",
+        inputSchema: {
+          type: "object",
+          additionalProperties: false,
+          required: ["siteName", "siteUrl", "networkName", "htmlText"],
+          properties: {
+            siteName: { type: "string", maxLength: 120 },
+            siteUrl: { type: "string", maxLength: 512 },
+            networkName: { type: "string", maxLength: 80 },
+            htmlText: { type: "string", maxLength: 64000 },
+          },
+        },
+        execute: (args) => buildFactsNetworkBundle(args),
+      });
+      actions.register({
+        name: "convert_multi_agent_graph",
+        description: "Convert a Google ADK or OpenAI Agents multi-agent JSON graph into a portable Neuro SAN .network.json + agent-manifest.json bundle.",
+        effect: "read",
+        inputSchema: {
+          type: "object",
+          additionalProperties: false,
+          required: ["sourceJson"],
+          properties: {
+            sourceJson: { type: "string", maxLength: 64000 },
+            emitScopedToolboxes: { type: "boolean" },
+          },
+        },
+        execute: ({ sourceJson, emitScopedToolboxes }) =>
+          convertAgentFrameworkToHoconBundle(sourceJson, { emitScopedToolboxes: Boolean(emitScopedToolboxes) }),
+      });
+      actions.register({
+        name: "verify_audit_bundle",
+        description: "Verify JCS SHA-256 integrity, genesis-linked Saga hash chain, Ed25519 provider receipts, and Zero-Ceiling-Leak SHA-256 Hash-Ladder budget proof.",
+        effect: "read",
+        inputSchema: {
+          type: "object",
+          additionalProperties: false,
+          required: ["bundleJson"],
+          properties: { bundleJson: { type: "string", maxLength: 128000 } },
+        },
+        execute: ({ bundleJson }) => verifyExportedAuditBundle(JSON.parse(bundleJson)),
+      });
+      actions.register({
+        name: "scan_peer_firewall",
+        description: "Inspect an untrusted peer manifest + .network.json for Unicode Bidi Trojans, credential exfiltration, and TOFU SHA-256 rug-pull drift.",
+        effect: "read",
+        inputSchema: {
+          type: "object",
+          additionalProperties: false,
+          required: ["bundleJson"],
+          properties: { bundleJson: { type: "string", maxLength: 128000 } },
+        },
+        execute: ({ bundleJson }) => inspectPeerNetworkSafety(JSON.parse(bundleJson)),
+      });
+      actions.register({
+        name: "generate_nanda_catalog",
+        description: "Generate and validate A2A v1.0 Agent Card, NANDA AI Catalog with JCS SHA-256 targetDigest, and Poppy Reach v1 manifest.",
+        effect: "read",
+        inputSchema: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            baseUrl: { type: "string", maxLength: 512 },
+            brand: { type: "string", maxLength: 120 },
+            networkName: { type: "string", maxLength: 80 },
+          },
+        },
+        execute: async ({ baseUrl, brand, networkName }) => {
+          if (baseUrl) {
+            const u = document.querySelector("#kit-nanda-url");
+            if (u) u.value = baseUrl;
+          }
+          if (brand) {
+            const b = document.querySelector("#kit-nanda-brand");
+            if (b) b.value = brand;
+          }
+          if (networkName) {
+            const n = document.querySelector("#kit-nanda-net");
+            if (n) n.value = networkName;
+          }
+          await generateKitNanda();
+          return lastNandaArtifacts;
+        },
+      });
+    },
+    { namespace: "continuity_kit" },
+  );
 }
 
 if (typeof document !== "undefined") {

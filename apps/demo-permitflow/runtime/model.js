@@ -11,7 +11,8 @@ export function normalizeModelName(value) {
     if (!((first === '"' && last === '"') || (first === "'" && last === "'"))) break;
     model = model.slice(1, -1).trim();
   }
-  if (/^models\/gemini-/i.test(model)) {
+  // Google's OpenAI-compatible catalog lists ids as "models/<name>" while chat takes "<name>".
+  if (/^models\/[a-z0-9._-]+$/i.test(model)) {
     model = model.replace(/^models\//i, "");
   }
   return model;

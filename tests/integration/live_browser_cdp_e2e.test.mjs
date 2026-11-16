@@ -275,6 +275,10 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
       document.querySelector("#kit-bundle-tamper-btn")?.click();
       await new Promise((r) => setTimeout(r, 120));
       const sampleBundleTamperCaught = (document.querySelector("#kit-bundle-status")?.textContent || "").includes("TAMPERED / INVALID");
+      const kitWebMcpCount =
+        window.__continuityWebMcpCatalog?.namespace === "continuity_kit"
+          ? window.__continuityWebMcpCatalog.tools?.length || 0
+          : 0;
       return {
         modulesRows: document.querySelectorAll("#kit-modules-tbody tr").length,
         cleanCompiled,
@@ -283,6 +287,7 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
         adkScopedOk,
         sampleBundleVerified,
         sampleBundleTamperCaught,
+        kitWebMcpCount,
         nandaCatalogGenerated: (document.querySelector("#kit-nanda-cat-out")?.value || "").includes("urn:air:"),
       };
     })()`);
@@ -294,6 +299,7 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
     assert.equal(kitOutcome.adkScopedOk, true);
     assert.equal(kitOutcome.sampleBundleVerified, true);
     assert.equal(kitOutcome.sampleBundleTamperCaught, true);
+    assert.equal(kitOutcome.kitWebMcpCount, 6);
     assert.equal(kitOutcome.nandaCatalogGenerated, true);
 
     // 5. Verify 1-click Inbound Cross-Origin Peer -> CONTINUITY trigger (`?ask_continuity=1`) on MoveCo Express

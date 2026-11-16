@@ -1204,6 +1204,30 @@ export class ContinuityCoordinatorPage {
     };
   }
 
+  async verifyCommittedNodeReceiptLive(nodeId) {
+    const matchingOp = this.preparedOps.find((o) => o.commitment_id === nodeId);
+    if (!matchingOp?.receipt_envelope) {
+      return { ok: false, reason: "No signed receipt envelope attached to this node." };
+    }
+    const pid = matchingOp.provider_id || matchingOp.receipt_envelope?.receipt_body?.provider_id;
+    const verifier = this.saga?.receiptVerifier;
+    if (!pid || !verifier) {
+      return { ok: false, reason: "No pinned ReceiptVerifier active for this session." };
+    }
+    const t0 = performance.now();
+    const res = await verifier.verifyReceipt(pid, matchingOp.receipt_envelope);
+    const elapsedMs = Number((performance.now() - t0).toFixed(2));
+    return {
+      ok: res.valid,
+      elapsedMs,
+      providerId: pid,
+      keyId: matchingOp.receipt_envelope?.proof?.key_id || null,
+      payloadSha256: matchingOp.receipt_envelope?.proof?.payload_sha256 || null,
+      level: res.level,
+      detail: res.detail || res.summary,
+    };
+  }
+
   async buildCurrentAuditBundle() {
     return await exportVerifiableAuditBundle({
       mission: this.mission,

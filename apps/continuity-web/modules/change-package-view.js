@@ -176,6 +176,12 @@ export function renderChangePackageView(page, plan) {
       const isSel = p.plan_id === page.selectedPlanId;
       const deltaSign = p.metrics.netDeltaEur >= 0 ? "+" : "";
       const paretoHtml = p.paretoOptimal ? `<span class="pareto-badge">PARETO OPTIMAL</span>` : "";
+      const avoidedCancelEur = (p.preservedCommitments || []).reduce(
+        (sum, c) => sum + Number(c.cancellation_fee_eur || 0),
+        0,
+      );
+      const savedTxt = avoidedCancelEur > 0 ? ` · €${avoidedCancelEur.toFixed(0)} cancel fees saved` : "";
+      const crowdTxt = Number.isFinite(p.crowdingDistance) ? p.crowdingDistance.toFixed(2) : "∞";
       return `
         <button type="button" class="plan-option ${isSel ? "selected" : ""}" data-plan-id="${page.escapeXml(p.plan_id)}" ${page.lastSagaExecution ? "disabled" : ""}>
           <div class="plan-option-top">
@@ -183,7 +189,7 @@ export function renderChangePackageView(page, plan) {
             <span>€${p.metrics.totalMissionCostEur.toFixed(2)} (${deltaSign}€${p.metrics.netDeltaEur.toFixed(2)})</span>
           </div>
           <div class="plan-option-meta">
-            ${p.metrics.changedCount} changed · ${p.metrics.unchangedCount} preserved untouched · Budget headroom: €${p.metrics.budgetHeadroomEur.toFixed(2)}
+            ${p.metrics.changedCount} changed · ${p.metrics.unchangedCount} preserved${savedTxt} · Headroom: €${p.metrics.budgetHeadroomEur.toFixed(2)} · Front #${p.paretoRank ?? 1} (Crowding ${crowdTxt})
           </div>
         </button>
       `;

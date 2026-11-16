@@ -17,7 +17,7 @@ run(
   [
     "commit",
     "-m",
-    "feat: live hybrid .ics peer execution, 4-peer firewall & local AI parity, 4-primitive ZK audit bundle, WCAG 100x6 zero-failure audit & 86 tests",
+    "feat: Dark-theme WCAG 100x6, live node Ed25519 re-verifier, NSGA-II plan card metrics, WebMCP Builder Kit, Node24 CI & 88 tests",
   ],
   { stdio: "inherit" },
 );

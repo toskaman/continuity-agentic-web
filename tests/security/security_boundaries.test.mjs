@@ -520,3 +520,37 @@ test("S18 ADK-to-HOCON Converter reports numeric scrubbedSecretsCount and suppor
   assert.equal(scoped.toolboxScoping.ok, true);
   assert.ok(scoped.toolboxScoping.metrics.savedCharsPerTurn > 0);
 });
+
+test("S19 verifyCommittedNodeReceiptLive performs live WebCrypto Ed25519 re-verification on committed graph nodes", async () => {
+  const { ContinuityCoordinatorPage } = await import("../../apps/continuity-web/script.js");
+
+  const page = new ContinuityCoordinatorPage();
+  await page.analyzeAndPrepareChange("Move relocation from Tuesday to Friday under €700.");
+  const st = page.getState();
+  await page.commitPreparedPackage({
+    planId: st.selectedPlanId,
+    expectedVersion: st.version,
+    expectedTotalEur: st.selectedPlanSummary.metrics.totalMissionCostEur,
+  });
+
+  const liveVerify = await page.verifyCommittedNodeReceiptLive("cmt_moveco_van");
+  assert.equal(liveVerify.ok, true);
+  assert.equal(liveVerify.providerId, "moveco");
+  assert.equal(liveVerify.level, "VERIFIED_ED25519_DEMO_PROVIDER_SIGNATURE");
+  assert.ok(typeof liveVerify.elapsedMs === "number" && liveVerify.elapsedMs >= 0);
+
+  const uninvolved = await page.verifyCommittedNodeReceiptLive("cmt_storage_pod");
+  assert.equal(uninvolved.ok, false);
+});
+
+test("S20 Runtime model & BYOK profile normalizers strip Google models/ prefix for all families and label Otari & Google AI Studio", async () => {
+  const { normalizeModelName } = await import("../../skills/agentify-website/runtime/model.js");
+  const { guessByokProfileName } = await import("../../skills/agentify-website/runtime/byok.js");
+
+  assert.equal(normalizeModelName("models/gemini-3.8-flash"), "gemini-3.8-flash");
+  assert.equal(normalizeModelName("models/gemma-3-27b-it"), "gemma-3-27b-it");
+  assert.equal(normalizeModelName("alibaba/qwen-3.5-35b-a3b"), "alibaba/qwen-3.5-35b-a3b");
+  assert.equal(guessByokProfileName({ router: "https://api.otari.ai/api/v1", model: "alibaba/qwen-3.5-35b-a3b" }), "Hosted Otari");
+  assert.equal(guessByokProfileName({ router: "https://eu.api.otari.ai/api/v1", model: "alibaba/qwen3.8-flash" }), "Hosted Otari");
+  assert.equal(guessByokProfileName({ router: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-3.8-flash" }), "Google AI Studio");
+});

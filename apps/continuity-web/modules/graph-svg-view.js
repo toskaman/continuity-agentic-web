@@ -169,7 +169,11 @@ export function renderMissionNodeInspector(page, nodeId) {
   const isPinned = page.pinnedNodeIds.has(node.id);
   const matchingOp = page.preparedOps.find((o) => o.commitment_id === node.id);
   const receiptDetails = matchingOp?.receipt_envelope
-    ? `<details class="receipt-drawer"><summary>Inspect Signed Ed25519 Receipt JSON</summary><pre class="receipt-pre">${page.escapeXml(JSON.stringify(matchingOp.receipt_envelope, null, 2))}</pre></details>`
+    ? `<div class="draft-actions-row">
+         <button type="button" class="mini-btn" data-verify-receipt="${page.escapeXml(node.id)}">✓ Re-verify Ed25519 signature live</button>
+         <span data-receipt-live-status="1" class="mono-ref" role="status"></span>
+       </div>
+       <details class="receipt-drawer"><summary>Inspect Signed Ed25519 Receipt JSON</summary><pre class="receipt-pre">${page.escapeXml(JSON.stringify(matchingOp.receipt_envelope, null, 2))}</pre></details>`
     : "";
 
   const isAnchor = node.id === page.mission.anchor_commitment_id && !page.lastSagaExecution;
@@ -212,6 +216,21 @@ export function renderMissionNodeInspector(page, nodeId) {
     if (shiftBtn) {
       const targetIso = shiftBtn.getAttribute("data-quick-shift");
       if (targetIso) void page.switchTargetAnchorDate(targetIso);
+      return;
+    }
+    const verifyBtn = ev.target.closest?.("[data-verify-receipt]");
+    if (verifyBtn) {
+      const cid = verifyBtn.getAttribute("data-verify-receipt");
+      const statusSpan = box.querySelector("[data-receipt-live-status]");
+      if (cid) {
+        void page.verifyCommittedNodeReceiptLive(cid).then((rep) => {
+          if (statusSpan) {
+            statusSpan.textContent = rep.ok
+              ? `✓ Ed25519 verified in ${rep.elapsedMs} ms (${rep.keyId} · sha256:${String(rep.payloadSha256 || "").slice(0, 14)}…)`
+              : `✕ Signature check failed: ${rep.reason || rep.detail}`;
+          }
+        });
+      }
     }
   };
 }

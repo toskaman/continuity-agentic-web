@@ -78,6 +78,8 @@ export function selectByokProfile(id) {
 export function guessByokProfileName({ router, model } = {}) {
   const hay = `${router || ""} ${model || ""}`.toLowerCase();
   if (/localhost|127\.0\.0\.1|\[::1\]|:11434|:12434|ollama|docker/.test(hay)) return "Local LLM";
+  if (/otari\.ai/.test(hay)) return "Hosted Otari";
+  if (/generativelanguage\.googleapis|gemini|gemma/.test(hay)) return "Google AI Studio";
   if (/anthropic|claude/.test(hay)) return "Anthropic";
   if (/openrouter/.test(hay)) return "OpenRouter";
   if (/openai|gpt-/.test(hay)) return "OpenAI";

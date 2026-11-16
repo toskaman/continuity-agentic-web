@@ -57,9 +57,9 @@ Re-verified **November 16, 2026** after adding the 6-day horizon sweep, semantic
 
 | Page Audited | Accessibility | Best Practices | SEO | Diagnostic Audit Failures (`lh.failures`) | Console Errors |
 |---|---:|---:|---:|---:|---:|
-| **CONTINUITY Coordinator (`/` — Idle State)** | **100** | **100** | **100** | **`0` (`[]`)** | **0** |
+| **CONTINUITY Coordinator (`/` — Idle State, Light & Dark Themes)** | **100** | **100** | **100** | **`0` (`[]`)** | **0** |
 | **CONTINUITY Coordinator (`/` — Ripple-Prepared + Open Settings)** | **100** | **100** | **100** | **`0` (`[]`)** | **0** |
-| **Community Builder Kit (`/community-kit.html` — 6 Tools, 24 Modules)** | **100** | **100** | **100** | **`0` (`[]`)** | **0** |
+| **Community Builder Kit (`/community-kit.html` — Light & Dark Themes, 6 WebMCP Tools)** | **100** | **100** | **100** | **`0` (`[]`)** | **0** |
 | **MoveCo Express Peer (`demo-moveco`)** | **100** | **100** | **100** | **`0` (`[]`)** | **0** |
 | **PermitFlow Civic Prep Peer (`demo-permitflow`)** | **100** | **100** | **100** | **`0` (`[]`)** | **0** |
 | **HomeConnect Fiber Peer (`demo-homeconnect`)** | **100** | **100** | **100** | **`0` (`[]`)** | **0** |

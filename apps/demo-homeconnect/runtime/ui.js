@@ -1113,7 +1113,7 @@ export function mountApp(root, { engine, trace, manifest }) {
       if (!response.ok) return null;
       const body = await response.json();
       const models = (Array.isArray(body?.data) ? body.data : [])
-        .map((item) => normalizeModelName(item?.id))
+        .map((item) => normalizeModelName(item?.id).replace(/^models\//i, ""))
         .filter(Boolean);
       modelOptionsEl.innerHTML = "";
       for (const id of models) {
