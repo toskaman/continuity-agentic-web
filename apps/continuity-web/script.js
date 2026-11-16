@@ -1477,8 +1477,16 @@ export class ContinuityCoordinatorPage {
     this.renderKpis(plan);
     this.renderGraphSvg();
     this.renderNodeInspector(this.selectedNodeId);
-    renderScheduleGanttView(this);
-    this.populatePassportCommitmentSelect();
+    if (!this._bootGanttPainted && typeof requestAnimationFrame === "function") {
+      this._bootGanttPainted = true;
+      requestAnimationFrame(() => {
+        renderScheduleGanttView(this);
+        this.populatePassportCommitmentSelect();
+      });
+    } else {
+      renderScheduleGanttView(this);
+      this.populatePassportCommitmentSelect();
+    }
     this.renderChangePackage(plan);
     this.renderCommitmentsTable();
     this.renderPrivacyTable();

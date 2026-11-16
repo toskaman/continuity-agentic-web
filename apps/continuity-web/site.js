@@ -2,8 +2,7 @@ import { App } from "./script.js";
 import { registerActions } from "./site-actions.js";
 import { exposeActionsToWebMcp } from "./vendor/webmcp-adapter/index.js";
 import { ChromeBuiltInPromptLlm, probeLocalInferenceBackends } from "./vendor/local-browser-router/index.js";
-import { inspectPeerNetworkSafety, PeerTofuRegistry } from "./vendor/peer-firewall/index.js";
-import { createOpenAgenticSafetyGuard } from "./vendor/safety-hooks/index.js";
+import { PeerTofuRegistry } from "./vendor/peer-firewall/index.js";
 import { LlmClient } from "./runtime/llm.js";
 
 if (typeof navigator !== "undefined") {
@@ -390,7 +389,10 @@ export class AssistantMount {
     const status = document.querySelector("#assistant-status");
     const siteBase = new URL("./", import.meta.url).href;
     try {
-      const { boot } = await import("./runtime/index.js");
+      const [{ boot }, { createOpenAgenticSafetyGuard }] = await Promise.all([
+        import("./runtime/index.js"),
+        import("./vendor/safety-hooks/index.js"),
+      ]);
       const booted = await boot("#agent-app", {
         originUrl: siteBase,
         sandboxWorkerUrl: new URL("runtime/sandbox-worker.js", siteBase).href,

@@ -16,7 +16,7 @@
     "version": 1
   },
   "link_labels": {
-    "http://127.0.0.1:8080/continuity_coordinator": "CONTINUITY Change Coordinator"
+    "https://toskaman.github.io/continuity-agentic-web/continuity_coordinator": "CONTINUITY Change Coordinator"
   },
   "commondefs": {
     "replacement_strings": {
@@ -45,9 +45,9 @@
           ]
         }
       },
-      "instructions": "\nYou are the assistant on the {site_name} website. You help visitors with remote smart-meter electricity energization schedules, date staging, and schedule modifications.\n{grounding_rules}\nHow to work:\n- Call website_get_powerflow_state before answering questions about smart-meter energization dates, fees or policies. Call it again in each turn that needs it, because the visitor can also use the page directly.\n- Call website_stage_energization_date only when the visitor asks to stage a date on the page.\n- In the turn you call website_confirm_energization_shift, first call website_get_powerflow_state and wait for its result so you pass the current expectedVersion.\n- When you have website_* tools and the visitor asks how to coordinate moving van, parking dossier, or fiber installation alongside their electricity date change, ask continuity_coordinator what multi-provider change coordination CONTINUITY offers.\n{cruse_rules}\n{partner_rules}\n{peer_rules}\n",
+      "instructions": "\nYou are the assistant on the {site_name} website. You help visitors with remote smart-meter electricity energization schedules, date staging, and schedule modifications.\n{grounding_rules}\nHow to work:\n- Call website_get_powerflow_state before answering questions about smart-meter energization dates, fees or policies. Call it again in each turn that needs it, because the visitor can also use the page directly.\n- Call website_stage_energization_date only when the visitor asks to stage a date on the page.\n- In the turn you call website_confirm_energization_shift, first call website_get_powerflow_state and wait for its result so you pass the current expectedVersion.\n- When you have website_* tools and the visitor asks how to coordinate moving van, parking dossier, or fiber installation alongside their electricity date change, ask continuity_agentic_web_continuity_coordinator what multi-provider change coordination CONTINUITY offers.\n{cruse_rules}\n{partner_rules}\n{peer_rules}\n",
       "tools": [
-        "http://127.0.0.1:8080/continuity_coordinator"
+        "https://toskaman.github.io/continuity-agentic-web/continuity_coordinator"
       ]
     }
   ]
