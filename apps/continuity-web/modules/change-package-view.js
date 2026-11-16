@@ -171,17 +171,20 @@ export function renderChangePackageView(page, plan) {
 
   summaryBox.innerHTML = `${committedBanner}${alertsHtml}`;
 
+  const cmtMap = new Map((page.mission.commitments || []).map((c) => [c.id, c]));
   plansContainer.innerHTML = page.solverResult.plans
     .map((p) => {
       const isSel = p.plan_id === page.selectedPlanId;
       const deltaSign = p.metrics.netDeltaEur >= 0 ? "+" : "";
       const paretoHtml = p.paretoOptimal ? `<span class="pareto-badge">PARETO OPTIMAL</span>` : "";
       const avoidedCancelEur = (p.preservedCommitments || []).reduce(
-        (sum, c) => sum + Number(c.cancellation_fee_eur || 0),
+        (sum, c) => sum + Number(cmtMap.get(c.commitment_id)?.cancellation_fee_eur || 0),
         0,
       );
       const savedTxt = avoidedCancelEur > 0 ? ` · €${avoidedCancelEur.toFixed(0)} cancel fees saved` : "";
-      const crowdTxt = Number.isFinite(p.crowdingDistance) ? p.crowdingDistance.toFixed(2) : "∞";
+      const crowdTxt = typeof p.crowdingDistance === "number" && Number.isFinite(p.crowdingDistance)
+        ? p.crowdingDistance.toFixed(2)
+        : "∞";
       return `
         <button type="button" class="plan-option ${isSel ? "selected" : ""}" data-plan-id="${page.escapeXml(p.plan_id)}" ${page.lastSagaExecution ? "disabled" : ""}>
           <div class="plan-option-top">
