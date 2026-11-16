@@ -6,6 +6,7 @@
 import { formatDateWithWeekday } from "../vendor/mission-core/index.js";
 import { OperationLedger } from "../vendor/outcome-reconciliation/index.js";
 import { ARBITER_MECHANISM_VERSION } from "../vendor/mandate-arbiter/index.js";
+import { synthesizePeerFederationConfig } from "../vendor/merkle-passport/index.js";
 
 export function renderCommitmentsTableView(page) {
   const tbody = document.querySelector("#commitments-tbody");
@@ -154,7 +155,7 @@ export function renderAuditorTableView(page) {
 
   tbody.innerHTML = page.auditorResults
     .map(
-      (r) => `
+      (r, idx) => `
       <tr>
         <td><strong><code>${page.escapeXml(r.siteBaseUrl)}</code></strong></td>
         <td>Network: <code>${page.escapeXml(r.networkName || "n/a")}</code><br><small>${page.escapeXml(r.manifestDigest || "")}</small></td>
@@ -164,8 +165,27 @@ export function renderAuditorTableView(page) {
               `<div><strong>[${page.escapeXml(c.status)}]</strong> ${page.escapeXml(c.check)} — <small>${page.escapeXml(c.detail)}</small></div>`,
           )
           .join("")}</td>
-        <td><strong>${r.ok ? "✓ PASS" : "✕ FAIL"}</strong><br><code>${page.escapeXml(r.score)}</code></td>
+        <td>
+          <strong>${r.ok ? "✓ PASS" : "✕ FAIL"}</strong><br>
+          <code>${page.escapeXml(r.score)}</code><br>
+          ${r.networkName ? `<button type="button" class="mini-btn" data-copy-federation="${idx}">Copy federation HOCON</button>` : ""}
+        </td>
       </tr>`,
     )
     .join("");
+
+  tbody.querySelectorAll("[data-copy-federation]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const item = page.auditorResults[Number(btn.getAttribute("data-copy-federation"))];
+      if (!item) return;
+      const fed = synthesizePeerFederationConfig(item);
+      const text = `${fed.hoconSnippet}\n\n// Runtime Safety Hook:\n${fed.safetyHookSnippet}`;
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = "✓ Copied HOCON";
+      } catch {
+        page.triggerBrowserDownload(`${item.networkName}-federation.hocon`, "text/plain;charset=utf-8", text);
+      }
+    });
+  });
 }

@@ -28,10 +28,21 @@ import {
 import { buildHybridTransitionPlaybook } from "../packages/transition-playbook/index.js";
 import { ReceiptVerifier } from "../packages/proof-verifier/index.js";
 import { SagaCoordinator } from "../packages/saga-engine/index.js";
+import {
+  analyzeCriticalPathSlack,
+  createSelectiveDisclosureProof,
+  issueVerifiableMissionPassport,
+  verifySelectiveDisclosureProof,
+} from "../packages/merkle-passport/index.js";
+import { scanOutboundPeerPayload } from "../packages/safety-hooks/index.js";
+import {
+  createAndProveMissionBudget,
+  verifyBlindedBudgetAttestation,
+} from "../packages/zk-budget-attestation/index.js";
 import { startAllEcosystemServers } from "./serve_ecosystem.mjs";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
-const SAMPLES = 30;
+const SAMPLES = 40;
 const WARMUP = 3; // excluded from statistics (JIT warm-up)
 
 const eco = await startAllEcosystemServers({
@@ -472,11 +483,11 @@ try {
     await runSingleLiveTrial(false);
     await runSingleLiveTrial(true);
   }
-  for (let i = 0; i < 35; i++) {
+  for (let i = 0; i < 40; i++) {
     normalRuns.push(await runSingleLiveTrial(false));
     rippleRuns.push(await runSingleLiveTrial(true));
   }
-  for (let i = 0; i < 25; i++) {
+  for (let i = 0; i < 30; i++) {
     surgeryRuns.push(
       await runMultiDomainScenarioTrial(
         "outpatient_surgery",
@@ -490,9 +501,46 @@ try {
       ),
     );
   }
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 40; i++) {
     hybridIcsRuns.push(await runHybridColdStartIcsTrial());
   }
+
+  // Section 4: Cryptographic & Runtime Safety Micro-Benchmarks (N = 100 iterations)
+  const microMission = createSignatureMoveMission();
+  const microGraph = MissionGraph.fromMission(microMission);
+  const merkleSamples = [];
+  const dlpSamples = [];
+  const cpmSamples = [];
+  for (let i = 0; i < 100; i++) {
+    const tM0 = performance.now();
+    const pass = await issueVerifiableMissionPassport({ mission: microMission, graph: microGraph, operations: [] });
+    const sProof = await createSelectiveDisclosureProof(pass, "cmt_moveco_van");
+    await verifySelectiveDisclosureProof(sProof);
+    merkleSamples.push(performance.now() - tM0);
+
+    const tD0 = performance.now();
+    scanOutboundPeerPayload({
+      note: "Check Visa 4532 0151 1283 0366 and IBAN DE89 3704 0044 0532 0130 00 for MC-8841",
+    });
+    dlpSamples.push(performance.now() - tD0);
+
+    const tC0 = performance.now();
+    analyzeCriticalPathSlack(microGraph, "2026-11-20", microMission.anchor_commitment_id);
+    cpmSamples.push(performance.now() - tC0);
+  }
+  const statArr = (arr) => {
+    const s = [...arr].sort((a, b) => a - b);
+    return {
+      medianMs: Number(s[Math.floor(s.length / 2)].toFixed(3)),
+      p95Ms: Number(s[Math.floor(s.length * 0.95)].toFixed(3)),
+    };
+  };
+  const cryptoSafetyMicro = {
+    samples: 100,
+    merklePassportAndSelectiveProofMs: statArr(merkleSamples),
+    outboundLuhnIbanDlpScanMs: statArr(dlpSamples),
+    criticalPathSlackAnalysisMs: statArr(cpmSamples),
+  };
 
   const totalMeasuredSagas =
     normalRuns.length + rippleRuns.length + surgeryRuns.length + expoRuns.length + hybridIcsRuns.length;
@@ -520,6 +568,7 @@ try {
     continuityMeasuredOutpatientSurgeryScenario: summarize(surgeryRuns),
     continuityMeasuredExpoFreightScenario: summarize(expoRuns),
     continuityMeasuredHybridIcsScenario: summarize(hybridIcsRuns),
+    cryptoAndSafetyMicroBenchmarks: cryptoSafetyMicro,
   };
 
   const jsonPath = path.join(ROOT, "docs", "benchmarks", "benchmark_results.json");
@@ -535,7 +584,7 @@ try {
 
 **Date measured:** ${benchmarkData.measuredAtIso}
 **Hardware / runtime:** Node.js \`${benchmarkData.environment.nodeVersion}\` on \`${benchmarkData.environment.platform}\` (${benchmarkData.environment.cpuModel.trim()}, ${benchmarkData.environment.cpuCores} logical cores)
-**Sample size:** \`N = ${totalMeasuredSagas}\` measured end-to-end sagas (\`35\` Normal Relocation + \`35\` Ripple Failure Recovery over 5 live HTTP origins, plus \`25\` Outpatient Surgery + \`25\` International Expo Freight + \`30\` Hybrid Cold-Start \`.ics\` Agentic+Legacy runs, after \`${WARMUP}\` excluded JIT warm-up runs).
+**Sample size:** \`N = ${totalMeasuredSagas}\` measured end-to-end sagas (\`40\` Normal Relocation + \`40\` Ripple Failure Recovery over 5 live HTTP origins, plus \`30\` Outpatient Surgery + \`30\` International Expo Freight + \`40\` Hybrid Cold-Start \`.ics\` Agentic+Legacy runs, after \`${WARMUP}\` excluded JIT warm-up runs).
 **Raw data:** [\`docs/benchmarks/benchmark_results.json\`](./benchmark_results.json) · **Reproduce:** \`node scripts/run_benchmarks.mjs\`
 
 Every number in sections 1, 2, and 3 is computed by the script in this run, except the action-count row explicitly labeled **Estimate (task model)**.
@@ -574,7 +623,7 @@ ${[
 
 ---
 
-## 3. Multi-domain & Cold-Start Hybrid \`.ics\` generality (\`N = 25..30\` sagas per domain)
+## 3. Multi-domain & Cold-Start Hybrid \`.ics\` generality (\`N = 30..40\` sagas per domain)
 
 | Scenario | Commitments | Changed / Preserved | Baseline → Committed Total | Verified Ed25519 Receipts | Median Full Saga (ms) | Completion |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -582,11 +631,21 @@ ${[
 | **International Expo Freight** (\`product_launch_expo\`) | 6 | **${ex.changedCommitments} changed · ${ex.preservedCommitments} kept** | €${ex.baselineTotalEur.toFixed(2)} → **€${ex.totalCostEur.toFixed(2)}** | **${ex.verifiedReceiptsPerRun} / ${ex.committedPerRun}** | ${ex.totalEndToEndMs.median} ms | **${ex.allSucceededRatePct}%** |
 | **Hybrid Cold-Start \`.ics\` (2 Agentic + 1 Legacy + 1 Storage)** | 4 | **${hy.changedCommitments} changed · ${hy.preservedCommitments} kept** | €${hy.baselineTotalEur.toFixed(2)} → **€${hy.totalCostEur.toFixed(2)}** | **${hy.verifiedReceiptsPerRun} / ${hy.committedPerRun}** (+ 1 Hold-First \`mailto:\` draft) | ${hy.totalEndToEndMs.median} ms | **${hy.allSucceededRatePct}%** |
 
+---
+
+## 4. Cryptographic & Runtime Safety Micro-Benchmarks (\`N = 100\` iterations)
+
+| Primitive | Median Latency | p95 Latency |
+| --- | ---: | ---: |
+| **RFC 6962 6-Leaf Merkle Passport + 1-of-6 Selective Proof + Verify** | **${cryptoSafetyMicro.merklePassportAndSelectiveProofMs.medianMs} ms** | ${cryptoSafetyMicro.merklePassportAndSelectiveProofMs.p95Ms} ms |
+| **\`@continuity/safety-hooks\` Outbound Luhn PAN + Mod-97 IBAN + Secret DLP** | **${cryptoSafetyMicro.outboundLuhnIbanDlpScanMs.medianMs} ms** | ${cryptoSafetyMicro.outboundLuhnIbanDlpScanMs.p95Ms} ms |
+| **Critical-Path Method (CPM) Forward/Backward Slack Analysis** | **${cryptoSafetyMicro.criticalPathSlackAnalysisMs.medianMs} ms** | ${cryptoSafetyMicro.criticalPathSlackAnalysisMs.p95Ms} ms |
+
 Means are kept in \`benchmark_results.json\` for completeness; medians and p95 are reported here because single garbage-collection pauses dominate means at sub-millisecond scale.
 
 ---
 
-## 4. Limitations
+## 5. Limitations
 
 1. **Demonstration providers.** MoveCo, PermitFlow, HomeConnect and PowerFlow are independent demonstration services on separate origins with real HTTP, CORS, MCP and Ed25519 boundaries — not commercial companies.
 2. **Loopback latency.** Measured on local sockets. Over the public internet each provider hop adds WAN round-trip time (typically tens of milliseconds), plus model inference time when the optional chat assistant is used.

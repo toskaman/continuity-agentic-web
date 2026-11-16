@@ -1,0 +1,8 @@
+{
+  "name": "@continuity/merkle-passport",
+  "version": "2.0.0",
+  "description": "RFC 6962 Domain-Separated SHA-256 Merkle Mission Passports, Salted Single-Commitment Selective-Disclosure Proofs, Critical-Path Slack Analyzer & Live Federation Synthesizer.",
+  "type": "module",
+  "main": "./index.js",
+  "license": "Apache-2.0"
+}

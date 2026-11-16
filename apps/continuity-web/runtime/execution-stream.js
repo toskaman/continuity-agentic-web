@@ -4,19 +4,25 @@
 // run's trace subtree into a small, stable set of UI-safe lifecycle events while
 // the normal agent return values continue to flow up the call tree.
 
+const MAX_STREAM_QUEUE = 2048;
+
 class AsyncEventQueue {
-  constructor() {
+  constructor(onReturn = null) {
     this.values = [];
     this.waiters = [];
     this.closed = false;
     this.error = null;
+    this.onReturn = onReturn;
   }
 
   push(value) {
     if (this.closed) return;
     const waiter = this.waiters.shift();
     if (waiter) waiter.resolve({ value, done: false });
-    else this.values.push(value);
+    else {
+      if (this.values.length >= MAX_STREAM_QUEUE) this.values.shift();
+      this.values.push(value);
+    }
   }
 
   close() {
@@ -52,6 +58,12 @@ class AsyncEventQueue {
     return new Promise((resolve, reject) => this.waiters.push({ resolve, reject }));
   }
 
+  return() {
+    this.onReturn?.();
+    this.close();
+    return Promise.resolve({ value: undefined, done: true });
+  }
+
   [Symbol.asyncIterator]() { return this; }
 }
 
@@ -63,7 +75,10 @@ function preview(value, limit = 240) {
 // Start a turn immediately and return an AsyncIterable of its public events.
 // `runTurn` is injected to keep this adapter independent of Engine internals.
 export function createTurnEventStream(trace, runTurn, streamToken) {
-  const queue = new AsyncEventQueue();
+  let onTrace = null;
+  const queue = new AsyncEventQueue(() => {
+    if (onTrace) trace.removeEventListener("event", onTrace);
+  });
   const spans = new Map();
   const included = new Set();
   let runId = null;
@@ -89,7 +104,7 @@ export function createTurnEventStream(trace, runTurn, streamToken) {
     ...extra,
   });
 
-  const onTrace = (message) => {
+  onTrace = (message) => {
     const ev = message.detail;
     if (ev.phase === "start" && ev.kind === "run" && runId === null && (!streamToken || ev.streamToken === streamToken)) {
       runId = ev.id;
@@ -165,6 +180,14 @@ export function createTurnEventStream(trace, runTurn, streamToken) {
       queue.push(base(ev.state === "applied" ? "turn.steering.applied" : "turn.steering.received", ev, {
         input: ev.input || "",
         count: ev.count || 1,
+        visibility: "user",
+      }));
+    } else if (ev.phase === "note" && ev.kind === "safety_check") {
+      queue.push(base("turn.safety_check", ev, {
+        hook: ev.hook,
+        decision: ev.decision,
+        peerAnswered: Boolean(ev.peerAnswered),
+        action: ev.action || "unknown",
         visibility: "user",
       }));
     }

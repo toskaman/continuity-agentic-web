@@ -26,12 +26,16 @@ export class ProviderError extends Error {
 
     const router = ProviderError.parseUrl(routerUrl);
     const page = ProviderError.parseUrl(pageUrl);
-    const routerLabel = router?.host || routerUrl || "the configured AI router";
+    const safeRawLabel = String(routerUrl || "").replace(/([?&](?:key|api_key|token)=)[^&#\s]+/gi, "$1[REDACTED]");
+    const routerLabel = router?.host || safeRawLabel || "the configured AI router";
     if (!router || !ProviderError.isLocalAddress(router.hostname)) {
-      return new ProviderError(
-        `Couldn’t connect to the AI router at ${routerLabel}. Check that the URL is correct, the service is running, and it allows browser requests from ${page?.origin || "this site"} (CORS).`,
-        error,
-      );
+      let hint = `Couldn’t connect to the AI router at ${routerLabel}. Check that the URL is correct, the service is running, and it allows browser requests from ${page?.origin || "this site"} (CORS).`;
+      if (/otari\.ai$/i.test(router?.hostname || "")) {
+        hint += " Verify your Mozilla Otari key starts with otk_ (EU keys route to eu.api.otari.ai).";
+      } else if (/generativelanguage\.googleapis\.com$/i.test(router?.hostname || "")) {
+        hint += " For Google AI Studio, use https://generativelanguage.googleapis.com/v1beta/openai and an AIza... or AQ... key.";
+      }
+      return new ProviderError(hint, error);
     }
 
     const origin = page?.origin || "this site";

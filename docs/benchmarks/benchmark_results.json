@@ -1,6 +1,6 @@
 {
-  "measuredAtIso": "2026-11-16T01:01:56.371Z",
-  "totalMeasuredSagas": 150,
+  "measuredAtIso": "2026-11-16T13:07:54.531Z",
+  "totalMeasuredSagas": 180,
   "environment": {
     "nodeVersion": "v26.13.1",
     "platform": "win32 x64",
@@ -28,36 +28,36 @@
     "breakdown": "6 site logins/lookups + 6 availability checks + 6 manual reschedule/hold/verify actions"
   },
   "continuityMeasuredNormalScenario": {
-    "sampleSize": 35,
+    "sampleSize": 40,
     "compileMs": {
-      "median": 0.08,
-      "p95": 0.13,
-      "max": 0.132,
-      "mean": 0.086
+      "median": 0.115,
+      "p95": 0.174,
+      "max": 0.363,
+      "mean": 0.124
     },
     "impactMs": {
-      "median": 0.093,
-      "p95": 0.148,
-      "max": 0.265,
-      "mean": 0.104
+      "median": 0.115,
+      "p95": 0.288,
+      "max": 0.686,
+      "mean": 0.14
     },
     "quoteLatencyMs": {
-      "median": 1.773,
-      "p95": 7.378,
-      "max": 8.93,
-      "mean": 2.34
+      "median": 2.194,
+      "p95": 5.412,
+      "max": 7.819,
+      "mean": 2.589
     },
     "solveMs": {
-      "median": 0.16,
-      "p95": 0.349,
-      "max": 0.457,
-      "mean": 0.177
+      "median": 0.203,
+      "p95": 0.506,
+      "max": 1.13,
+      "mean": 0.248
     },
     "totalEndToEndMs": {
-      "median": 8.685,
-      "p95": 26.517,
-      "max": 42.806,
-      "mean": 11.179
+      "median": 10.776,
+      "p95": 25.238,
+      "max": 101.589,
+      "mean": 14.889
     },
     "baselineTotalEur": 624,
     "verifiedReceiptsPerRun": 3,
@@ -73,36 +73,36 @@
     "allSucceededRatePct": 100
   },
   "continuityMeasuredRippleRecoveryScenario": {
-    "sampleSize": 35,
+    "sampleSize": 40,
     "compileMs": {
-      "median": 0.087,
-      "p95": 0.155,
-      "max": 0.3,
-      "mean": 0.092
+      "median": 0.113,
+      "p95": 0.174,
+      "max": 0.303,
+      "mean": 0.118
     },
     "impactMs": {
-      "median": 0.097,
-      "p95": 0.199,
-      "max": 2.086,
-      "mean": 0.159
+      "median": 0.104,
+      "p95": 0.171,
+      "max": 0.73,
+      "mean": 0.129
     },
     "quoteLatencyMs": {
-      "median": 1.622,
-      "p95": 4.679,
-      "max": 7.971,
-      "mean": 2
+      "median": 2.067,
+      "p95": 4.482,
+      "max": 4.78,
+      "mean": 2.383
     },
     "solveMs": {
-      "median": 0.156,
-      "p95": 0.423,
-      "max": 0.544,
-      "mean": 0.179
+      "median": 0.201,
+      "p95": 0.318,
+      "max": 0.463,
+      "mean": 0.221
     },
     "totalEndToEndMs": {
-      "median": 8.382,
-      "p95": 39.87,
-      "max": 48.331,
-      "mean": 11.228
+      "median": 10.588,
+      "p95": 21.013,
+      "max": 28.309,
+      "mean": 12.168
     },
     "baselineTotalEur": 624,
     "verifiedReceiptsPerRun": 3,
@@ -118,36 +118,36 @@
     "allSucceededRatePct": 100
   },
   "continuityMeasuredOutpatientSurgeryScenario": {
-    "sampleSize": 25,
+    "sampleSize": 30,
     "compileMs": {
-      "median": 0.058,
-      "p95": 0.084,
-      "max": 0.098,
-      "mean": 0.059
+      "median": 0.093,
+      "p95": 0.603,
+      "max": 0.714,
+      "mean": 0.144
     },
     "impactMs": {
-      "median": 0.076,
-      "p95": 0.106,
-      "max": 0.146,
-      "mean": 0.081
+      "median": 0.104,
+      "p95": 0.229,
+      "max": 0.252,
+      "mean": 0.115
     },
     "quoteLatencyMs": {
-      "median": 0.164,
-      "p95": 0.425,
-      "max": 3.952,
-      "mean": 0.338
+      "median": 0.26,
+      "p95": 1.237,
+      "max": 1.762,
+      "mean": 0.386
     },
     "solveMs": {
-      "median": 0.087,
-      "p95": 0.188,
-      "max": 0.221,
-      "mean": 0.098
+      "median": 0.16,
+      "p95": 0.613,
+      "max": 0.79,
+      "mean": 0.196
     },
     "totalEndToEndMs": {
-      "median": 3.931,
-      "p95": 6.317,
-      "max": 69.407,
-      "mean": 6.752
+      "median": 5.916,
+      "p95": 16.632,
+      "max": 17.146,
+      "mean": 7.577
     },
     "baselineTotalEur": 480,
     "verifiedReceiptsPerRun": 3,
@@ -163,36 +163,36 @@
     "allSucceededRatePct": 100
   },
   "continuityMeasuredExpoFreightScenario": {
-    "sampleSize": 25,
+    "sampleSize": 30,
     "compileMs": {
-      "median": 0.059,
-      "p95": 0.079,
-      "max": 0.092,
-      "mean": 0.058
+      "median": 0.103,
+      "p95": 0.18,
+      "max": 0.408,
+      "mean": 0.113
     },
     "impactMs": {
-      "median": 0.08,
-      "p95": 0.112,
-      "max": 0.142,
-      "mean": 0.085
+      "median": 0.131,
+      "p95": 0.522,
+      "max": 1.275,
+      "mean": 0.188
     },
     "quoteLatencyMs": {
-      "median": 0.132,
-      "p95": 0.217,
-      "max": 3.638,
-      "mean": 0.283
+      "median": 0.211,
+      "p95": 0.489,
+      "max": 0.539,
+      "mean": 0.232
     },
     "solveMs": {
-      "median": 0.087,
-      "p95": 0.187,
-      "max": 0.262,
-      "mean": 0.103
+      "median": 0.131,
+      "p95": 0.297,
+      "max": 0.359,
+      "mean": 0.145
     },
     "totalEndToEndMs": {
-      "median": 3.962,
-      "p95": 4.754,
-      "max": 29.408,
-      "mean": 4.97
+      "median": 5.547,
+      "p95": 14.598,
+      "max": 19.502,
+      "mean": 7.195
     },
     "baselineTotalEur": 1820,
     "verifiedReceiptsPerRun": 3,
@@ -208,36 +208,36 @@
     "allSucceededRatePct": 100
   },
   "continuityMeasuredHybridIcsScenario": {
-    "sampleSize": 30,
+    "sampleSize": 40,
     "compileMs": {
-      "median": 0.048,
-      "p95": 0.094,
-      "max": 0.19,
-      "mean": 0.057
+      "median": 0.065,
+      "p95": 0.11,
+      "max": 0.161,
+      "mean": 0.072
     },
     "impactMs": {
-      "median": 0.061,
-      "p95": 0.113,
-      "max": 0.146,
-      "mean": 0.068
+      "median": 0.068,
+      "p95": 0.136,
+      "max": 0.747,
+      "mean": 0.091
     },
     "quoteLatencyMs": {
-      "median": 0.137,
-      "p95": 0.289,
-      "max": 0.372,
-      "mean": 0.156
+      "median": 0.144,
+      "p95": 0.544,
+      "max": 1.592,
+      "mean": 0.227
     },
     "solveMs": {
-      "median": 0.069,
-      "p95": 0.154,
-      "max": 2.908,
-      "mean": 0.17
+      "median": 0.081,
+      "p95": 0.193,
+      "max": 1.863,
+      "mean": 0.156
     },
     "totalEndToEndMs": {
-      "median": 4.256,
-      "p95": 23.317,
-      "max": 27.922,
-      "mean": 7.513
+      "median": 5.116,
+      "p95": 15.336,
+      "max": 16.075,
+      "mean": 7.111
     },
     "baselineTotalEur": 574,
     "verifiedReceiptsPerRun": 3,
@@ -251,5 +251,20 @@
     "preservedCommitments": 1,
     "totalCostEur": 599,
     "allSucceededRatePct": 100
+  },
+  "cryptoAndSafetyMicroBenchmarks": {
+    "samples": 100,
+    "merklePassportAndSelectiveProofMs": {
+      "medianMs": 1.413,
+      "p95Ms": 5.631
+    },
+    "outboundLuhnIbanDlpScanMs": {
+      "medianMs": 0.033,
+      "p95Ms": 0.125
+    },
+    "criticalPathSlackAnalysisMs": {
+      "medianMs": 0.099,
+      "p95Ms": 0.486
+    }
   }
 }

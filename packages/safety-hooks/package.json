@@ -1,0 +1,8 @@
+{
+  "name": "@continuity/safety-hooks",
+  "version": "2.0.0",
+  "description": "Official Issue #32 Runtime Safety Hooks for Open Agentic Websites: Luhn Payment Card & ISO 13616 Mod-97 IBAN Outbound DLP, Pre-Execution Peer Firewall + TOFU Pinning, and Post-Peer Turn-Taint Action Escalation.",
+  "type": "module",
+  "main": "./index.js",
+  "license": "Apache-2.0"
+}

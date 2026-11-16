@@ -29,13 +29,15 @@
         </span>
       </a>
       <nav class="site-nav" aria-label="Builder tools">
-        <a href="#validator-tool">9-Point Validator</a>
-        <a href="#facts-tool">Facts Compiler</a>
-        <a href="#nanda-tool">NANDA Catalog</a>
-        <a href="#converter-tool">Graph → HOCON</a>
-        <a href="#bundle-tool">Receipt Verifier</a>
-        <a href="#firewall-tool">Peer Firewall</a>
-        <a href="#modules-catalog">24 Modules</a>
+        <a href="#validator-tool">Validator</a>
+        <a href="#facts-tool">Facts</a>
+        <a href="#nanda-tool">NANDA</a>
+        <a href="#converter-tool">HOCON</a>
+        <a href="#bundle-tool">Receipts</a>
+        <a href="#firewall-tool">Firewall</a>
+        <a href="#safety-hooks-tool">Safety Hooks</a>
+        <a href="#passport-fed-tool">Merkle Proof</a>
+        <a href="#modules-catalog">26 Modules</a>
       </nav>
       <div class="header-meta top-actions">
         <button id="kit-theme-btn" type="button" class="ghost-btn btn-sm" aria-label="Switch light or dark theme"><span aria-hidden="true">◐</span> Theme</button>
@@ -50,11 +52,11 @@
         <div class="hero-copy" style="max-width: 820px;">
           <div class="hero-meta">
             <span class="spec-pill">Open Agentic Web · Community Infrastructure</span>
-            <span class="spec-pill">WebMCP · 6 builder tools</span>
+            <span class="spec-pill">WebMCP · 8 builder tools</span>
             <span class="spec-pill">Zero External Dependencies · Apache-2.0</span>
           </div>
           <h1 id="kit-heading">Build, validate &amp; publish<br><span>Open Agentic Websites in seconds.</span></h1>
-          <p class="hero-lead">Shared with the Open Agentic Web community: six browser-local developer tools and 24 zero-dependency ES modules built while engineering CONTINUITY. Nothing you paste leaves your browser.</p>
+          <p class="hero-lead">Shared with the Open Agentic Web community: eight browser-local developer tools and 26 zero-dependency ES modules built while engineering CONTINUITY. Nothing you paste leaves your browser.</p>
           <div class="btn-row hero-ctas">
             <a href="#validator-tool" class="btn btn-primary btn-lg">Audit an agentic site →</a>
             <a href="#facts-tool" class="btn btn-lg btn-on-dark">Compile a public facts network</a>
@@ -281,13 +283,76 @@
       </div>
     </section>
 
+    <!-- TOOL 7: RUNTIME ENGINE.ADDCHECK() SAFETY HOOKS & OUTBOUND LUHN/IBAN DLP -->
+    <section id="safety-hooks-tool" class="section" aria-labelledby="sh-heading">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Tool 7 · @continuity/safety-hooks (Cognizant Issue #32)</span>
+            <h2 id="sh-heading">Runtime <code>engine.addCheck()</code> Safety Hooks &amp; Luhn / IBAN Outbound DLP</h2>
+            <p>Drop-in guard for any Open Agentic Website: blocks ISO/IEC 7812 Luhn-verified payment cards, ISO 13616 Mod-97 IBANs, JWTs and API keys before contacting external peers, and upgrades post-peer host write actions to mandatory visitor confirmation.</p>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="chaos-header">
+            <div><strong>Outbound DLP &amp; Post-Peer Confused-Deputy Simulator</strong></div>
+            <div class="auditor-controls">
+              <button id="kit-dlp-clean-btn" type="button" class="ghost-btn">Load safe request</button>
+              <button id="kit-dlp-attack-btn" type="button" class="ghost-btn">Test Luhn card + IBAN + taint</button>
+              <button id="kit-dlp-scan-btn" type="button" class="cta-btn">Run safety hooks</button>
+              <button id="kit-dlp-copy-hook-btn" type="button" class="mini-btn">Copy engine.addCheck() snippet</button>
+            </div>
+          </div>
+          <p id="kit-dlp-status" class="chaos-summary" role="status">Ready to evaluate <code>beforePeerRequest</code> DLP and <code>beforeAction</code> post-peer taint locks.</p>
+          <div class="converter-grid">
+            <div>
+              <label for="kit-dlp-input" class="input-label">Outbound Peer Request &amp; Peer Reply Simulation (JSON)</label>
+              <textarea id="kit-dlp-input" class="code-box" rows="8"></textarea>
+            </div>
+            <div>
+              <label for="kit-dlp-out" class="input-label">Hook Decisions &amp; Masked DLP Findings</label>
+              <textarea id="kit-dlp-out" class="code-box" rows="8" readonly></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOOL 8: RFC 6962 SELECTIVE-DISCLOSURE MERKLE PASSPORT VERIFIER -->
+    <section id="passport-fed-tool" class="section section-alt" aria-labelledby="merkle-heading">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Tool 8 · @continuity/merkle-passport</span>
+            <h2 id="merkle-heading">RFC 6962 Selective-Disclosure Merkle Proof Generator &amp; Verifier</h2>
+            <p>Verify single-commitment Merkle presentations (`0x00` leaf / `0x01` interior domain separation + Ed25519 provider receipt + ZK budget ladder) where sibling bookings remain 100% salted and hidden.</p>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="chaos-header">
+            <div><strong>Zero-Sibling-Leak RFC 6962 Presentation Verifier</strong></div>
+            <div class="auditor-controls">
+              <button id="kit-merkle-sample-btn" type="button" class="ghost-btn">Generate 1-of-6 sample proof</button>
+              <button id="kit-merkle-tamper-btn" type="button" class="ghost-btn">Simulate leaf tamper</button>
+              <button id="kit-merkle-verify-btn" type="button" class="cta-btn">Verify selective proof</button>
+            </div>
+          </div>
+          <p id="kit-merkle-status" class="chaos-summary" role="status">Generate or paste a <code>continuity-selective-disclosure/v1</code> JSON presentation to verify.</p>
+          <label for="kit-merkle-json" class="sr-only">Selective-disclosure Merkle presentation JSON</label>
+          <textarea id="kit-merkle-json" class="code-box" rows="8"></textarea>
+        </div>
+      </div>
+    </section>
+
     <!-- MODULE CATALOG -->
     <section id="modules-catalog" class="section" aria-labelledby="mods-heading">
       <div class="shell">
         <div class="section-head">
           <div>
             <span class="eyebrow">Open-source building blocks · Apache-2.0</span>
-            <h2 id="mods-heading">24 Zero-Dependency <code>@continuity/*</code> Community Modules</h2>
+            <h2 id="mods-heading">26 Zero-Dependency <code>@continuity/*</code> Community Modules</h2>
             <p>Every module runs directly in standard browsers and Node.js &ge; 22 with zero external npm dependencies.</p>
           </div>
         </div>

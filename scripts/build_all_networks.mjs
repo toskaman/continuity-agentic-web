@@ -28,6 +28,7 @@ const PEER_VENDOR_PACKAGES = [
   "cross-origin-bridge",
   "webmcp-adapter",
   "peer-firewall",
+  "safety-hooks",
   "local-browser-router",
 ];
 

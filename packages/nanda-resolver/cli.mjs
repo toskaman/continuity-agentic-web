@@ -19,10 +19,12 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { extractMarkedPageFacts, verifyFactsProvenance } from "../facts-publisher/index.js";
 import { verifyExportedAuditBundle } from "../intake-compiler/index.js";
+import { verifySelectiveDisclosureProof } from "../merkle-passport/index.js";
 import { inspectPeerNetworkSafety } from "../peer-firewall/index.js";
+import { scanOutboundPeerPayload } from "../safety-hooks/index.js";
 import { auditOpenAgenticSite, validatePoppyReachDeclaration } from "./index.js";
 
-export const CLI_VERSION = "2.1.0";
+export const CLI_VERSION = "2.2.0";
 
 const DEFAULT_ECOSYSTEM_URLS = [
   "https://toskaman.github.io/continuity-agentic-web/",
@@ -45,8 +47,10 @@ Options:
   --sarif                Emit SARIF 2.1.0 report for GitHub Code Scanning / CI
   --check-firewall       Run @continuity/peer-firewall pre-execution scan on manifest + .network.json
   --verify-facts         Verify HTML data-agent-facts visibility & facts/ source_html_sha256 provenance
-  --check-poppy          Validate /.well-known/poppy.json NANDA Reach v1 declaration
-  --verify-bundle <path> Offline verify JCS SHA-256, Saga chain, Ed25519 receipts & ZK hash-ladder
+  --check-poppy               Validate /.well-known/poppy.json NANDA Reach v1 declaration
+  --verify-bundle <path>      Offline verify JCS SHA-256, Saga chain, Ed25519 receipts & ZK hash-ladder
+  --verify-passport <path>    Offline verify RFC 6962 Selective-Disclosure Merkle proof + Ed25519 receipt
+  --scan-dlp <text-or-json>   Scan outbound text/JSON for Luhn cards, Mod-97 IBANs, JWTs & API keys
 `;
 
 export async function runContinuityCli(argv = process.argv.slice(2), io = {}) {
@@ -69,6 +73,37 @@ export async function runContinuityCli(argv = process.argv.slice(2), io = {}) {
   const verifyFacts = argv.includes("--verify-facts");
   const checkPoppy = argv.includes("--check-poppy");
   const verifyIdx = argv.indexOf("--verify-bundle");
+  const passportIdx = argv.indexOf("--verify-passport");
+  const dlpIdx = argv.indexOf("--scan-dlp");
+
+  if (dlpIdx !== -1) {
+    const rawTarget = argv[dlpIdx + 1] || "";
+    const rep = scanOutboundPeerPayload(rawTarget);
+    if (jsonMode) {
+      writeOut(`${JSON.stringify(rep, null, 2)}\n`);
+    } else {
+      writeOut(`Outbound DLP Verdict: ${rep.safe ? "ALLOW (0 leaks)" : `BLOCK (${rep.blockedCount} secret(s) masked)`}\n`);
+      for (const f of rep.findings) writeOut(`  [${f.ruleId}] ${f.label}: ${f.maskedEvidence}\n`);
+    }
+    return rep.safe ? 0 : 1;
+  }
+
+  if (passportIdx !== -1) {
+    const proofPath = argv[passportIdx + 1];
+    if (!proofPath || proofPath.startsWith("--")) {
+      writeErr("Usage: continuity-audit --verify-passport <selective-proof.json> [--json]\n");
+      return 1;
+    }
+    const rawProof = JSON.parse(await readFile(proofPath, "utf8"));
+    const rep = await verifySelectiveDisclosureProof(rawProof);
+    if (jsonMode) {
+      writeOut(`${JSON.stringify(rep, null, 2)}\n`);
+    } else {
+      writeOut(`RFC 6962 Selective-Disclosure Proof: ${rep.valid ? "VERIFIED INTACT" : "TAMPERED / INVALID"}\n`);
+      for (const e of rep.errors) writeOut(`  [FAIL] ${e}\n`);
+    }
+    return rep.valid ? 0 : 1;
+  }
 
   if (verifyIdx !== -1) {
     const bundlePath = argv[verifyIdx + 1];

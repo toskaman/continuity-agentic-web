@@ -357,8 +357,78 @@ if (new URLSearchParams(location.search).get("demo") === "1") {
 
 chrome();
 
-// Global keyboard shortcuts: Escape dismisses completion toast; "/" focuses #mission-input when idle.
+// Global keyboard shortcuts: Ctrl/Cmd+K opens Command Palette; Escape dismisses toast; "/" focuses #mission-input.
+const cmdDialog = document.querySelector("#cmd-palette-dialog");
+const cmdSearch = document.querySelector("#cmd-palette-search");
+const cmdList = document.querySelector("#cmd-palette-list");
+
+const QUICK_COMMANDS = [
+  { label: "Run the live guided demo (Ripple failure + recovery)", run: () => document.querySelector("#guided-demo-btn")?.click() },
+  { label: "Analyze & prepare minimal-change plans", run: () => document.querySelector("#analyze-plan-btn")?.click() },
+  { label: "Toggle simulated Friday crew failure (Ripple recovery)", run: () => document.querySelector("#inject-ripple-btn")?.click() },
+  { label: "Switch scenario: Home relocation (6 bookings · live peers)", run: () => document.querySelector('[data-scenario-id="home_relocation"]')?.click() },
+  { label: "Switch scenario: Outpatient surgery (5 commitments)", run: () => document.querySelector('[data-scenario-id="outpatient_surgery"]')?.click() },
+  { label: "Switch scenario: Expo freight delay (6 commitments)", run: () => document.querySelector('[data-scenario-id="product_launch_expo"]')?.click() },
+  { label: "Generate RFC 6962 Selective-Disclosure Merkle Proof", run: () => { document.querySelector("#tab-btn-passport")?.click(); document.querySelector("#trust")?.scrollIntoView({ behavior: "smooth" }); } },
+  { label: "Run all Chaos Lab distributed failure scenarios", run: () => { document.querySelector("#tab-btn-chaos")?.click(); document.querySelector("#trust")?.scrollIntoView({ behavior: "smooth" }); } },
+  { label: "Audit all 5 Open Agentic Websites (MVP 0.2 & NANDA)", run: () => { document.querySelector("#tab-btn-auditor")?.click(); document.querySelector("#trust")?.scrollIntoView({ behavior: "smooth" }); } },
+  { label: "Switch light / dark theme", run: () => document.querySelector("#theme-toggle-btn")?.click() },
+  { label: "Open Community Builder Kit", run: () => { window.location.href = "./community-kit.html"; } },
+];
+
+function renderCmdPalette(filterText = "") {
+  if (!cmdList) return;
+  const q = String(filterText || "").trim().toLowerCase();
+  const items = QUICK_COMMANDS.filter((c) => !q || c.label.toLowerCase().includes(q));
+  cmdList.innerHTML = items
+    .map((c, idx) => `<button type="button" class="cmd-palette-item" data-cmd-idx="${idx}">${c.label}</button>`)
+    .join("");
+  cmdList.querySelectorAll("[data-cmd-idx]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const item = items[Number(btn.getAttribute("data-cmd-idx"))];
+      cmdDialog?.close();
+      item?.run();
+    });
+  });
+}
+
+function openCmdPalette() {
+  if (!cmdDialog) return;
+  renderCmdPalette("");
+  if (cmdSearch) cmdSearch.value = "";
+  if (!cmdDialog.open) cmdDialog.showModal();
+  cmdSearch?.focus();
+}
+
+document.querySelector("#cmd-palette-open-btn")?.addEventListener("click", openCmdPalette);
+document.querySelector("#cmd-palette-close-btn")?.addEventListener("click", () => cmdDialog?.close());
+cmdSearch?.addEventListener("input", () => renderCmdPalette(cmdSearch.value));
+cmdSearch?.addEventListener("keydown", (ev) => {
+  if (ev.key === "ArrowDown") {
+    const first = cmdList?.querySelector(".cmd-palette-item");
+    if (first) {
+      ev.preventDefault();
+      first.focus();
+    }
+  }
+});
+cmdList?.addEventListener("keydown", (ev) => {
+  if (ev.key !== "ArrowDown" && ev.key !== "ArrowUp") return;
+  const btns = Array.from(cmdList.querySelectorAll(".cmd-palette-item"));
+  const idx = btns.indexOf(document.activeElement);
+  if (idx < 0 || !btns.length) return;
+  ev.preventDefault();
+  const nextIdx = ev.key === "ArrowDown" ? (idx + 1) % btns.length : (idx - 1 + btns.length) % btns.length;
+  btns[nextIdx]?.focus();
+});
+
 document.addEventListener("keydown", (ev) => {
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "k") {
+    ev.preventDefault();
+    if (cmdDialog?.open) cmdDialog.close();
+    else openCmdPalette();
+    return;
+  }
   if (ev.key === "Escape" && !document.querySelector("dialog[open]")) {
     const toast = document.querySelector("#outcome-panel");
     if (toast) {

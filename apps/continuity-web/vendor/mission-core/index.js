@@ -327,16 +327,16 @@ export function compileMissionChange(input, mission) {
     ten: "10", dix: "10",
   };
   const rawText = rawOriginal
-    .replace(/\b(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/gi, (m) => {
+    .replace(/(?<![A-Za-zÀ-ÿ])(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|luned[ìi]|marted[ìi]|mercoled[ìi]|gioved[ìi]|venerd[ìi]|sabato|domenica|segunda(?:-feira)?|ter[çc]a(?:-feira)?|quarta(?:-feira)?|quinta(?:-feira)?|sexta(?:-feira)?|maandag|dinsdag|woensdag|donderdag|vrijdag|zaterdag|zondag)(?![A-Za-zÀ-ÿ])/gi, (m) => {
       const k = m.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       return ({
-        lundi: "Monday", lunes: "Monday", montag: "Monday",
-        mardi: "Tuesday", martes: "Tuesday", dienstag: "Tuesday",
-        mercredi: "Wednesday", miercoles: "Wednesday", mittwoch: "Wednesday",
-        jeudi: "Thursday", jueves: "Thursday", donnerstag: "Thursday",
-        vendredi: "Friday", viernes: "Friday", freitag: "Friday",
-        samedi: "Saturday", sabado: "Saturday", samstag: "Saturday",
-        dimanche: "Sunday", domingo: "Sunday", sonntag: "Sunday",
+        lundi: "Monday", lunes: "Monday", montag: "Monday", lunedi: "Monday", segunda: "Monday", "segunda-feira": "Monday", maandag: "Monday",
+        mardi: "Tuesday", martes: "Tuesday", dienstag: "Tuesday", martedi: "Tuesday", terca: "Tuesday", "terca-feira": "Tuesday", dinsdag: "Tuesday",
+        mercredi: "Wednesday", miercoles: "Wednesday", mittwoch: "Wednesday", mercoledi: "Wednesday", quarta: "Wednesday", "quarta-feira": "Wednesday", woensdag: "Wednesday",
+        jeudi: "Thursday", jueves: "Thursday", donnerstag: "Thursday", giovedi: "Thursday", quinta: "Thursday", "quinta-feira": "Thursday", donderdag: "Thursday",
+        vendredi: "Friday", viernes: "Friday", freitag: "Friday", venerdi: "Friday", sexta: "Friday", "sexta-feira": "Friday", vrijdag: "Friday",
+        samedi: "Saturday", sabado: "Saturday", samstag: "Saturday", zaterdag: "Saturday",
+        dimanche: "Sunday", domingo: "Sunday", sonntag: "Sunday", domenica: "Sunday", zondag: "Sunday",
       })[k] || m;
     })
     .replace(/\b(janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[ûu]t|septembre|octobre|novembre|d[ée]cembre)\b/gi, (m) => {
@@ -350,11 +350,11 @@ export function compileMissionChange(input, mission) {
     .replace(/\b(?:apr[èe]s[- ]demain|day\s+after\s+tomorrow)\b/gi, "+2 days")
     .replace(/\b(?:demain|tomorrow)\b/gi, "+1 day")
     .replace(/\b(?:une\s+semaine\s+plus\s+tard|la\s+semaine\s+prochaine|next\s+week|a\s+week\s+later|\+1\s*week)\b/gi, "+7 days")
-    .replace(/\b(?:à|a|pour|jusqu'à|jusqu'a|vers|al|para|auf)\s+(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/gi, "to $1")
+    .replace(/\b(?:à|a|pour|jusqu'à|jusqu'a|vers|al|para|auf|per|naar)\s+(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/gi, "to $1")
     .replace(/\b(?:dans|in)\s+(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|un|deux|trois|quatre|cinq|sept|huit|neuf|dix)\s+(?:jours?|days?)\b/gi, (_m, n) => `+${WORD_NUMS[n.toLowerCase()] || n} days`)
     .replace(/\b(one|two|three|four|five|six|seven|eight|nine|ten|un|deux|trois|quatre|cinq|sept|huit|neuf|dix)\s+(?:jours?|days?)\s+(?:later|plus\s+tard)\b/gi, (_m, n) => `${WORD_NUMS[n.toLowerCase()] || n} days later`)
     .replace(/\b(one|two|three|four|five|six|seven|eight|nine|ten|un|deux|trois|quatre|cinq|sept|huit|neuf|dix)\s+(?:jours?|days?)\s+(?:earlier|plus\s+t[ôo]t)\b/gi, (_m, n) => `-${WORD_NUMS[n.toLowerCase()] || n} days`)
-    .replace(/\b(?:sous|moins\s+de|plafond(?:\s+de)?|bajo|menos\s+de|unter)\s*(\d{2,5}(?:\.\d{1,2})?)\s*(?:€|euros?|eur)?/gi, "below €$1")
+    .replace(/\b(?:sous|moins\s+de|plafond(?:\s+de)?|bajo|menos\s+de|unter|sotto|abaixo\s+de|onder|within|at\s+most)\s*(?:€\s*)?(\d{2,5}(?:\.\d{1,2})?)\s*(?:€|euros?|eur)?/gi, "below €$1")
     .replace(/\b(?:le\s+moins\s+cher|[ée]conomique)\b/gi, "lowest cost")
     .replace(/\b(?:au\s+plus\s+vite|le\s+plus\s+rapide)\b/gi, "fastest");
 
@@ -482,7 +482,7 @@ export function compileMissionChange(input, mission) {
       const earlierMatch =
         rawText.match(/\b(\d{1,2})\s+days?\s+earlier\b/i)
         || rawText.match(/(?:^|\s)-(\d{1,2})\s*days?\b/i)
-        || rawText.match(/\b(?:advance|bring\s+forward)(?:\s+\w+){0,3}\s+by\s+(\d{1,2})\s+days?\b/i);
+        || rawText.match(/\b(?:advance|bring\s+forward|pull\s+forward)(?:\s+\w+){0,3}\s+by\s+(\d{1,2})\s+days?\b/i);
       if (earlierMatch) {
         newDate = addDaysIso(prevDate, -Number(earlierMatch[1]));
         extractedNotes.push(`Applied -${earlierMatch[1]} days shift -> ${newDate}`);

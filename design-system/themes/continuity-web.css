@@ -423,3 +423,39 @@ a.badge { text-decoration: none; }
 .live-state[data-state="prepared"] { background: var(--warn-bg); color: var(--warn); }
 @media (max-width: 1080px) { .live-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .live-grid { grid-template-columns: 1fr; } }
+
+/* Before -> After Critical-Path & Schedule Alignment Strip */
+.gantt-strip { margin-top: var(--s-4); padding: var(--s-4); border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); }
+.gantt-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; font-size: var(--fs-sm); color: var(--ink); }
+.gantt-list { display: grid; gap: 6px; }
+.gantt-row {
+  display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.25fr) auto; align-items: center; gap: 10px;
+  width: 100%; text-align: left; padding: 8px 11px; border-radius: var(--r-sm);
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); cursor: pointer; font: inherit; font-size: var(--fs-xs);
+}
+.gantt-row.is-selected { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent); }
+.gantt-title { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
+.gantt-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+.gantt-dates { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.gantt-dates strong { color: var(--ink); }
+.slack-pill { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: var(--r-pill); font-size: 0.7rem; font-weight: 650; white-space: nowrap; border: 1px solid transparent; }
+.slack-crit { background: var(--warn-bg); color: var(--warn); border-color: var(--warn-line); }
+.slack-float { background: var(--accent-soft); color: var(--accent-strong); border-color: var(--accent-line); }
+.slack-safe { background: var(--ok-bg); color: var(--ok); border-color: var(--ok-line); }
+@media (max-width: 680px) { .gantt-row { grid-template-columns: 1fr; gap: 4px; } .slack-pill { justify-self: start; } }
+
+/* Command Palette Dialog & Header Shortcut Badge */
+.top-actions kbd { font-family: var(--mono); font-size: 0.68rem; padding: 2px 6px; border-radius: 5px; background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line-strong); margin-left: 4px; }
+.cmd-palette-dialog {
+  width: min(560px, calc(100vw - 28px)); border: 1px solid var(--line-strong); border-radius: var(--r-lg);
+  padding: var(--s-5); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-3);
+}
+.cmd-palette-dialog::backdrop { background: rgba(10, 15, 28, 0.58); }
+.cmd-palette-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+.cmd-palette-input { width: 100%; margin-bottom: 10px; }
+.cmd-palette-list { display: grid; gap: 6px; max-height: 52vh; overflow-y: auto; }
+.cmd-palette-item {
+  width: 100%; text-align: left; padding: 10px 12px; border-radius: var(--r-sm);
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: 550 var(--fs-sm)/1.35 var(--font); cursor: pointer;
+}
+.cmd-palette-item:hover, .cmd-palette-item:focus-visible { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); outline: none; }

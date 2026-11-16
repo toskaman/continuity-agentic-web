@@ -16,6 +16,7 @@ import { EDGE_TYPES } from "../mission-graph/index.js";
 import { generateDemoProviderKeyPair, ReceiptVerifier, signProviderReceipt } from "../proof-verifier/index.js";
 import { OperationLedger } from "../outcome-reconciliation/index.js";
 import { canonicalizeJson, isPlainObject, isValidIsoDate, sanitizeJson, sha256Hex } from "../shared-schemas/index.js";
+import { computeMerkleRoot } from "../merkle-passport/index.js";
 import { verifyBlindedBudgetAttestation } from "../zk-budget-attestation/index.js";
 
 export const SAMPLE_RAW_CONFIRMATION_EMAILS = [
@@ -1105,6 +1106,23 @@ export async function exportVerifiableAuditBundle({
     };
   }
 
+  const normalizedOps = (operations || []).map((op) => ({
+    operation_id: op.operation_id,
+    commitment_id: op.commitment_id,
+    provider_id: op.provider_id || op.receipt_envelope?.receipt_body?.provider_id || null,
+    provider_name: op.provider_name,
+    state: op.state,
+    proposed_date: op.proposed_date,
+    window: op.window,
+    approval_hash: op.approval_hash || null,
+    proof_verification: op.proof_verification || null,
+    receipt_envelope: op.receipt_envelope || null,
+  }));
+  const opLeafDigests = await Promise.all(
+    normalizedOps.map((op) => sha256Hex(`continuity-audit-op-v1:${canonicalizeJson(op)}`)),
+  );
+  const merkleOperationsRootSha256 = await computeMerkleRoot(opLeafDigests);
+
   const payload = sanitizeJson({
     schema: "continuity-verifiable-audit-bundle/v1",
     exported_at: new Date().toISOString(),
@@ -1120,18 +1138,8 @@ export async function exportVerifiableAuditBundle({
         }
       : null,
     ...(zkBudgetAttestation ? { zk_budget_attestation: zkBudgetAttestation } : {}),
-    operations: (operations || []).map((op) => ({
-      operation_id: op.operation_id,
-      commitment_id: op.commitment_id,
-      provider_id: op.provider_id || op.receipt_envelope?.receipt_body?.provider_id || null,
-      provider_name: op.provider_name,
-      state: op.state,
-      proposed_date: op.proposed_date,
-      window: op.window,
-      approval_hash: op.approval_hash || null,
-      proof_verification: op.proof_verification || null,
-      receipt_envelope: op.receipt_envelope || null,
-    })),
+    merkle_operations_root_sha256: merkleOperationsRootSha256,
+    operations: normalizedOps,
     pinned_provider_keys_snapshot: keySnapshot,
     immutable_saga_log: auditLog || [],
   });
@@ -1252,6 +1260,19 @@ export async function verifyExportedAuditBundle(rawBundle, options = {}) {
     zkBudgetValid = zkConsistent;
   }
 
+  let merkleOperationsRootValid = null;
+  if (typeof clean.merkle_operations_root_sha256 === "string") {
+    const opsArr = Array.isArray(clean.operations) ? clean.operations : [];
+    const opDigests = await Promise.all(
+      opsArr.map((op) => sha256Hex(`continuity-audit-op-v1:${canonicalizeJson(op)}`)),
+    );
+    const recomputedMerkle = await computeMerkleRoot(opDigests);
+    merkleOperationsRootValid = recomputedMerkle === clean.merkle_operations_root_sha256.toLowerCase();
+    if (!merkleOperationsRootValid) {
+      errors.push("MERKLE_OPERATIONS_ROOT_MISMATCH: operations[] does not match merkle_operations_root_sha256.");
+    }
+  }
+
   return {
     valid: errors.length === 0,
     bundleSha256Valid,
@@ -1262,6 +1283,7 @@ export async function verifyExportedAuditBundle(rawBundle, options = {}) {
     receiptsTotalCommitted: committedOps.length,
     zkBudgetAttestationPresent: Boolean(zkAtt),
     zkBudgetValid,
+    merkleOperationsRootValid,
     keyTrustMode,
     errors,
   };

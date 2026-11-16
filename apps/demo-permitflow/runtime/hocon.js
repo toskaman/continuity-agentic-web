@@ -10,8 +10,16 @@
 // In the full design this parser is part of the cross-compiled kernel; here it is a
 // faithful hand-written reference so the demo runs end to end.
 
+const FORBIDDEN_HOCON_KEYS = new Set(["__proto__", "prototype", "constructor"]);
+const MAX_HOCON_CHARS = 524_288;
+const MAX_HOCON_DEPTH = 32;
+
 export function parseHocon(text) {
-  return new HoconParser(text).parseDocument();
+  const src = String(text ?? "");
+  if (src.length > MAX_HOCON_CHARS) {
+    throw new Error(`HOCON input exceeds ${MAX_HOCON_CHARS} char safety limit.`);
+  }
+  return new HoconParser(src).parseDocument();
 }
 
 class HoconParser {
@@ -19,6 +27,7 @@ class HoconParser {
     this.s = text;
     this.i = 0;
     this.n = text.length;
+    this.depth = 0;
   }
 
   error(msg) {
@@ -52,8 +61,10 @@ class HoconParser {
   }
 
   parseObject() {
+    if (++this.depth > MAX_HOCON_DEPTH) throw this.error("maximum nesting depth exceeded");
     this.expect("{");
     const obj = this.parseObjectBody(true);
+    this.depth--;
     return obj;
   }
 
@@ -75,6 +86,9 @@ class HoconParser {
       let key;
       if (c === '"') key = this.parseQuotedString();
       else key = this.parseBareKey();
+      if (FORBIDDEN_HOCON_KEYS.has(key)) {
+        throw this.error(`forbidden object key '${key}'`);
+      }
       this.skipTrivia();
       const sep = this.peek();
       let value;
@@ -103,6 +117,7 @@ class HoconParser {
   }
 
   parseArray() {
+    if (++this.depth > MAX_HOCON_DEPTH) throw this.error("maximum nesting depth exceeded");
     this.expect("[");
     const arr = [];
     for (;;) {
@@ -116,6 +131,7 @@ class HoconParser {
       arr.push(this.parseValue());
       this.skipSeparators();
     }
+    this.depth--;
     return arr;
   }
 
@@ -149,7 +165,9 @@ class HoconParser {
         const e = this.s[this.i + 1];
         const map = { n: "\n", t: "\t", r: "\r", '"': '"', "\\": "\\", "/": "/" };
         if (e === "u") {
-          out += String.fromCharCode(parseInt(this.s.slice(this.i + 2, this.i + 6), 16));
+          const hex4 = this.s.slice(this.i + 2, this.i + 6);
+          if (!/^[0-9a-fA-F]{4}$/.test(hex4)) throw this.error("invalid \\uXXXX escape");
+          out += String.fromCharCode(parseInt(hex4, 16));
           this.i += 6;
         } else if (e in map) {
           out += map[e];
@@ -249,12 +267,15 @@ function coerceScalar(raw) {
 }
 
 export function isPlainObject(v) {
-  return v !== null && typeof v === "object" && !Array.isArray(v);
+  if (v === null || typeof v !== "object" || Array.isArray(v)) return false;
+  const proto = Object.getPrototypeOf(v);
+  return proto === Object.prototype || proto === null;
 }
 
 export function deepMerge(a, b) {
   const out = { ...a };
   for (const [k, v] of Object.entries(b)) {
+    if (FORBIDDEN_HOCON_KEYS.has(k)) continue;
     if (isPlainObject(out[k]) && isPlainObject(v)) out[k] = deepMerge(out[k], v);
     else out[k] = v;
   }

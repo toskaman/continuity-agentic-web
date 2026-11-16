@@ -17,7 +17,7 @@ run(
   [
     "commit",
     "-m",
-    "feat: complete 1-to-1 300-upgrade TITAN OMEGA v3.0 campaign (Waves 6-8: runtime sandbox/MCP/LLM/CRUSE hardenings, 4-peer Ed25519 & PEER_RESET, continuity-audit v2.1 CLI, 0 Long Tasks & 111 tests)",
+    "feat: TITAN OMEGA Cycle II (#301-#600: Issue #32 engine.addCheck & Luhn/IBAN DLP, RFC 6962 Selective-Disclosure Merkle Passports, CPM Gantt, Ctrl+K Palette, 8-tool Kit, 26 modules, 42 Chaos, N=180 & 117 tests)",
   ],
   { stdio: "inherit" },
 );

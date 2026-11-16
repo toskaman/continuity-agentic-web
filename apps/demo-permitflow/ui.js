@@ -70,10 +70,10 @@ function renderDossier(state) {
           <div class="record-fact"><dt>Draft total</dt><dd>${e(d.prepFeeEur)}</dd></div>
           <div class="record-fact"><dt>Official status</dt><dd>Not submitted</dd></div>
         </dl>
-        ${state.previewDate ? `<div class="record-hold">Previewing ${e(state.previewDate.label)} — draft unchanged until you update it</div>` : ""}
+        ${state.previewDate ? `<div class="record-hold">Previewing ${e(state.previewDate.label)} — draft unchanged until you update it <button type="button" class="mini-btn" data-peer-release="1">Clear preview</button></div>` : ""}
         ${state.lastReceipt?.payloadSha256 ? `<div class="record-hold">✓ Ed25519 Verified (${e(state.lastReceipt.keyId || "ed25519")} · sha256:${e(state.lastReceipt.payloadSha256.slice(0, 12))}…)</div>` : ""}
       </div>
-      <div class="record-foot"><span>Preparation only — not an official permit</span><span>Demonstration data</span></div>
+      <div class="record-foot"><span>Preparation only — not an official permit</span><button type="button" class="mini-btn" data-peer-ics="1">↓ .ics</button></div>
     </article>`;
 }
 
@@ -81,6 +81,19 @@ afterEachRender(App.page, (state, feedback) => {
   const panel = document.querySelector("#dossier-panel");
   if (panel) {
     panel.innerHTML = renderDossier(state);
+    panel.querySelector("[data-peer-ics]")?.addEventListener("click", () => {
+      const ics = App.page.exportIcs();
+      const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${state.dossier.dossierRef}.ics`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    panel.querySelector("[data-peer-release]")?.addEventListener("click", () => {
+      App.page.clearPreview();
+    });
     if (feedback) flash(panel.firstElementChild);
   }
   const items = checklist(state);

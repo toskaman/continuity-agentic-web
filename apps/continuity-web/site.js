@@ -3,6 +3,7 @@ import { registerActions } from "./site-actions.js";
 import { exposeActionsToWebMcp } from "./vendor/webmcp-adapter/index.js";
 import { ChromeBuiltInPromptLlm, probeLocalInferenceBackends } from "./vendor/local-browser-router/index.js";
 import { inspectPeerNetworkSafety, PeerTofuRegistry } from "./vendor/peer-firewall/index.js";
+import { createOpenAgenticSafetyGuard } from "./vendor/safety-hooks/index.js";
 import { LlmClient } from "./runtime/llm.js";
 
 if (typeof navigator !== "undefined") {
@@ -260,6 +261,40 @@ export class ContinuityScriptedReplayLlm {
       );
     }
 
+    // 3d. Critical-Path Slack & Merkle Passport summary intent
+    if (/\b(critical[- ]path|slack|float|merkle)\b/i.test(userText) && avail.has("website_get_mission_state")) {
+      if (!calledNames.has("website_get_mission_state")) {
+        return emitTool("website_get_mission_state", {});
+      }
+      const st = parseToolPayload("website_get_mission_state") || {};
+      const cpm = st.criticalPathSummary || { criticalPathNodeIds: [], nodes: [] };
+      if (avail.has("render_cruse") && !calledNames.has("render_cruse") && Array.isArray(cpm.nodes) && cpm.nodes.length) {
+        return emitTool("render_cruse", {
+          presentation: {
+            version: 1,
+            components: [
+              {
+                id: "cpm_slack_table",
+                kind: "table",
+                title: "Critical-Path Method (CPM) Slack & Isolation Analysis",
+                columns: ["Commitment", "Ref", "Earliest Date", "Float / Status"],
+                rows: cpm.nodes.map((n) => [
+                  n.title,
+                  n.bookingRef,
+                  n.projectedEarliestDate,
+                  n.unaffected ? "Untouched (Protected)" : n.isCriticalPath ? "CRITICAL (0d slack)" : `+${n.slackDays}d float`,
+                ]),
+              },
+            ],
+          },
+        });
+      }
+      return emitText(
+        `## Critical-Path Slack Summary *(Scripted Replay)*\n- **Critical-Path Commitments (` +
+          `0d slack):** **${cpm.criticalPathNodeIds?.length || 0}** (\`${(cpm.criticalPathNodeIds || []).join(", ")}\`)\n- **Schedule Span:** **${cpm.scheduleSpanDays || 0} day(s)**`,
+      );
+    }
+
     // 4. Commit prepared change package intent
     if (/\bcommit\b/i.test(userText) && avail.has("website_commit_prepared_change_package")) {
       if (!calledNames.has("website_get_mission_state")) {
@@ -364,32 +399,11 @@ export class AssistantMount {
       AssistantMount.tofuRegistry = new PeerTofuRegistry(
         typeof window !== "undefined" ? window.localStorage : null,
       );
-      const rawResolveRemote = booted.engine.resolveRemote.bind(booted.engine);
-      booted.engine.resolveRemote = async (...args) => {
-        const session = await rawResolveRemote(...args);
-        if (session?.network?.config) {
-          const peerInspection = await inspectPeerNetworkSafety({
-            manifestJson: session.manifest || { networks: [{ name: session.network.name || "peer" }] },
-            networkJson: session.network.config,
-            siteBaseUrl: session.origin || String(args[0] || ""),
-          });
-          const tofu = AssistantMount.tofuRegistry.verifyOrPin(peerInspection);
-          if (!peerInspection.safe) {
-            throw new Error(tofu.reason);
-          }
-          if (tofu.requiresReconsent) {
-            const reapproved = await booted.engine.onConsent({
-              origin: session.origin || String(args[0] || ""),
-              purpose: `Peer artifact digest changed since first approval (${tofu.previousBundleSha256.slice(0, 16)}… → ${tofu.nextBundleSha256.slice(0, 16)}…). Re-approve updated network?`,
-            });
-            if (!reapproved) {
-              throw new Error("Visitor declined re-consent after peer artifact digest change.");
-            }
-            AssistantMount.tofuRegistry.approveUpdatedPin(peerInspection);
-          }
-        }
-        return session;
-      };
+      AssistantMount.safetyGuard = createOpenAgenticSafetyGuard({
+        tofuRegistry: AssistantMount.tofuRegistry,
+        onReconsentRequired: ({ origin, purpose }) => booted.engine.onConsent({ origin, purpose }),
+      });
+      booted.engine.addCheck(AssistantMount.safetyGuard);
       AssistantMount.defaultReview = booted.engine.onActionConfirm;
       booted.engine.onActionConfirm = AssistantMount.review;
       AssistantMount.defaultConsent = booted.engine.onConsent;

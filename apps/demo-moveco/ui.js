@@ -48,10 +48,10 @@ function renderBooking(state) {
           <div class="record-fact"><dt>Current total</dt><dd>${e(b.basePriceEur)}</dd></div>
           <div class="record-fact"><dt>Page version</dt><dd>v${e(state.version)}</dd></div>
         </dl>
-        ${hold ? `<div class="record-hold">Hold ${e(hold.holdId)} on ${e(hold.targetLabel)} (${e(hold.window)}) · your booking stays active</div>` : ""}
+        ${hold ? `<div class="record-hold">Hold ${e(hold.holdId)} on ${e(hold.targetLabel)} (${e(hold.window)}) · your booking stays active <button type="button" class="mini-btn" data-peer-release="1">Release (€0)</button></div>` : ""}
         ${state.lastReceipt?.payloadSha256 ? `<div class="record-hold">✓ Ed25519 Verified (${e(state.lastReceipt.keyId || "ed25519")} · sha256:${e(state.lastReceipt.payloadSha256.slice(0, 12))}…)</div>` : ""}
       </div>
-      <div class="record-foot"><span>${moved ? "Rescheduled in this session" : "Original date"}</span><span>Demonstration data</span></div>
+      <div class="record-foot"><span>${moved ? "Rescheduled in this session" : "Original date"}</span><button type="button" class="mini-btn" data-peer-ics="1">↓ .ics</button></div>
     </article>`;
 }
 
@@ -59,6 +59,19 @@ afterEachRender(App.page, (state, feedback) => {
   const panel = document.querySelector("#booking-panel");
   if (panel) {
     panel.innerHTML = renderBooking(state);
+    panel.querySelector("[data-peer-ics]")?.addEventListener("click", () => {
+      const ics = App.page.exportIcs();
+      const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${state.booking.bookingRef}.ics`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    panel.querySelector("[data-peer-release]")?.addEventListener("click", () => {
+      App.page.releaseHold();
+    });
     if (feedback) flash(panel.firstElementChild);
   }
   const moved = state.booking.scheduledDate !== ORIGINAL_DATE;

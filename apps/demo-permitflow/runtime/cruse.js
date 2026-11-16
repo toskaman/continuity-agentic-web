@@ -1,8 +1,14 @@
 // Changed by agentic-web. See README.md in this folder for what changed.
 // CRUSE's wire contract. Proposals are returned to the caller, never published
 // directly to the user by a child agent. This module is shared by both runners.
-const object = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+const object = (v) => {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return false;
+  const proto = Object.getPrototypeOf(v);
+  return proto === Object.prototype || proto === null;
+};
 const kinds = new Set(["form", "choice", "confirm", "info", "report", "table", "chart", "html", "action"]);
+const MAX_CRUSE_DEPTH = 16;
+const MAX_CRUSE_COMPONENTS = 24;
 
 export function parseJson(text) {
   try { return JSON.parse(text); } catch {}
@@ -45,10 +51,11 @@ function validComponent(c) {
 
 // Exact duplicates are safe to remove mechanically. Semantic merging belongs to
 // the parent LLM: similar labels can still describe distinct people or actions.
-function canonical(value) {
-  if (Array.isArray(value)) return value.map(canonical);
+function canonical(value, depth = 0) {
+  if (depth > MAX_CRUSE_DEPTH) return null;
+  if (Array.isArray(value)) return value.map((item) => canonical(item, depth + 1));
   if (!object(value)) return value;
-  return Object.fromEntries(Object.keys(value).sort().map((k) => [k, canonical(value[k])]));
+  return Object.fromEntries(Object.keys(value).sort().map((k) => [k, canonical(value[k], depth + 1)]));
 }
 
 export function normalizePresentation(value, prefix = "component") {
@@ -56,7 +63,7 @@ export function normalizePresentation(value, prefix = "component") {
   const issues = [];
   const seen = new Set();
   const ids = new Set();
-  const candidates = Array.isArray(value?.components) ? value.components : [value];
+  const candidates = (Array.isArray(value?.components) ? value.components : [value]).slice(0, MAX_CRUSE_COMPONENTS);
   if (value?.version !== undefined && value.version !== 1) return { presentation: null, issues: ["Unsupported presentation version."] };
   for (const candidate of candidates) {
     if (candidate?.display === false) continue;

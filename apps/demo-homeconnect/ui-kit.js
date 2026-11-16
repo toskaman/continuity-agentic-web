@@ -4,6 +4,7 @@
 
 import { ChromeBuiltInPromptLlm, probeLocalInferenceBackends } from "./vendor/local-browser-router/index.js";
 import { inspectPeerNetworkSafety, PeerTofuRegistry } from "./vendor/peer-firewall/index.js";
+import { createOpenAgenticSafetyGuard } from "./vendor/safety-hooks/index.js";
 import { LlmClient } from "./runtime/llm.js";
 
 export const escapeHtml = (v) =>
@@ -334,30 +335,24 @@ export function bindPeerZeroKeyControls(engine, statusEl, greetFn) {
     typeof window !== "undefined" ? window.localStorage : null,
   );
   engine.tofuRegistry = tofuRegistry;
+  engine.safetyGuard = createOpenAgenticSafetyGuard({
+    tofuRegistry,
+    onReconsentRequired: ({ origin, purpose }) => engine.onConsent({ origin, purpose }),
+  });
+  const hasNativeHookApi = typeof engine.addCheck === "function";
+  if (hasNativeHookApi) {
+    engine.addCheck(engine.safetyGuard);
+  }
 
-  // Enforce @continuity/peer-firewall + TOFU SHA-256 pinning on every cross-origin partner load!
   const guardedResolveRemote = async (...args) => {
     const session = await rawResolveRemote(...args);
-    if (session?.network?.config) {
-      const peerInspection = await inspectPeerNetworkSafety({
-        manifestJson: session.manifest || { networks: [{ name: session.network.name || "peer" }] },
-        networkJson: session.network.config,
-        siteBaseUrl: session.origin || String(args[0] || ""),
+    if (!hasNativeHookApi && session?.network?.config) {
+      await engine.safetyGuard.beforePeerRuns({
+        url: String(args[0] || ""),
+        base: session.origin || String(args[0] || ""),
+        manifest: session.manifest,
+        network: session.network,
       });
-      const tofu = tofuRegistry.verifyOrPin(peerInspection);
-      if (!peerInspection.safe) {
-        throw new Error(tofu.reason);
-      }
-      if (tofu.requiresReconsent) {
-        const reapproved = await engine.onConsent({
-          origin: session.origin || String(args[0] || ""),
-          purpose: `Partner artifact digest changed since first approval (${tofu.previousBundleSha256.slice(0, 16)}… → ${tofu.nextBundleSha256.slice(0, 16)}…). Re-approve updated network?`,
-        });
-        if (!reapproved) {
-          throw new Error("Visitor declined re-consent after partner artifact digest change.");
-        }
-        tofuRegistry.approveUpdatedPin(peerInspection);
-      }
     }
     return session;
   };

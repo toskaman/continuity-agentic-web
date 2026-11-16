@@ -5,6 +5,9 @@
 // side effects. The top agent can interrupt an in-flight model call, incorporate
 // the new user input, and decide what to do with those results when they arrive.
 
+const MAX_STEER_QUEUE = 16;
+const MAX_STEER_CHARS = 8192;
+
 export class TurnControl {
   constructor() {
     this.pending = [];
@@ -32,8 +35,8 @@ export class TurnControl {
   }
 
   steer(value) {
-    const text = String(value || "").trim();
-    if (!text || this.closed) return false;
+    const text = String(value || "").trim().slice(0, MAX_STEER_CHARS);
+    if (!text || this.closed || this.pending.length >= MAX_STEER_QUEUE) return false;
     const input = { text, receivedAt: Date.now() };
     this.pending.push(input);
     this.accepted.push(input);

@@ -76,7 +76,7 @@ node scripts/run_all_tests.mjs
 This single command executes:
 1. Official Cognizant `build_network.mjs --check` across all 5 websites (**0 errors, 0 warnings**).
 2. Official Cognizant `check_partner.mjs` across all **9 bidirectional cross-origin directions** (`CONTINUITY -> 4 Peers`, `All 4 Peers -> CONTINUITY`, and external open callability — **CORS, manifests, networks, and `bridge/action-bridge.html` verified**).
-3. All **111 automated tests in 31 suites** (unit, runtime multi-provider SSE parallel tool calls & EU/US Otari + Gemini `AQ.` routing, 1-click OpenRouter OAuth PKCE S256 & URL `?code=` scrubbing, pre-execution peer instruction firewall & TOFU SHA-256 rug-pull pinning, least-privilege sub-agent toolbox scoper, zero-ceiling-leak SHA-256 hash-ladder budget range proof, zero-key on-device `LanguageModel` & loopback Ollama router, visible `data-agent-facts` anti-injection & `facts/` partner checks, Project NANDA `urn:air` + AI Catalog + Poppy `nandaindex.org/reach` v1 + `POST /resolve` `draft-raskar-02` + SPA fallback detection, NSGA-II Pareto + counterfactual relaxation + 6-day horizon sweep, multilingual EN/FR & relative NL + hybrid `.ics` intake, hybrid Open Agentic Web + legacy Hold-First transition playbook, zero-trust audit bundle verifier & `€0.01` tamper detection, `€0` pre-commit hold release, Google ADK → HOCON converter, mandate & Nash bargaining bypasses, SHA-256 hash-chained ledger, cross-origin browser bridge, peer zero-key replay, W3C `document.modelContext` + `navigator.modelContext` WebMCP guardrails, bidirectional `Engine` composition `I1–I3`, live 9-point MVP 0.2 + NANDA conformance auditor & SARIF CLI, production `--dry-run` bundle staging, docs-vs-code truth contract, provider MCP contracts, adversarial security boundaries `S1–S20`, **real Headless Chromium CDP Desktop + `390x844` Mobile + `?demo=1` + `?ask_continuity=1` + Builder Kit E2E**, and all **36 Chaos Lab scenarios**).
+3. All **117 automated tests in 32 suites** (unit, runtime multi-provider SSE parallel tool calls & EU/US Otari + Gemini `AQ.` routing, 1-click OpenRouter OAuth PKCE S256 & URL `?code=` scrubbing, pre-execution peer instruction firewall & TOFU SHA-256 rug-pull pinning, least-privilege sub-agent toolbox scoper, zero-ceiling-leak SHA-256 hash-ladder budget range proof, zero-key on-device `LanguageModel` & loopback Ollama router, visible `data-agent-facts` anti-injection & `facts/` partner checks, Project NANDA `urn:air` + AI Catalog + Poppy `nandaindex.org/reach` v1 + `POST /resolve` `draft-raskar-02` + SPA fallback detection, NSGA-II Pareto + counterfactual relaxation + 6-day horizon sweep, multilingual EN/FR & relative NL + hybrid `.ics` intake, hybrid Open Agentic Web + legacy Hold-First transition playbook, zero-trust audit bundle verifier & `€0.01` tamper detection, `€0` pre-commit hold release, Google ADK → HOCON converter, mandate & Nash bargaining bypasses, SHA-256 hash-chained ledger, cross-origin browser bridge, peer zero-key replay, W3C `document.modelContext` + `navigator.modelContext` WebMCP guardrails, bidirectional `Engine` composition `I1–I3`, live 9-point MVP 0.2 + NANDA conformance auditor & SARIF CLI, production `--dry-run` bundle staging, docs-vs-code truth contract, provider MCP contracts, adversarial security boundaries `S1–S20`, **real Headless Chromium CDP Desktop + `390x844` Mobile + `?demo=1` + `?ask_continuity=1` + Builder Kit E2E**, and all **42 Chaos Lab scenarios**).
 
 ### 3. Reproduce Before/After & Multi-Domain Benchmarks (`N = 90` Measured Sagas)
 
@@ -96,7 +96,7 @@ continuity/
 │   ├── demo-permitflow/       # Peer B: Public curbside bay notice check & demo dossier drafts
 │   ├── demo-homeconnect/      # Peer C: Fiber ONT technician scheduling & 10-min holds
 │   └── demo-powerflow/        # Peer D: Remote smart-meter electricity energization
-├── packages/                  # 24 Reusable Open-Source Community Modules (Apache-2.0)
+├── packages/                  # 26 Reusable Open-Source Community Modules (Apache-2.0)
 │   ├── shared-schemas/        # Canonical JSON (JCS), SHA-256 Web Crypto, strict JSON Schema
 │   ├── mission-core/          # Multilingual EN/FR Mission compiler & hard-invariant guard
 │   ├── intake-compiler/       # Email + Hybrid RFC 5545 .ics + JSON compiler & Audit Bundle verifier
@@ -120,7 +120,9 @@ continuity/
 │   ├── saga-engine/           # Prepare-first, €0 hold-release, commit-last Saga coordinator
 │   ├── proof-verifier/        # Ed25519 receipt verification & explicit trust classification
 │   ├── nanda-resolver/        # Project NANDA AI Catalog, POST /resolve, A2A & 9-point CLI/SARIF auditor
-│   └── chaos-lab/             # 36 deterministic failure-injection scenarios
+│   ├── safety-hooks/          # Issue #32 engine.addCheck() guard, Luhn PAN & Mod-97 IBAN DLP + post-peer taint lock
+│   ├── merkle-passport/       # RFC 6962 0x00/0x01 Merkle Mission Passports, salted selective disclosure & CPM slack
+│   └── chaos-lab/             # 42 deterministic failure-injection scenarios
 ├── providers/                 # Standalone CORS + MCP (2025-06-18) servers for each peer
 ├── skills/agentify-website/   # Official Cognizant runtime & compliance validators
 ├── design-system/             # Shared tokens, components, per-site themes (built by scripts/write_peer_styles.mjs)

@@ -65,6 +65,8 @@ import {
 } from "./modules/change-package-view.js";
 import { renderMissionGraphSvg, renderMissionNodeInspector } from "./modules/graph-svg-view.js";
 import { renderParetoFrontierPlot } from "./modules/pareto-svg-view.js";
+import { renderScheduleGanttView } from "./modules/schedule-gantt-view.js";
+import { analyzeCriticalPathSlack } from "./vendor/merkle-passport/index.js";
 import {
   renderAuditorTableView,
   renderAuditTimelineView,
@@ -125,6 +127,8 @@ export class ContinuityCoordinatorPage {
     this.arbiterReport = null;
     this.bypassAuditReport = null;
     this.lastConvertedBundle = null;
+    this.lastPassport = null;
+    this.lastSelectiveProof = null;
     this.holdsPlacedAtMs = null;
     this._holdTimerHandle = null;
     this.providerHarnessPromise = null;
@@ -377,6 +381,11 @@ export class ContinuityCoordinatorPage {
         compiledProposal: this.compiledProposal,
         impactMetrics: this.impactReport?.metrics || null,
         unaffectedIds: this.impactReport?.unaffectedIds || [],
+        criticalPathSummary: analyzeCriticalPathSlack(
+          this.graph,
+          this.compiledProposal?.requested_change?.new_value || this.mission.anchor_date,
+          this.mission.anchor_commitment_id,
+        ),
         budgetSensitivity: this.budgetSensitivity,
         feasiblePlans: (this.solverResult?.plans || []).map((p) => ({
           plan_id: p.plan_id,
@@ -517,6 +526,8 @@ export class ContinuityCoordinatorPage {
     this.arbiterReport = null;
     this.bypassAuditReport = null;
     this.lastConvertedBundle = null;
+    this.lastPassport = null;
+    this.lastSelectiveProof = null;
     this.holdsPlacedAtMs = null;
     this.pinnedNodeIds = new Set();
     this.providerHarnessPromise = null;
@@ -1230,6 +1241,96 @@ export class ContinuityCoordinatorPage {
     };
   }
 
+  async generateSelectivePassportProof(commitmentId = null) {
+    const { issueVerifiableMissionPassport, createSelectiveDisclosureProof, verifySelectiveDisclosureProof } =
+      await import("./vendor/merkle-passport/index.js");
+    const targetId =
+      commitmentId
+      || (typeof document !== "undefined" ? document.querySelector("#passport-commitment-select")?.value : null)
+      || this.mission.anchor_commitment_id
+      || this.mission.commitments[0]?.id;
+    const trustedProviderKeys = {};
+    const verifier = this.saga?.receiptVerifier;
+    if (verifier?.trustedByProvider) {
+      for (const [pid, meta] of verifier.trustedByProvider.entries()) {
+        trustedProviderKeys[pid] = { keyId: meta.keyId, publicJwk: meta.publicJwk };
+      }
+    }
+    this.lastPassport = await issueVerifiableMissionPassport({
+      mission: this.mission,
+      graph: this.graph,
+      operations: this.lastSagaExecution?.operations || this.preparedOps || [],
+      trustedProviderKeys,
+      zkBudgetAttestation: this.lastZkBudgetAttestation,
+    });
+    this.lastSelectiveProof = await createSelectiveDisclosureProof(this.lastPassport, targetId);
+    const check = await verifySelectiveDisclosureProof(this.lastSelectiveProof);
+
+    if (typeof document !== "undefined") {
+      const outEl = document.querySelector("#passport-proof-output");
+      const statusEl = document.querySelector("#passport-status-banner");
+      const dlBtn = document.querySelector("#passport-download-btn");
+      if (outEl) outEl.value = JSON.stringify(this.lastSelectiveProof, null, 2);
+      if (dlBtn) dlBtn.hidden = false;
+      if (statusEl) {
+        statusEl.textContent = `✓ RFC 6962 Selective-Disclosure Proof Issued & Verified: Disclosed "${targetId}" (${this.lastSelectiveProof.audit_path.length} Merkle hop(s) → root ${this.lastSelectiveProof.merkle_root_sha256.slice(0, 16)}…) · ${this.lastSelectiveProof.blinded_siblings_count} sibling commitment(s) 100% salted & blinded.`;
+      }
+    }
+    return { ok: check.valid, proof: this.lastSelectiveProof, verification: check };
+  }
+
+  async verifyCurrentSelectiveProof() {
+    const { verifySelectiveDisclosureProof } = await import("./vendor/merkle-passport/index.js");
+    if (!this.lastSelectiveProof) {
+      await this.generateSelectivePassportProof();
+    }
+    const check = await verifySelectiveDisclosureProof(this.lastSelectiveProof);
+    if (typeof document !== "undefined") {
+      const statusEl = document.querySelector("#passport-status-banner");
+      if (statusEl) {
+        statusEl.textContent = check.valid
+          ? `✓ Selective-Disclosure Proof Verified: RFC 6962 Merkle root ${check.recomputedRootHex?.slice(0, 16)}… intact · ${check.blindedSiblingsCount} sibling(s) remain hidden${check.receiptValid ? " · Ed25519 provider receipt verified" : ""}${check.zkBudgetValid ? " · ZK budget ladder verified" : ""}.`
+          : `✕ Selective-Disclosure Tamper Caught: ${check.errors.join(" | ")}`;
+      }
+    }
+    return check;
+  }
+
+  async simulateSelectiveProofTamper() {
+    const { verifySelectiveDisclosureProof } = await import("./vendor/merkle-passport/index.js");
+    if (!this.lastSelectiveProof) {
+      await this.generateSelectivePassportProof();
+    }
+    const tampered = JSON.parse(JSON.stringify(this.lastSelectiveProof));
+    tampered.disclosed_commitment.final_date = "2026-12-31";
+    const check = await verifySelectiveDisclosureProof(tampered);
+    if (typeof document !== "undefined") {
+      const statusEl = document.querySelector("#passport-status-banner");
+      if (statusEl) {
+        statusEl.textContent = !check.valid
+          ? `✓ Tamper Attack Caught by RFC 6962 Verifier: Forged date "2026-12-31" broke leaf 0x00 digest & presentation JCS SHA-256 (${check.errors[0]}).`
+          : "Unexpected: tamper not caught.";
+      }
+    }
+    return check;
+  }
+
+  populatePassportCommitmentSelect() {
+    if (typeof document === "undefined") return;
+    const sel = document.querySelector("#passport-commitment-select");
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = (this.mission.commitments || [])
+      .map(
+        (c) =>
+          `<option value="${this.escapeXml(c.id)}">${this.escapeXml(`${c.title} (${c.booking_ref})`)}</option>`,
+      )
+      .join("");
+    if (prev && Array.from(sel.options).some((o) => o.value === prev)) {
+      sel.value = prev;
+    }
+  }
+
   async buildCurrentAuditBundle() {
     return await exportVerifiableAuditBundle({
       mission: this.mission,
@@ -1376,6 +1477,8 @@ export class ContinuityCoordinatorPage {
     this.renderKpis(plan);
     this.renderGraphSvg();
     this.renderNodeInspector(this.selectedNodeId);
+    renderScheduleGanttView(this);
+    this.populatePassportCommitmentSelect();
     this.renderChangePackage(plan);
     this.renderCommitmentsTable();
     this.renderPrivacyTable();
@@ -1609,6 +1712,65 @@ export class ContinuityCoordinatorPage {
       void this.simulateBundleTamperAttack();
     });
 
+    document.querySelector("#passport-generate-btn")?.addEventListener("click", () => {
+      void this.generateSelectivePassportProof();
+    });
+    document.querySelector("#passport-verify-btn")?.addEventListener("click", () => {
+      void this.verifyCurrentSelectiveProof();
+    });
+    document.querySelector("#passport-tamper-btn")?.addEventListener("click", () => {
+      void this.simulateSelectiveProofTamper();
+    });
+    document.querySelector("#passport-download-btn")?.addEventListener("click", () => {
+      if (!this.lastSelectiveProof) return;
+      const cid = this.lastSelectiveProof.disclosed_commitment?.commitment_id || "booking";
+      this.triggerBrowserDownload(
+        `${this.mission.mission_id}-${cid}-selective-proof.json`,
+        "application/json;charset=utf-8",
+        JSON.stringify(this.lastSelectiveProof, null, 2),
+      );
+    });
+
+    // Progressive-enhancement Web Speech voice dictation (shown only when supported by browser)
+    const SpeechRec =
+      typeof window !== "undefined" ? window.SpeechRecognition || window.webkitSpeechRecognition : null;
+    const voiceBtn = document.querySelector("#voice-dictate-btn");
+    if (SpeechRec && voiceBtn) {
+      voiceBtn.hidden = false;
+      let activeRec = null;
+      voiceBtn.addEventListener("click", () => {
+        if (activeRec) {
+          activeRec.stop();
+          activeRec = null;
+          voiceBtn.textContent = "Dictate change";
+          return;
+        }
+        const rec = new SpeechRec();
+        rec.lang = "en-US";
+        rec.interimResults = false;
+        rec.maxAlternatives = 1;
+        activeRec = rec;
+        voiceBtn.textContent = "Listening…";
+        rec.onresult = (ev) => {
+          const spoken = ev.results?.[0]?.[0]?.transcript || "";
+          const ta = document.querySelector("#mission-input");
+          if (ta && spoken.trim()) {
+            ta.value = spoken.trim();
+            void this.analyzeAndPrepareChange(ta.value);
+          }
+        };
+        rec.onend = () => {
+          activeRec = null;
+          voiceBtn.textContent = "Dictate change";
+        };
+        rec.onerror = () => {
+          activeRec = null;
+          voiceBtn.textContent = "Dictate change";
+        };
+        rec.start();
+      });
+    }
+
     document.querySelector("#approve-commit-btn")?.addEventListener("click", async () => {
       const plan = this.getSelectedPlan();
       if (!plan) return;
@@ -1666,6 +1828,9 @@ export class ContinuityCoordinatorPage {
         }
         if (targetId === "tab-panel-mandate" && !this.bypassAuditReport) {
           void this.executeBypassAudit();
+        }
+        if (targetId === "tab-panel-passport" && !this.lastSelectiveProof) {
+          void this.generateSelectivePassportProof();
         }
         if (targetId === "tab-panel-converter" && !this.lastConvertedBundle) {
           void (async () => {

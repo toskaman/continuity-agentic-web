@@ -46,10 +46,10 @@ function renderActivation(state) {
           <div class="record-fact"><dt>Activation fee</dt><dd>${e(a.feeEur)}</dd></div>
           <div class="record-fact"><dt>Contract</dt><dd>9 kVA single-phase</dd></div>
         </dl>
-        ${staged ? `<div class="record-hold">Staged ${e(staged.label)} (${e(staged.window)}) — confirm to apply it</div>` : ""}
+        ${staged ? `<div class="record-hold">Staged ${e(staged.label)} (${e(staged.window)}) — confirm to apply it <button type="button" class="mini-btn" data-peer-release="1">Clear staged</button></div>` : ""}
         ${state.lastReceipt?.payloadSha256 ? `<div class="record-hold">✓ Ed25519 Verified (${e(state.lastReceipt.keyId || "ed25519")} · sha256:${e(state.lastReceipt.payloadSha256.slice(0, 12))}…)</div>` : ""}
       </div>
-      <div class="record-foot"><span>Switch-on happens on the scheduled date</span><span>Demonstration data</span></div>
+      <div class="record-foot"><span>Switch-on happens on the scheduled date</span><button type="button" class="mini-btn" data-peer-ics="1">↓ .ics</button></div>
     </article>`;
 }
 
@@ -57,6 +57,19 @@ afterEachRender(App.page, (state, feedback) => {
   const panel = document.querySelector("#grid-panel");
   if (panel) {
     panel.innerHTML = renderActivation(state);
+    panel.querySelector("[data-peer-ics]")?.addEventListener("click", () => {
+      const ics = App.page.exportIcs();
+      const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${state.activation.activationRef}.ics`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    panel.querySelector("[data-peer-release]")?.addEventListener("click", () => {
+      App.page.clearStaged();
+    });
     if (feedback) flash(panel.firstElementChild);
   }
   const moved = state.activation.scheduledDate !== ORIGINAL_DATE;

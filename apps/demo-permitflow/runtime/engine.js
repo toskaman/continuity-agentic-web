@@ -116,6 +116,63 @@ export class Engine {
     this.actionPresentations = new Map();
     this.actionSubmissions = new Map();
     this.onActionConfirm = async () => false;
+    this.safetyChecks = new Set(); // Public Issue #32 safety hooks registered via addCheck()
+  }
+
+  /**
+   * Register a structured safety hook object (`cognizant-ai-labs/agentic-web` Issue #32):
+   *   `{ beforePeerRuns, beforePeerRequest, afterPeerAnswer, beforeMcpCall, afterMcpAnswer, beforeAction }`
+   * Returns an unsubscribe function that removes the check.
+   */
+  addCheck(check) {
+    if (!check || typeof check !== "object") {
+      throw new Error("engine.addCheck requires a hook object.");
+    }
+    this.safetyChecks.add(check);
+    return () => {
+      this.safetyChecks.delete(check);
+    };
+  }
+
+  removeCheck(check) {
+    return this.safetyChecks.delete(check);
+  }
+
+  async _runSafetyHook(hookName, ...args) {
+    for (const check of this.safetyChecks) {
+      const fn = check?.[hookName];
+      if (typeof fn === "function") {
+        await fn(...args);
+      }
+    }
+  }
+
+  async _decideActionPolicy(plan, actionMeta, composition) {
+    const rank = { allow: 0, ask: 1, refuse: 2 };
+    let decision = "allow";
+    const turnInfo = {
+      peerAnswered: Boolean(composition?.peerAnswered),
+      answeredPeers: composition?.answeredPeers ? Array.from(composition.answeredPeers) : [],
+      remoteCalls: composition?.remoteCalls || 0,
+      actionMeta: actionMeta || null,
+    };
+    for (const check of this.safetyChecks) {
+      if (typeof check?.beforeAction === "function") {
+        const out = await check.beforeAction(plan, turnInfo);
+        if (out === "refuse" || out === "ask" || out === "allow") {
+          if (rank[out] > rank[decision]) decision = out;
+        }
+      }
+    }
+    if (decision !== "allow") {
+      this.trace?.note("safety_check", {
+        hook: "beforeAction",
+        decision,
+        peerAnswered: turnInfo.peerAnswered,
+        action: actionMeta?.name || plan?.calls?.[0]?.name || "unknown",
+      });
+    }
+    return decision;
   }
 
   // Clear the multi-turn conversation history (start a new chat).
@@ -371,6 +428,8 @@ export class Engine {
       resolveLink: (ref, parentSpan) => self.resolveLink(ref, network, base, parentSpan),
       requestConsent: (info) => self.requestConsent(info),
       confirmWebsiteActions: (items) => self.onActionConfirm(items),
+      runSafetyHook: (hookName, ...hookArgs) => self._runSafetyHook(hookName, ...hookArgs),
+      decideActionPolicy: (plan, actionMeta, comp) => self._decideActionPolicy(plan, actionMeta, comp),
       // LangChain.js AgentRunner intrinsic (neuro-san-web owns the loop)
       // The bundled LangChain runner expects an HTTP OpenAI-compatible endpoint.
       // Static bundles use the dependency-free manual loop for browser://mock.
@@ -413,7 +472,17 @@ export class Engine {
     this.registry.checkCycle(chain, origin, lastSeg);
 
     const cached = this.registry.get(origin, lastSeg);
-    if (cached) return cached;
+    if (cached) {
+      await this._runSafetyHook("beforePeerRuns", {
+        url: ref,
+        base: cached.base,
+        manifest: cached.manifest,
+        network: cached.network,
+        fetchedUrls: cached.fetchedUrls,
+        cached: true,
+      });
+      return cached;
+    }
 
     const fetchSpan = this.trace.start("remote_fetch", {
       parent: parentSpan,
@@ -436,6 +505,14 @@ export class Engine {
         toolBundle: manifest.coded_tools?.bundle ? resolveUrl(base, manifest.coded_tools.bundle) : null,
       };
       const { network, bundleUrl, integrity, llm } = await this._compile(base, manifest, entry);
+      await this._runSafetyHook("beforePeerRuns", {
+        url: ref,
+        base,
+        manifest,
+        network,
+        fetchedUrls,
+        cached: false,
+      });
       await registerRemoteActions(this.actions, { base, network: network.name }, manifest);
       this.trace.end(fetchSpan, { network: network.name, fetchedUrls, peerOrigin: hostOf(origin), brand: manifest.brand });
       session = new Session(this, { network, base, bundleUrl, integrity, manifest, llm, fetchedUrls, brand: manifest.brand });
@@ -479,6 +556,10 @@ export class Engine {
     const key = `${turnId}:${componentId}`;
     if (this.actionSubmissions.has(key)) return this.actionSubmissions.get(key);
     const plan = this.actions.prepare(component, values);
+    const policyDecision = await this._decideActionPolicy(plan, null, this._lastTurnComposition);
+    if (policyDecision === "refuse") {
+      throw new Error("Action refused by registered runtime safety check.");
+    }
     const invocationId = randomUuid();
     const promise = this.actions.execute(plan, this.onActionConfirm, invocationId);
     this.actionSubmissions.set(key, promise);
@@ -533,6 +614,8 @@ export class Engine {
         composition: {
           remoteCalls: 0,
           peerCalls: new Map(),
+          peerAnswered: false,
+          answeredPeers: new Set(),
           maxRemoteCalls: 4,
           maxCallsPerPeer: 1,
           agentCalls: 0,
@@ -540,6 +623,7 @@ export class Engine {
           deadline: Date.now() + 90_000,
         },
       });
+      this._lastTurnComposition = ctx.composition;
       const message = interactionMessage(userText, interaction);
       const result = await runAgent(ctx, this.top.network.findFrontMan(), message, runSpan, ctx_chain(ctx, this.top));
       _turnControl?.close();
@@ -599,6 +683,14 @@ class Session {
     });
     try {
       const invocationChain = [...chain, `${this.base}::${this.network.name}`];
+      const peerDescriptor = {
+        base: this.base,
+        network: this.network,
+        manifest: this.manifest,
+        brand: this.brand,
+        fetchedUrls: this.fetchedUrls,
+      };
+      await this.engine._runSafetyHook("beforePeerRequest", peerDescriptor, request, composition);
       const ctx = this.engine._makeCtx({
         network: this.network,
         base: this.base,
@@ -612,6 +704,11 @@ class Session {
         isTop: false,
       });
       const result = await runAgent(ctx, this.network.findFrontMan(), request.user_message.text, span, invocationChain);
+      if (composition) {
+        composition.peerAnswered = true;
+        composition.answeredPeers?.add(this.base);
+      }
+      await this.engine._runSafetyHook("afterPeerAnswer", peerDescriptor, result, composition);
       trace.end(span, { responsePreview: result.text.slice(0, 300), type: ChatMessageType.AGENT });
       return result;
     } catch (err) {

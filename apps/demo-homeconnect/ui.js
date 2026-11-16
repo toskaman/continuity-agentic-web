@@ -46,10 +46,10 @@ function renderAppointment(state) {
           <div class="record-fact"><dt>Installation fee</dt><dd>${e(a.installFeeEur)}</dd></div>
           <div class="record-fact"><dt>Reschedule fee</dt><dd>€0.00</dd></div>
         </dl>
-        ${hold ? `<div class="record-hold">Hold ${e(hold.holdId)} on ${e(hold.label)} (${e(hold.window)}) · current visit stays active</div>` : ""}
+        ${hold ? `<div class="record-hold">Hold ${e(hold.holdId)} on ${e(hold.label)} (${e(hold.window)}) · current visit stays active <button type="button" class="mini-btn" data-peer-release="1">Release (€0)</button></div>` : ""}
         ${state.lastReceipt?.payloadSha256 ? `<div class="record-hold">✓ Ed25519 Verified (${e(state.lastReceipt.keyId || "ed25519")} · sha256:${e(state.lastReceipt.payloadSha256.slice(0, 12))}…)</div>` : ""}
       </div>
-      <div class="record-foot"><span>Bring keys · keep mains power on</span><span>Demonstration data</span></div>
+      <div class="record-foot"><span>Bring keys · keep mains power on</span><button type="button" class="mini-btn" data-peer-ics="1">↓ .ics</button></div>
     </article>`;
 }
 
@@ -57,6 +57,19 @@ afterEachRender(App.page, (state, feedback) => {
   const panel = document.querySelector("#appt-panel");
   if (panel) {
     panel.innerHTML = renderAppointment(state);
+    panel.querySelector("[data-peer-ics]")?.addEventListener("click", () => {
+      const ics = App.page.exportIcs();
+      const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${state.appointment.appointmentRef}.ics`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    panel.querySelector("[data-peer-release]")?.addEventListener("click", () => {
+      App.page.releaseHold();
+    });
     if (feedback) flash(panel.firstElementChild);
   }
   const moved = state.appointment.scheduledDate !== ORIGINAL_DATE;

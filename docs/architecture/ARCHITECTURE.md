@@ -60,7 +60,9 @@ flowchart TB
   21. `@continuity/openrouter-pkce` — Zero-client-ID RFC 7636 S256 1-click OpenRouter OAuth PKCE onboarding & URL `?code=` scrubber.
   22. `@continuity/toolbox-scoper` — Least-privilege per-agent `website_*` toolbox compiler, partner zero-action isolator & prompt-token optimizer.
   23. `@continuity/zk-budget-attestation` — Preimage-sound SHA-256 Hash-Ladder Range Proof verifying spend <= private ceiling with zero ceiling disclosure.
-  24. `@continuity/chaos-lab` — 36 deterministic fault-injection scenarios runnable via CLI or browser tab.
+  24. `@continuity/chaos-lab` — 42 deterministic fault-injection scenarios runnable via CLI or browser tab.
+  25. `@continuity/safety-hooks` — Official Issue #32 `engine.addCheck()` runtime hooks, Luhn PAN & Mod-97 IBAN outbound DLP, and post-peer taint escalation.
+  26. `@continuity/merkle-passport` — RFC 6962 `0x00`/`0x01` SHA-256 Merkle Mission Passports, salted single-commitment selective disclosure, and Critical-Path Slack analyzer.
 
 ---
 

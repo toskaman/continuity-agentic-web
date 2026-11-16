@@ -41,6 +41,7 @@
         <a href="./community-kit.html">Builder kit</a>
       </nav>
       <div class="header-meta top-actions">
+        <button id="cmd-palette-open-btn" type="button" class="ghost-btn btn-sm" title="Open keyboard command palette (Ctrl+K or Cmd+K)">Quick actions <kbd aria-hidden="true">Ctrl K</kbd></button>
         <button id="guided-demo-btn" type="button" class="btn btn-primary top-demo-btn" title="Runs the full mission: ripple failure, recovery, plan selection and the approval dialog">Run the live demo</button>
       </div>
     </div>
@@ -153,7 +154,7 @@
             <p class="proof-big">2 decisions <small>one request, one approval</small></p>
             <ul class="proof-facts">
               <li><strong>4</strong> providers asked, <strong>2</strong> never contacted</li>
-              <li><strong>0</strong> cancel calls in 150 benchmark runs</li>
+              <li><strong>0</strong> cancel calls in 180 benchmark runs</li>
               <li><strong>3 / 3</strong> commits return a verified signed receipt</li>
             </ul>
             <a class="badge badge-ok" href="https://github.com/toskaman/continuity-agentic-web/blob/main/docs/benchmarks/BEFORE_AFTER.md" target="_blank" rel="noopener">Measured · see the benchmark ↗</a>
@@ -216,6 +217,7 @@
             <div class="composer-label-row">
               <label for="mission-input" class="input-label">Your change request</label>
               <div class="invariant-tags" aria-label="Rules CONTINUITY will enforce">
+                <button id="voice-dictate-btn" type="button" class="mini-btn" hidden title="Dictate your schedule change using your browser's local speech recognition">Dictate change</button>
                 <span id="inv-cap-tag" class="inv-tag">Cap ≤ €700.00</span>
                 <span class="inv-tag">Hold before release</span>
                 <span class="inv-tag">Never auto-cancel</span>
@@ -288,6 +290,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
             <div id="node-inspector" class="node-inspector" aria-live="polite">
               Select a booking above to see its provider, reference, cancellation fee, timing rules and proof level.
             </div>
+            <div id="schedule-gantt-strip" class="gantt-strip" role="region" aria-label="Before and after schedule alignment and critical-path slack"></div>
           </section>
 
           <section class="panel-card package-panel approval-center reveal" aria-labelledby="package-heading">
@@ -460,7 +463,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
         <div class="trust-tiles reveal">
           <button type="button" class="trust-tile" data-open-tab="tab-btn-timeline"><span class="tt-icon" aria-hidden="true">⛓</span><strong>Hash-chained log</strong><span>Tamper-evident history of every step</span></button>
           <button type="button" class="trust-tile" data-open-tab="tab-btn-privacy"><span class="tt-icon" aria-hidden="true">◎</span><strong>Data minimization</strong><span>Exactly what each provider received</span></button>
-          <button type="button" class="trust-tile" data-open-tab="tab-btn-chaos"><span class="tt-icon" aria-hidden="true">⚡</span><strong>Chaos Lab</strong><span>36 failure scenarios, run in your browser</span></button>
+          <button type="button" class="trust-tile" data-open-tab="tab-btn-chaos"><span class="tt-icon" aria-hidden="true">⚡</span><strong>Chaos Lab</strong><span>42 failure scenarios, run in your browser</span></button>
           <button type="button" class="trust-tile" data-open-tab="tab-btn-auditor"><span class="tt-icon" aria-hidden="true">✓</span><strong>Spec &amp; NANDA audit</strong><span>Live checks of all 5 sites</span></button>
         </div>
 
@@ -470,6 +473,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
               <button role="tab" id="tab-btn-commitments" aria-selected="true" aria-controls="tab-panel-commitments" class="tab-btn active">Commitments</button>
               <button role="tab" id="tab-btn-privacy" aria-selected="false" aria-controls="tab-panel-privacy" class="tab-btn">Privacy</button>
               <button role="tab" id="tab-btn-timeline" aria-selected="false" aria-controls="tab-panel-timeline" class="tab-btn">Saga log</button>
+              <button role="tab" id="tab-btn-passport" aria-selected="false" aria-controls="tab-panel-passport" class="tab-btn">Merkle passport</button>
               <button role="tab" id="tab-btn-mandate" aria-selected="false" aria-controls="tab-panel-mandate" class="tab-btn">Mandate &amp; arbiter</button>
               <button role="tab" id="tab-btn-chaos" aria-selected="false" aria-controls="tab-panel-chaos" class="tab-btn">Chaos Lab</button>
               <button role="tab" id="tab-btn-auditor" aria-selected="false" aria-controls="tab-panel-auditor" class="tab-btn">Spec auditor</button>
@@ -518,6 +522,26 @@ Do not cancel anything or approve additional fees without my confirmation.</text
             </ol>
           </div>
 
+          <div id="tab-panel-passport" role="tabpanel" aria-labelledby="tab-btn-passport" class="tab-panel" hidden>
+            <div class="chaos-header">
+              <div>
+                <strong>RFC 6962 Selective-Disclosure Merkle Mission Passport</strong>
+                <p class="panel-sub">Prove ONE re-aligned booking (with its Ed25519 provider receipt and zero-ceiling-leak budget proof) to a landlord, employer, clinic, or customs agent against a domain-separated SHA-256 Merkle root — while keeping all other commitments 100% cryptographically blinded via 128-bit salts.</p>
+              </div>
+              <div class="auditor-controls">
+                <label for="passport-commitment-select" class="sr-only">Commitment to disclose</label>
+                <select id="passport-commitment-select" class="audit-url-input"></select>
+                <button id="passport-generate-btn" type="button" class="cta-btn">Generate 1-booking proof</button>
+                <button id="passport-verify-btn" type="button" class="ghost-btn">Verify Merkle proof</button>
+                <button id="passport-tamper-btn" type="button" class="ghost-btn">Simulate 1-bit tamper</button>
+                <button id="passport-download-btn" type="button" class="mini-btn" hidden>↓ Selective Proof JSON</button>
+              </div>
+            </div>
+            <p id="passport-status-banner" class="chaos-summary" role="status">Choose any commitment above and click Generate 1-booking proof to build an RFC 6962 selective-disclosure presentation.</p>
+            <label for="passport-proof-output" class="sr-only">Selective-disclosure presentation JSON</label>
+            <textarea id="passport-proof-output" class="code-box" rows="10" readonly></textarea>
+          </div>
+
           <div id="tab-panel-mandate" role="tabpanel" aria-labelledby="tab-btn-mandate" class="tab-panel" hidden>
             <div class="chaos-header">
               <div>
@@ -541,9 +565,9 @@ Do not cancel anything or approve additional fees without my confirmation.</text
             <div class="chaos-header">
               <div>
                 <strong>Chaos Lab — isolated simulation sandbox</strong>
-                <p class="panel-sub">Thirty-six distributed failures, injected on purpose: timeouts after commit, price drift after approval, forged and cross-origin spoofed receipts, BroadcastChannel sub-origin forgeries, SSRF &amp; cross-origin manifest escapes, Unicode Tag &amp; Markdown beacon exfiltrations, TOFU rug-pulls, NANDA Reach 410 card migrations, hash-ladder overspend &amp; cross-mission replays, Ed25519 key revocations, partial hold rollbacks, and post-export bundle tampering. Your live mission is never touched.</p>
+                <p class="panel-sub">Forty-two distributed failures, injected on purpose: timeouts after commit, price drift after approval, forged and cross-origin spoofed receipts, BroadcastChannel sub-origin forgeries, SSRF &amp; cross-origin manifest escapes, Luhn card &amp; Mod-97 IBAN outbound DLP leaks, post-peer confused-deputy write escalations, RFC 6962 Merkle second-preimage &amp; selective-disclosure proofs, Unicode Tag &amp; Markdown beacon exfiltrations, TOFU rug-pulls, NANDA Reach 410 card migrations, hash-ladder overspend &amp; cross-mission replays, Ed25519 key revocations, partial hold rollbacks, and post-export bundle tampering. Your live mission is never touched.</p>
               </div>
-              <button id="run-chaos-suite-btn" type="button" class="cta-btn">Run all 36 scenarios</button>
+              <button id="run-chaos-suite-btn" type="button" class="cta-btn">Run all 42 scenarios</button>
             </div>
             <div id="chaos-summary" class="chaos-summary" role="status">Run the suite to verify every reliability rule in your browser.</div>
             <div class="table-wrap">
@@ -632,6 +656,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
             <button type="button" class="mini-btn runtime-prompt-chip" data-prompt="My move changed from Tuesday to Friday. Prepare a minimal-change plan below €700 without cancelling anything yet.">Prepare a plan under €700</button>
             <button type="button" class="mini-btn runtime-prompt-chip" data-prompt="Audit all 5 Open Agentic Websites for MVP 0.2 and Project NANDA conformance.">Audit all 5 sites</button>
             <button type="button" class="mini-btn runtime-prompt-chip" data-prompt="Export my dependency-ordered Hold-First transition playbook and avoided cancellation fees.">Hold-First playbook</button>
+            <button type="button" class="mini-btn runtime-prompt-chip" data-prompt="Show critical-path slack and unaffected commitments for my mission.">Critical-path slack</button>
             <button type="button" class="mini-btn runtime-prompt-chip" data-prompt="Commit my currently prepared minimal-change relocation package.">Commit the prepared plan</button>
           </div>
           <p class="assistant-note">Your messages and this page's mission state go to the LLM provider you configure below. You confirm every irreversible operation before it runs. With a real model, asking all four providers takes about a minute; <strong>Try without a key</strong> answers instantly.</p>
@@ -670,5 +695,14 @@ Do not cancel anything or approve additional fees without my confirmation.</text
       </div>
     </div>
   </footer>
+  <dialog id="cmd-palette-dialog" class="cmd-palette-dialog" aria-labelledby="cmd-palette-title">
+    <div class="cmd-palette-head">
+      <strong id="cmd-palette-title">Quick actions</strong>
+      <button id="cmd-palette-close-btn" type="button" class="mini-btn">Close</button>
+    </div>
+    <label for="cmd-palette-search" class="sr-only">Filter quick actions</label>
+    <input id="cmd-palette-search" type="search" class="audit-url-input cmd-palette-input" placeholder="Search scenarios, Ripple recovery, Merkle proof, Chaos Lab, exports…">
+    <div id="cmd-palette-list" class="cmd-palette-list" role="group" aria-label="Available quick actions"></div>
+  </dialog>
 </body>
 </html>

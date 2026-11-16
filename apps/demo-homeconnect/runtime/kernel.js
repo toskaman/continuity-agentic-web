@@ -16,7 +16,9 @@ import { validate_network } from "./generated/validation.gen.mjs";
 
 // --- ChatMessage envelope (mirrors neuro_san/api/grpc/chat.proto) ------------
 
-export const ChatMessageType = {
+const FORBIDDEN_SLY_KEYS = new Set(["__proto__", "prototype", "constructor"]);
+
+export const ChatMessageType = Object.freeze({
   UNKNOWN: 0,
   SYSTEM: 1,
   HUMAN: 2,
@@ -25,7 +27,7 @@ export const ChatMessageType = {
   AGENT_FRAMEWORK: 101,
   AGENT_TOOL_RESULT: 103,
   AGENT_PROGRESS: 104,
-};
+});
 
 export function chatMessage(type, text, origin = [], extra = {}) {
   return { type, text, origin, ...extra };
@@ -45,9 +47,17 @@ export function redactSlyData(slyData) {
 export function filterSlyData(slyData, allowedKeys) {
   if (!slyData) return {};
   if (!allowedKeys || allowedKeys.length === 0) return {};
-  if (allowedKeys.includes("*")) return { ...slyData };
+  if (allowedKeys.includes("*")) {
+    const clean = {};
+    for (const [k, v] of Object.entries(slyData)) {
+      if (!FORBIDDEN_SLY_KEYS.has(k)) clean[k] = v;
+    }
+    return clean;
+  }
   const out = {};
-  for (const k of allowedKeys) if (k in slyData) out[k] = slyData[k];
+  for (const k of allowedKeys) {
+    if (!FORBIDDEN_SLY_KEYS.has(k) && Object.hasOwn(slyData, k)) out[k] = slyData[k];
+  }
   return out;
 }
 

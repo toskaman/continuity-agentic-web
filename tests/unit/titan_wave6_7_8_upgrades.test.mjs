@@ -317,8 +317,8 @@ test("Strict 1-to-1 Ledger Contract — Every single upgrade #001 through #300 i
     assert.equal(foundIds.has(id), false, `Duplicate upgrade ID #${id}`);
     foundIds.add(id);
   }
-  assert.equal(foundIds.size, 300, `Expected 300 distinct 1-to-1 upgrades, found ${foundIds.size}`);
-  for (let n = 1; n <= 300; n++) {
+  assert.equal(foundIds.size, 600, `Expected 600 distinct 1-to-1 upgrades (#001-#600), found ${foundIds.size}`);
+  for (let n = 1; n <= 600; n++) {
     const key = String(n).padStart(3, "0");
     assert.equal(foundIds.has(key), true, `Missing itemized upgrade #${key}`);
   }

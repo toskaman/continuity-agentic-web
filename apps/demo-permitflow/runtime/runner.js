@@ -353,8 +353,17 @@ export async function dispatchToolCall(ctx, entry, args, parentSpan, chain) {
       throw new Error("Website action is not callable by this agent.");
     }
     const plan = ctx.actions.prepare({ kind: "action", action: entry.ref, arguments: args });
-    const confirm = registered.effect === "irreversible"
-      ? ctx.confirmWebsiteActions : async () => true;
+    const safetyVerdict = ctx.decideActionPolicy
+      ? await ctx.decideActionPolicy(plan, registered, ctx.composition)
+      : "allow";
+    if (safetyVerdict === "refuse") {
+      throw new Error(`Website action '${registered.name}' refused by runtime safety check.`);
+    }
+    const mustAsk = registered.effect === "irreversible" || safetyVerdict === "ask";
+    if (mustAsk && typeof ctx.confirmWebsiteActions !== "function") {
+      throw new Error(`Website action '${registered.name}' requires visitor confirmation after external peer contact.`);
+    }
+    const confirm = mustAsk ? ctx.confirmWebsiteActions : async () => true;
     const receipts = await ctx.actions.execute(plan, confirm, crypto.randomUUID());
     return receipts?.[0] || { action: entry.ref, status: "cancelled", message: "Customer declined; nothing was submitted." };
   }
@@ -405,7 +414,19 @@ export async function dispatchToolCall(ctx, entry, args, parentSpan, chain) {
         return `The user declined to send this request to ${host}. Continue without it.`;
       }
     }
-    return entry.client.callTool(entry.mcpName, args, parentSpan);
+    const mcpTarget = {
+      url: entry.client.url,
+      tool: entry.mcpName,
+      thirdParty: Boolean(entry.requiresApproval ?? requiresThirdPartyApproval(entry.ref || entry.client.url, ctx.baseOrigin)),
+    };
+    await ctx.runSafetyHook?.("beforeMcpCall", mcpTarget, args, ctx.composition);
+    const mcpResult = await entry.client.callTool(entry.mcpName, args, parentSpan);
+    if (mcpTarget.thirdParty && ctx.composition) {
+      ctx.composition.peerAnswered = true;
+      ctx.composition.answeredPeers?.add(entry.client.url);
+    }
+    await ctx.runSafetyHook?.("afterMcpAnswer", mcpTarget, mcpResult, ctx.composition);
+    return mcpResult;
   }
 
   if (entry.kind === "link") {
