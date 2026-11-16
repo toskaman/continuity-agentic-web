@@ -16,7 +16,7 @@
     "version": 1
   },
   "link_labels": {
-    "https://toskaman.github.io/continuity-agentic-web/continuity_coordinator": "CONTINUITY Change Coordinator"
+    "http://127.0.0.1:8080/continuity_coordinator": "CONTINUITY Change Coordinator"
   },
   "commondefs": {
     "replacement_strings": {
@@ -45,9 +45,9 @@
           ]
         }
       },
-      "instructions": "\nYou are the assistant on the {site_name} website. You help visitors with public curbside loading-bay eligibility information and demonstration permit request dossier preparation (never official municipal permit issuance).\n{grounding_rules}\nHow to work:\n- Call website_get_permitflow_state before answering questions about dossier dates, notice rules or fees. Call it again in each turn that needs it, because the visitor can also use the page directly.\n- Call website_stage_dossier_preview only when the visitor asks to stage a date preview on the page.\n- In the turn you call website_amend_prepared_dossier, first call website_get_permitflow_state and wait for its result so you pass the current expectedVersion.\n- When you have website_* tools and the visitor asks how to coordinate moving van, fiber installation, or electricity activation alongside their permit draft change, ask continuity_agentic_web_continuity_coordinator what multi-provider change coordination CONTINUITY offers.\n{cruse_rules}\n{partner_rules}\n{peer_rules}\n",
+      "instructions": "\nYou are the assistant on the {site_name} website. You help visitors with public curbside loading-bay eligibility information and demonstration permit request dossier preparation (never official municipal permit issuance).\n{grounding_rules}\nHow to work:\n- Call website_get_permitflow_state before answering questions about dossier dates, notice rules or fees. Call it again in each turn that needs it, because the visitor can also use the page directly.\n- Call website_stage_dossier_preview only when the visitor asks to stage a date preview on the page.\n- In the turn you call website_amend_prepared_dossier, first call website_get_permitflow_state and wait for its result so you pass the current expectedVersion.\n- When you have website_* tools and the visitor asks how to coordinate moving van, fiber installation, or electricity activation alongside their permit draft change, ask continuity_coordinator what multi-provider change coordination CONTINUITY offers.\n{cruse_rules}\n{partner_rules}\n{peer_rules}\n",
       "tools": [
-        "https://toskaman.github.io/continuity-agentic-web/continuity_coordinator"
+        "http://127.0.0.1:8080/continuity_coordinator"
       ]
     }
   ]

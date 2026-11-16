@@ -18,10 +18,10 @@
     "version": 1
   },
   "link_labels": {
-    "https://gpaschercher-sudo.github.io/moveco-agentic-peer/moveco_dispatch": "MoveCo Express",
-    "https://gpaschercher-sudo.github.io/permitflow-agentic-peer/permitflow_advisor": "PermitFlow Civic Prep",
-    "https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/homeconnect_scheduler": "HomeConnect Fiber",
-    "https://gpaschercher-sudo.github.io/powerflow-agentic-peer/powerflow_grid": "PowerFlow Energy"
+    "http://127.0.0.1:8081/moveco_dispatch": "MoveCo Express",
+    "http://localhost:8082/permitflow_advisor": "PermitFlow Civic Prep",
+    "http://127.0.0.1:8083/homeconnect_scheduler": "HomeConnect Fiber",
+    "http://localhost:8084/powerflow_grid": "PowerFlow Energy"
   },
   "commondefs": {
     "replacement_strings": {
@@ -72,12 +72,12 @@
           ]
         }
       },
-      "instructions": "\nYou help the {site_name} coordinator consult independent partner agentic websites. Your answer goes to the front coordinator, not directly to the visitor.\n{grounding_rules}\nHow to work:\n- Call website_get_mission_state first if you need partner links.\n- For moving crew capabilities, ask moveco_agentic_peer_moveco_dispatch what moving services and hold policies it offers.\n- For curbside loading-bay preparation, ask permitflow_agentic_peer_permitflow_advisor what public eligibility and dossier services it offers.\n- For broadband technician scheduling, ask homeconnect_agentic_peer_homeconnect_scheduler what fiber installation services it offers.\n- For smart-meter energization, ask powerflow_agentic_peer_powerflow_grid what electricity activation services it offers.\n- Return a concise plain-text summary including the partner links from website_get_mission_state.\n{partner_rules}\n",
+      "instructions": "\nYou help the {site_name} coordinator consult independent partner agentic websites. Your answer goes to the front coordinator, not directly to the visitor.\n{grounding_rules}\nHow to work:\n- Call website_get_mission_state first if you need partner links.\n- For moving crew capabilities, ask moveco_dispatch what moving services and hold policies it offers.\n- For curbside loading-bay preparation, ask permitflow_advisor what public eligibility and dossier services it offers.\n- For broadband technician scheduling, ask homeconnect_scheduler what fiber installation services it offers.\n- For smart-meter energization, ask powerflow_grid what electricity activation services it offers.\n- Return a concise plain-text summary including the partner links from website_get_mission_state.\n{partner_rules}\n",
       "tools": [
-        "https://gpaschercher-sudo.github.io/moveco-agentic-peer/moveco_dispatch",
-        "https://gpaschercher-sudo.github.io/permitflow-agentic-peer/permitflow_advisor",
-        "https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/homeconnect_scheduler",
-        "https://gpaschercher-sudo.github.io/powerflow-agentic-peer/powerflow_grid"
+        "http://127.0.0.1:8081/moveco_dispatch",
+        "http://localhost:8082/permitflow_advisor",
+        "http://127.0.0.1:8083/homeconnect_scheduler",
+        "http://localhost:8084/powerflow_grid"
       ]
     }
   ]

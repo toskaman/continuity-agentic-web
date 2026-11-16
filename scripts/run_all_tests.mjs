@@ -47,17 +47,31 @@ runStep("2. Verify Live 5-Origin CORS, Manifests & Action Bridges", [
   path.join(ROOT, "scripts", "verify_live_ecosystem.mjs"),
 ]);
 
-const testFiles = [
+const allTestFiles = [
   ...(await collectTestFiles(path.join(ROOT, "tests"))),
   ...(await collectTestFiles(path.join(ROOT, "apps"))),
 ]
   .map((f) => path.relative(process.cwd(), f))
   .sort();
 
-runStep(`3. Run All ${testFiles.length} Automated Test Suites`, [
+// `origin_rewriter_and_sarif.test.mjs` exercises `deploy_public_github.mjs --dry-run`, which temporarily
+// rewrites `apps/*/agent-manifest.json` on disk before restoring `--mode local`. Run it in its own step
+// after the parallel suites so concurrent test processes never read transient HTTPS manifests.
+const isMutatingDeployTest = (relPath) => relPath.replace(/\\/g, "/").endsWith("origin_rewriter_and_sarif.test.mjs");
+const parallelFiles = allTestFiles.filter((f) => !isMutatingDeployTest(f));
+const isolatedFiles = allTestFiles.filter((f) => isMutatingDeployTest(f));
+
+runStep(`3a. Run ${parallelFiles.length} Read-Only Automated Test Suites`, [
   "--test",
-  "--test-concurrency=1",
-  ...testFiles,
+  ...parallelFiles,
 ]);
+
+if (isolatedFiles.length > 0) {
+  runStep(`3b. Run Isolated Bundle-Staging Suite (${isolatedFiles.length} suite)`, [
+    "--test",
+    "--test-concurrency=1",
+    ...isolatedFiles,
+  ]);
+}
 
 console.log("\nALL CHECKS & TESTS PASSED CLEANLY.");
