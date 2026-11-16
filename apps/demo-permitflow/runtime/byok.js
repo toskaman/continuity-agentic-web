@@ -86,11 +86,33 @@ export function guessByokProfileName({ router, model } = {}) {
   return model || "LLM setup";
 }
 
+function getSessionStore() {
+  try {
+    return typeof window !== "undefined" ? window.sessionStorage : null;
+  } catch {
+    return null;
+  }
+}
+
+function getLocalStore() {
+  try {
+    return typeof window !== "undefined" ? window.localStorage : null;
+  } catch {
+    return null;
+  }
+}
+
 export function resolveByokRouter(router) {
   const value = String(router || "").trim();
   if (!value) return "";
   if (value.startsWith("/") && typeof location !== "undefined") {
     try { return new URL(value, location.origin).toString().replace(/\/$/, ""); } catch {}
+  }
+  if (/^https?:\/\//i.test(value)) {
+    try {
+      const parsed = new URL(value);
+      if (parsed.username || parsed.password) return "";
+    } catch {}
   }
   return value;
 }
@@ -120,16 +142,18 @@ export function canUseByokCookie() {
 export function saveTabByokSetup(setup) {
   clearTabByokSetup();
   if (!setup) return;
+  const ss = getSessionStore();
+  if (!ss) return;
   try {
     if (setup.key) {
-      sessionStorage.setItem(TAB_KEY_ITEM, setup.key);
+      ss.setItem(TAB_KEY_ITEM, setup.key);
       // The service's shared-key script compares its cookie with this slot and reloads
       // when they differ. Boot ignores the slot while this tab has an applied setup.
-      sessionStorage.setItem(LOOSE_KEY_ITEM, setup.key);
+      ss.setItem(LOOSE_KEY_ITEM, setup.key);
     }
-    sessionStorage.setItem(TAB_MODEL_ITEM, setup.model || "");
+    ss.setItem(TAB_MODEL_ITEM, setup.model || "");
     // Written last, because it marks the setup as complete.
-    sessionStorage.setItem(TAB_ROUTER_ITEM, setup.router || "");
+    ss.setItem(TAB_ROUTER_ITEM, setup.router || "");
   } catch {
     // Never leave part of a setup behind.
     clearTabByokSetup();
@@ -138,9 +162,11 @@ export function saveTabByokSetup(setup) {
 
 // Remove this tab's applied setup and any loose key.
 function clearTabByokSetup() {
+  const ss = getSessionStore();
+  if (!ss) return;
   // Each item separately, so one failure does not keep the others.
   for (const name of [TAB_ROUTER_ITEM, TAB_MODEL_ITEM, TAB_KEY_ITEM, LOOSE_KEY_ITEM]) {
-    try { sessionStorage.removeItem(name); } catch {}
+    try { ss.removeItem(name); } catch {}
   }
 }
 
@@ -153,12 +179,15 @@ export function loadTabByokSetup(savedProfile = getSelectedByokProfile()) {
   let router = null;
   let model = "";
   let looseKey = "";
-  try {
-    key = sessionStorage.getItem(TAB_KEY_ITEM) || "";
-    router = sessionStorage.getItem(TAB_ROUTER_ITEM);
-    model = sessionStorage.getItem(TAB_MODEL_ITEM) || "";
-    looseKey = sessionStorage.getItem(LOOSE_KEY_ITEM) || "";
-  } catch {}
+  const ss = getSessionStore();
+  if (ss) {
+    try {
+      key = ss.getItem(TAB_KEY_ITEM) || "";
+      router = ss.getItem(TAB_ROUTER_ITEM);
+      model = ss.getItem(TAB_MODEL_ITEM) || "";
+      looseKey = ss.getItem(LOOSE_KEY_ITEM) || "";
+    } catch {}
+  }
   // The router item marks a setup applied in this tab, even when it is empty.
   if (router !== null) return { key, router: resolveByokRouter(router), model };
   if (looseKey) return { key: looseKey, router: "", model: "" };
@@ -171,12 +200,15 @@ export function loadTabByokSetup(savedProfile = getSelectedByokProfile()) {
 
 function saveByokStore(store) {
   const normalized = normalizeStore(store);
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(normalized)); } catch {}
+  const ls = getLocalStore();
+  try { ls?.setItem(STORE_KEY, JSON.stringify(normalized)); } catch {}
   writeCookieStore(normalized);
 }
 
 function readLocalStore() {
-  try { return normalizeStore(JSON.parse(localStorage.getItem(STORE_KEY) || "null")); } catch { return null; }
+  const ls = getLocalStore();
+  if (!ls) return null;
+  try { return normalizeStore(JSON.parse(ls.getItem(STORE_KEY) || "null")); } catch { return null; }
 }
 
 function readCookieStore() {

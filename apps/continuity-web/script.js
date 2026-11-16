@@ -50,10 +50,6 @@ import {
   runAdversarialBypassAudit,
   SealedBidArbiter,
 } from "./vendor/mandate-arbiter/index.js";
-import {
-  convertAgentFrameworkToHoconBundle,
-  SAMPLE_GOOGLE_ADK_CONFIG,
-} from "./vendor/adk-hocon-converter/index.js";
 import { buildHybridTransitionPlaybook } from "./vendor/transition-playbook/index.js";
 import {
   createBlindedBudgetCommitment,
@@ -957,10 +953,16 @@ export class ContinuityCoordinatorPage {
     return prep;
   }
 
+  async loadSampleAdkConfig() {
+    const { SAMPLE_GOOGLE_ADK_CONFIG } = await import("./vendor/adk-hocon-converter/index.js");
+    return SAMPLE_GOOGLE_ADK_CONFIG;
+  }
+
   async runAdkConversion(rawJsonText) {
     const sumEl = typeof document !== "undefined" ? document.querySelector("#adk-equivalence-summary") : null;
     const outEl = typeof document !== "undefined" ? document.querySelector("#adk-output-textarea") : null;
     try {
+      const { convertAgentFrameworkToHoconBundle } = await import("./vendor/adk-hocon-converter/index.js");
       const res = await convertAgentFrameworkToHoconBundle(rawJsonText);
       this.lastConvertedBundle = res;
       if (sumEl) {
@@ -1666,9 +1668,11 @@ export class ContinuityCoordinatorPage {
           void this.executeBypassAudit();
         }
         if (targetId === "tab-panel-converter" && !this.lastConvertedBundle) {
-          const srcTa = document.querySelector("#adk-source-textarea");
-          if (srcTa && !srcTa.value.trim()) srcTa.value = SAMPLE_GOOGLE_ADK_CONFIG;
-          if (srcTa) void this.runAdkConversion(srcTa.value);
+          void (async () => {
+            const srcTa = document.querySelector("#adk-source-textarea");
+            if (srcTa && !srcTa.value.trim()) srcTa.value = await this.loadSampleAdkConfig();
+            if (srcTa) await this.runAdkConversion(srcTa.value);
+          })();
         }
       });
     });
@@ -1677,11 +1681,11 @@ export class ContinuityCoordinatorPage {
       void this.runGuidedInteractiveDemo();
     });
 
-    document.querySelector("#adk-load-sample-btn")?.addEventListener("click", () => {
+    document.querySelector("#adk-load-sample-btn")?.addEventListener("click", async () => {
       const srcTa = document.querySelector("#adk-source-textarea");
       if (srcTa) {
-        srcTa.value = SAMPLE_GOOGLE_ADK_CONFIG;
-        void this.runAdkConversion(srcTa.value);
+        srcTa.value = await this.loadSampleAdkConfig();
+        await this.runAdkConversion(srcTa.value);
       }
     });
 

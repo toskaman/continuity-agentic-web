@@ -39,8 +39,8 @@ test("Cycle 36 — README.md & DEVPOST_SUBMISSION.md counts, relative file links
 
   // 3. Verify coordinator WebMCP / agentTools count (8) & test suite count claim
   assert.equal(manifest.actions.agentTools.length, 8);
-  assert.match(readme, /106 automated tests in 30 suites/);
-  assert.match(devpost, /106 automated tests in 30 suites/);
+  assert.match(readme, /111 automated tests in 31 suites/);
+  assert.match(devpost, /111 automated tests in 31 suites/);
 
   // 3b. Verify HTML UI pages & security/chaos catalogs stay synchronized with codebase counts
   const coordHtml = await readFile(path.join(ROOT, "apps", "continuity-web", "index.html"), "utf8");

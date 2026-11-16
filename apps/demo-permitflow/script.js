@@ -16,6 +16,7 @@ export class PermitFlowPage {
       { date: "2026-11-21", label: "Sat, Nov 21, 2026", window: "08:00–14:00", totalEur: "€45.00" },
     ];
     this.previewDate = null;
+    this.lastReceipt = null;
   }
 
   dateEnums() {
@@ -37,6 +38,7 @@ export class PermitFlowPage {
         version: this.version,
         dossier: this.dossier,
         previewDate: this.previewDate,
+        lastReceipt: this.lastReceipt,
         eligibleDates: this.eligibleDates,
         policyNote: policyText,
         coordinatorLink: coordinatorHref,
@@ -51,6 +53,48 @@ export class PermitFlowPage {
     this.previewDate = found;
     this.render(`Staged draft preview for ${found.label} (dossier ${this.dossier.dossierRef} unchanged).`);
     return { ok: true, version: this.version, preview: JSON.parse(JSON.stringify(found)) };
+  }
+
+  clearPreview() {
+    this.version += 1;
+    this.previewDate = null;
+    this.render(`Cleared staged preview; dossier ${this.dossier.dossierRef} remains on ${this.dossier.scheduledLabel}.`);
+    return { ok: true, version: this.version };
+  }
+
+  resetToInitial() {
+    this.version += 1;
+    this.dossier = {
+      dossierRef: "PF-2049",
+      zone: "Zone B Curbside Loading Bay (15m)",
+      scheduledDate: "2026-11-17",
+      scheduledLabel: "Tue, Nov 17, 2026",
+      window: "07:30–14:00",
+      prepFeeEur: "€35.00",
+      amendmentFeeEur: "€10.00",
+      status: "PREPARED_DOSSIER",
+    };
+    this.previewDate = null;
+    this.lastReceipt = null;
+    this.render("Reset PermitFlow dossier PF-2049 to baseline Tue, Nov 17, 2026.");
+    return { ok: true, version: this.version };
+  }
+
+  exportIcs() {
+    const ymd = this.dossier.scheduledDate.replace(/-/g, "");
+    return [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//PermitFlow Civic Prep//Open Agentic Web Peer//EN",
+      "BEGIN:VEVENT",
+      `UID:${this.dossier.dossierRef}@permitflow.agentic.peer`,
+      `DTSTART:${ymd}T073000Z`,
+      `DTEND:${ymd}T140000Z`,
+      `SUMMARY:PermitFlow Draft — ${this.dossier.zone} (${this.dossier.dossierRef})`,
+      `DESCRIPTION:Draft Total ${this.dossier.prepFeeEur} | Demo preparation only`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
   }
 
   checkAmendment(args) {

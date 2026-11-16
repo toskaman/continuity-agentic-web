@@ -119,6 +119,15 @@ try {
             homeconnect: "${eco.peers.homeconnect.origin()}",
             powerflow: "${eco.peers.powerflow.origin()}",
           };
+          window.__continuityLongTasks = 0;
+          if (typeof PerformanceObserver === "function") {
+            try {
+              const ltObs = new PerformanceObserver((list) => {
+                window.__continuityLongTasks += list.getEntries().length;
+              });
+              ltObs.observe({ entryTypes: ["longtask"] });
+            } catch {}
+          }
           await App.page.probeLivePeerOrigins();
           await App.page.resetMission({ rippleFailureInjected: false });
           return true;
@@ -176,10 +185,17 @@ try {
   const heapMbBefore = Number((before.JSHeapUsedSize / 1_048_576).toFixed(2));
   const heapMbAfter = Number((after.JSHeapUsedSize / 1_048_576).toFixed(2));
 
+  const ltEval = await send("Runtime.evaluate", {
+    expression: "window.__continuityLongTasks || 0",
+    returnByValue: true,
+  });
+  const longTasksObserved = Number(ltEval?.result?.value || 0);
+
   console.log(
     JSON.stringify(
       {
         bootAnd5OriginHandshakeMs: bootMs,
+        longTasksObserved,
         domNodesBefore: before.Nodes,
         domNodesAfter5Sagas: after.Nodes,
         domNodesDelta: domDelta,

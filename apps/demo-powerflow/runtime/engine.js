@@ -254,12 +254,19 @@ export class Engine {
   }
 
   _storedLink(base, networkName, reference) {
-    try { return localStorage.getItem(this._linkKey(base, networkName, reference)) || ""; }
-    catch { return ""; }
+    try {
+      const ls = typeof window !== "undefined" ? window.localStorage : null;
+      return ls?.getItem(this._linkKey(base, networkName, reference)) || "";
+    } catch {
+      return "";
+    }
   }
 
   async _persistLink(base, networkName, reference, target) {
-    try { localStorage.setItem(this._linkKey(base, networkName, reference), target); } catch {}
+    try {
+      const ls = typeof window !== "undefined" ? window.localStorage : null;
+      ls?.setItem(this._linkKey(base, networkName, reference), target);
+    } catch {}
     if (this.top?.manifest?.deployment?.mode === "static") return;
     try {
       await fetch(resolveUrl(base, "/_nsdeploy/links"), {

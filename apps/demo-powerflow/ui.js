@@ -47,6 +47,7 @@ function renderActivation(state) {
           <div class="record-fact"><dt>Contract</dt><dd>9 kVA single-phase</dd></div>
         </dl>
         ${staged ? `<div class="record-hold">Staged ${e(staged.label)} (${e(staged.window)}) — confirm to apply it</div>` : ""}
+        ${state.lastReceipt?.payloadSha256 ? `<div class="record-hold">✓ Ed25519 Verified (${e(state.lastReceipt.keyId || "ed25519")} · sha256:${e(state.lastReceipt.payloadSha256.slice(0, 12))}…)</div>` : ""}
       </div>
       <div class="record-foot"><span>Switch-on happens on the scheduled date</span><span>Demonstration data</span></div>
     </article>`;

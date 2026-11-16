@@ -1,6 +1,8 @@
 // Web Crypto conveniences with dependency-free fallbacks for plain-HTTP static
 // demos. HTTPS still uses the browser's native primitives.
 let fallbackSequence = 0;
+const UTF8_ENCODER = new TextEncoder();
+const HEX_TABLE = Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, "0"));
 
 export function randomUuid(cryptoImpl = globalThis.crypto) {
   if (typeof cryptoImpl?.randomUUID === "function") return cryptoImpl.randomUUID();
@@ -13,8 +15,8 @@ export function randomUuid(cryptoImpl = globalThis.crypto) {
   }
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = [...bytes].map(value => value.toString(16).padStart(2, "0"));
-  return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10).join("")}`;
+  const h = Array.from(bytes, (b) => HEX_TABLE[b]);
+  return `${h[0]}${h[1]}${h[2]}${h[3]}-${h[4]}${h[5]}-${h[6]}${h[7]}-${h[8]}${h[9]}-${h[10]}${h[11]}${h[12]}${h[13]}${h[14]}${h[15]}`;
 }
 
 function fallbackSha256(bytes) {
@@ -60,10 +62,12 @@ function fallbackSha256(bytes) {
 }
 
 export async function sha256Hex(value, cryptoImpl = globalThis.crypto) {
-  const bytes = typeof value === "string" ? new TextEncoder().encode(value) : new Uint8Array(value);
+  const bytes = typeof value === "string" ? UTF8_ENCODER.encode(value) : new Uint8Array(value);
   if (typeof cryptoImpl?.subtle?.digest === "function") {
-    const digest = await cryptoImpl.subtle.digest("SHA-256", bytes);
-    return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+    const digest = new Uint8Array(await cryptoImpl.subtle.digest("SHA-256", bytes));
+    let out = "";
+    for (let i = 0; i < digest.length; i++) out += HEX_TABLE[digest[i]];
+    return out;
   }
   return fallbackSha256(bytes);
 }

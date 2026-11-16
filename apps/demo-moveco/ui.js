@@ -49,6 +49,7 @@ function renderBooking(state) {
           <div class="record-fact"><dt>Page version</dt><dd>v${e(state.version)}</dd></div>
         </dl>
         ${hold ? `<div class="record-hold">Hold ${e(hold.holdId)} on ${e(hold.targetLabel)} (${e(hold.window)}) · your booking stays active</div>` : ""}
+        ${state.lastReceipt?.payloadSha256 ? `<div class="record-hold">✓ Ed25519 Verified (${e(state.lastReceipt.keyId || "ed25519")} · sha256:${e(state.lastReceipt.payloadSha256.slice(0, 12))}…)</div>` : ""}
       </div>
       <div class="record-foot"><span>${moved ? "Rescheduled in this session" : "Original date"}</span><span>Demonstration data</span></div>
     </article>`;

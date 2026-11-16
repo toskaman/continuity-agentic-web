@@ -19,7 +19,10 @@ export function renderHoldCountdownView(page) {
   const ss = String(remainingSec % 60).padStart(2, "0");
   const holdIds = heldOps.map((o) => o.hold_id).join(", ");
   el.hidden = false;
-  el.textContent = `🔒 ${heldOps.length} Non-Destructive Replacement Hold(s) Active (${holdIds}) · Lock TTL ${mm}:${ss} remaining · Original bookings untouched`;
+  el.textContent =
+    remainingSec === 0
+      ? `⚠ Hold TTL expired for (${holdIds}) — click Analyze & Prepare to refresh temporary holds before committing`
+      : `🔒 ${heldOps.length} Non-Destructive Replacement Hold(s) Active (${holdIds}) · Lock TTL ${mm}:${ss} remaining · Original bookings untouched`;
 }
 
 export function renderWhatIfSliderView(page) {
@@ -177,16 +180,19 @@ export function renderChangePackageView(page, plan) {
       const isSel = p.plan_id === page.selectedPlanId;
       const deltaSign = p.metrics.netDeltaEur >= 0 ? "+" : "";
       const paretoHtml = p.paretoOptimal ? `<span class="pareto-badge">PARETO OPTIMAL</span>` : "";
-      const avoidedCancelEur = (p.preservedCommitments || []).reduce(
-        (sum, c) => sum + Number(cmtMap.get(c.commitment_id)?.cancellation_fee_eur || 0),
-        0,
-      );
+      const avoidedCancelEur =
+        typeof p.metrics.avoidedCancellationFeesEur === "number"
+          ? p.metrics.avoidedCancellationFeesEur
+          : (p.preservedCommitments || []).reduce(
+              (sum, c) => sum + Number(cmtMap.get(c.commitment_id)?.cancellation_fee_eur || 0),
+              0,
+            );
       const savedTxt = avoidedCancelEur > 0 ? ` · €${avoidedCancelEur.toFixed(0)} cancel fees saved` : "";
       const crowdTxt = typeof p.crowdingDistance === "number" && Number.isFinite(p.crowdingDistance)
         ? p.crowdingDistance.toFixed(2)
         : "∞";
       return `
-        <button type="button" class="plan-option ${isSel ? "selected" : ""}" data-plan-id="${page.escapeXml(p.plan_id)}" ${page.lastSagaExecution ? "disabled" : ""}>
+        <button type="button" class="plan-option ${isSel ? "selected" : ""}" aria-pressed="${isSel}" data-plan-id="${page.escapeXml(p.plan_id)}" ${page.lastSagaExecution ? "disabled" : ""}>
           <div class="plan-option-top">
             <span>${isSel ? "✓ " : ""}${page.escapeXml(p.label)}${paretoHtml}</span>
             <span>€${p.metrics.totalMissionCostEur.toFixed(2)} (${deltaSign}€${p.metrics.netDeltaEur.toFixed(2)})</span>

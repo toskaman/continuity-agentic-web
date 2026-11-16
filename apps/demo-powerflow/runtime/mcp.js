@@ -8,16 +8,35 @@
 // headers can be supplied via sly_data.http_headers[serverUrl].
 
 const PROTOCOL_VERSION = "2025-06-18";
+const MAX_SSE_BUFFER_CHARS = 1_048_576; // 1 MB bounded SSE stream buffer
+
+function assertSafeMcpUrl(rawUrl) {
+  const u = new URL(String(rawUrl || "").trim());
+  if (u.username || u.password) {
+    throw new Error(`MCP server URL must not embed credentials: ${rawUrl}`);
+  }
+  const isLoopback = ["127.0.0.1", "localhost", "[::1]"].includes(u.hostname);
+  if (u.protocol !== "https:" && !(u.protocol === "http:" && isLoopback)) {
+    throw new Error(`MCP server URL requires HTTPS (or loopback HTTP): ${rawUrl}`);
+  }
+  return u.href;
+}
 
 export class McpClient {
-  constructor({ url, trace, headers, onProgress } = {}) {
-    this.url = url;
+  constructor({ url, trace, headers, onProgress, timeoutMs = 30000 } = {}) {
+    this.url = assertSafeMcpUrl(url);
     this.trace = trace;
     this.headers = headers || {};
     this.onProgress = onProgress;
+    this.timeoutMs = timeoutMs;
     this.sessionId = null;
     this.initialized = null; // a promise, once
     this.rpcId = 0;
+  }
+
+  close() {
+    this.sessionId = null;
+    this.initialized = null;
   }
 
   async _rpc(method, params, { parentSpan, notification = false } = {}) {
@@ -34,8 +53,14 @@ export class McpClient {
         ...this.headers,
       };
       if (this.sessionId) headers["Mcp-Session-Id"] = this.sessionId;
+      const signal = typeof AbortSignal?.timeout === "function" ? AbortSignal.timeout(this.timeoutMs) : undefined;
 
-      const resp = await fetch(this.url, { method: "POST", headers, body: JSON.stringify(body) });
+      const resp = await fetch(this.url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+        ...(signal ? { signal } : {}),
+      });
       const sid = resp.headers.get("Mcp-Session-Id");
       if (sid) this.sessionId = sid;
       if (notification) { this.trace?.end(span, { status: "ok", notification: true }); return null; }
@@ -76,7 +101,10 @@ export class McpClient {
         clientInfo: { name: "neuro-san-web", title: "neuro-san-web MCP client", version: "0.1.0" },
       }, { parentSpan });
       await this._rpc("notifications/initialized", {}, { parentSpan, notification: true });
-    })();
+    })().catch((err) => {
+      this.initialized = null;
+      throw err;
+    });
     return this.initialized;
   }
 
@@ -122,35 +150,42 @@ export async function readJsonRpcResponse(resp, expectId, onNotification) {
     return null;
   };
 
-  while (true) {
-    const { value, done } = await reader.read();
-    buffer += decoder.decode(value || new Uint8Array(), { stream: !done }).replace(/\r\n/g, "\n");
-    let boundary;
-    while ((boundary = buffer.indexOf("\n\n")) >= 0) {
-      const block = buffer.slice(0, boundary);
-      buffer = buffer.slice(boundary + 2);
-      const payload = block.split("\n")
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      buffer += decoder.decode(value || new Uint8Array(), { stream: !done }).replace(/\r\n/g, "\n");
+      if (buffer.length > MAX_SSE_BUFFER_CHARS) {
+        throw new Error(`MCP SSE stream buffer exceeded ${MAX_SSE_BUFFER_CHARS} chars`);
+      }
+      let boundary;
+      while ((boundary = buffer.indexOf("\n\n")) >= 0) {
+        const block = buffer.slice(0, boundary);
+        buffer = buffer.slice(boundary + 2);
+        const payload = block.split("\n")
+          .filter((line) => line.trimStart().startsWith("data:"))
+          .map((line) => line.slice(line.indexOf(":") + 1).trimStart())
+          .join("\n");
+        const response = accept(payload);
+        if (response) {
+          try { await reader.cancel(); } catch { /* response is already complete */ }
+          return response;
+        }
+      }
+      if (done) break;
+    }
+    if (buffer.trim()) {
+      const payload = buffer.split("\n")
         .filter((line) => line.trimStart().startsWith("data:"))
         .map((line) => line.slice(line.indexOf(":") + 1).trimStart())
         .join("\n");
       const response = accept(payload);
-      if (response) {
-        try { await reader.cancel(); } catch { /* response is already complete */ }
-        return response;
-      }
+      if (response) return response;
     }
-    if (done) break;
+    if (fallback) return fallback;
+    throw new Error("unparseable MCP response");
+  } finally {
+    try { reader.releaseLock(); } catch { /* already released or cancelled */ }
   }
-  if (buffer.trim()) {
-    const payload = buffer.split("\n")
-      .filter((line) => line.trimStart().startsWith("data:"))
-      .map((line) => line.slice(line.indexOf(":") + 1).trimStart())
-      .join("\n");
-    const response = accept(payload);
-    if (response) return response;
-  }
-  if (fallback) return fallback;
-  throw new Error("unparseable MCP response");
 }
 
 // MCP servers may answer JSON-RPC as plain JSON or as an SSE stream. The stream can

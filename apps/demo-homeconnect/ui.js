@@ -47,6 +47,7 @@ function renderAppointment(state) {
           <div class="record-fact"><dt>Reschedule fee</dt><dd>€0.00</dd></div>
         </dl>
         ${hold ? `<div class="record-hold">Hold ${e(hold.holdId)} on ${e(hold.label)} (${e(hold.window)}) · current visit stays active</div>` : ""}
+        ${state.lastReceipt?.payloadSha256 ? `<div class="record-hold">✓ Ed25519 Verified (${e(state.lastReceipt.keyId || "ed25519")} · sha256:${e(state.lastReceipt.payloadSha256.slice(0, 12))}…)</div>` : ""}
       </div>
       <div class="record-foot"><span>Bring keys · keep mains power on</span><span>Demonstration data</span></div>
     </article>`;

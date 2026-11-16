@@ -15,6 +15,7 @@ export class HomeConnectPage {
       { date: "2026-11-20", label: "Fri, Nov 20, 2026", window: "14:00–17:00", feeEur: "€49.00" },
       { date: "2026-11-21", label: "Sat, Nov 21, 2026", window: "09:00–12:00", feeEur: "€39.00" },
     ];
+    this.lastReceipt = null;
   }
 
   windowDates() {
@@ -36,6 +37,7 @@ export class HomeConnectPage {
         version: this.version,
         appointment: this.appointment,
         activeHold: this.hold,
+        lastReceipt: this.lastReceipt,
         availableWindows: this.windows,
         policyNote: policyText,
         coordinatorLink: coordinatorHref,
@@ -50,6 +52,49 @@ export class HomeConnectPage {
     this.hold = { holdId: `HOLD-HC-${this.version}`, ...win, originalAppointmentPreserved: true };
     this.render(`Held technician window ${this.hold.holdId} for ${win.label}; ${this.appointment.appointmentRef} stays active.`);
     return { ok: true, version: this.version, hold: JSON.parse(JSON.stringify(this.hold)) };
+  }
+
+  releaseHold() {
+    if (!this.hold) return { ok: true, released: false, version: this.version };
+    const hid = this.hold.holdId;
+    this.version += 1;
+    this.hold = null;
+    this.render(`Released technician window hold ${hid} at €0.00 fee; ${this.appointment.appointmentRef} stays active.`);
+    return { ok: true, released: true, holdId: hid, feeChargedEur: 0, version: this.version };
+  }
+
+  resetToInitial() {
+    this.version += 1;
+    this.appointment = {
+      appointmentRef: "HC-5510",
+      plan: "2 Gbps Symmetric Fiber + ONT Splice",
+      scheduledDate: "2026-11-17",
+      scheduledLabel: "Tue, Nov 17, 2026",
+      window: "14:00–17:00",
+      installFeeEur: "€49.00",
+      status: "CONFIRMED",
+    };
+    this.hold = null;
+    this.lastReceipt = null;
+    this.render("Reset HomeConnect appointment HC-5510 to baseline Tue, Nov 17, 2026.");
+    return { ok: true, version: this.version };
+  }
+
+  exportIcs() {
+    const ymd = this.appointment.scheduledDate.replace(/-/g, "");
+    return [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//HomeConnect Fiber//Open Agentic Web Peer//EN",
+      "BEGIN:VEVENT",
+      `UID:${this.appointment.appointmentRef}@homeconnect.agentic.peer`,
+      `DTSTART:${ymd}T140000Z`,
+      `DTEND:${ymd}T170000Z`,
+      `SUMMARY:HomeConnect Fiber — ${this.appointment.plan} (${this.appointment.appointmentRef})`,
+      `DESCRIPTION:Install Fee ${this.appointment.installFeeEur} | Window ${this.appointment.window}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
   }
 
   checkChange(args) {

@@ -85,6 +85,52 @@ export class MoveCoPage {
     return { ok: true, version: this.version, hold: JSON.parse(JSON.stringify(this.hold)) };
   }
 
+  releaseHold() {
+    if (!this.hold) return { ok: true, released: false, version: this.version };
+    const prevHoldId = this.hold.holdId;
+    this.version += 1;
+    this.hold = null;
+    this.render(`Released temporary hold ${prevHoldId} at €0.00 fee; ${this.booking.bookingRef} stays confirmed.`);
+    return { ok: true, released: true, holdId: prevHoldId, feeChargedEur: 0, version: this.version };
+  }
+
+  resetToInitial() {
+    this.version += 1;
+    this.booking = {
+      bookingRef: "MC-8841",
+      service: "20m3 Luton Van + 3 Movers",
+      scheduledDate: "2026-11-17",
+      scheduledLabel: "Tue, Nov 17, 2026",
+      window: "08:00–13:00",
+      basePriceEur: "€390.00",
+      baseCents: 39000,
+      rescheduleFeeEur: "€25.00",
+      rescheduleFeeCents: 2500,
+      status: "CONFIRMED",
+    };
+    this.hold = null;
+    this.lastReceipt = null;
+    this.render("Reset MoveCo booking MC-8841 to baseline Tue, Nov 17, 2026.");
+    return { ok: true, version: this.version };
+  }
+
+  exportIcs() {
+    const ymd = this.booking.scheduledDate.replace(/-/g, "");
+    return [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//MoveCo Express//Open Agentic Web Peer//EN",
+      "BEGIN:VEVENT",
+      `UID:${this.booking.bookingRef}@moveco.agentic.peer`,
+      `DTSTART:${ymd}T080000Z`,
+      `DTEND:${ymd}T130000Z`,
+      `SUMMARY:MoveCo Express — ${this.booking.service} (${this.booking.bookingRef})`,
+      `DESCRIPTION:Total ${this.booking.basePriceEur} | Status ${this.booking.status}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+  }
+
   checkReschedule(args) {
     if (args.bookingRef !== this.booking.bookingRef) {
       return { ok: false, field: "bookingRef", reason: `Booking ${args.bookingRef} not found on this page.` };

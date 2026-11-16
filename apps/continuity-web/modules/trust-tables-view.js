@@ -67,10 +67,11 @@ export function renderAuditTimelineView(page) {
       : `✕ Hash Chain Tampering Detected at seq #${chainCheck.brokenAtSeq}: ${chainCheck.reason}`;
   }
   list.innerHTML = history
-    .map(
-      (h) =>
-        `<li><code>#${h.seq}</code> <strong>${page.escapeXml(h.operation_id)}</strong>: ${page.escapeXml(h.from_state || "INIT")} → <strong>${page.escapeXml(h.to_state)}</strong> — ${page.escapeXml(h.reason)} <small><code>[sha256:${page.escapeXml((h.entry_hash || "").slice(0, 12))}]</code></small></li>`,
-    )
+    .map((h) => {
+      const latencyNote =
+        typeof h.hold_elapsed_ms === "number" ? ` · ${h.hold_elapsed_ms.toFixed(1)} ms` : "";
+      return `<li><code>#${h.seq}</code> <strong>${page.escapeXml(h.operation_id)}</strong>: ${page.escapeXml(h.from_state || "INIT")} → <strong>${page.escapeXml(h.to_state)}</strong> — ${page.escapeXml(h.reason)}${latencyNote} <small><code>[sha256:${page.escapeXml((h.entry_hash || "").slice(0, 12))}]</code></small></li>`;
+    })
     .join("");
 }
 

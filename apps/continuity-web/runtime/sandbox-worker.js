@@ -15,7 +15,23 @@
 const denyNetwork = () => {
   throw new Error("network access is not available to coded tools");
 };
-for (const name of ["fetch", "XMLHttpRequest", "WebSocket", "EventSource", "importScripts", "sendBeacon", "Request", "Response"]) {
+for (const name of [
+  "fetch",
+  "XMLHttpRequest",
+  "WebSocket",
+  "EventSource",
+  "WebTransport",
+  "RTCPeerConnection",
+  "BroadcastChannel",
+  "Worker",
+  "SharedWorker",
+  "importScripts",
+  "sendBeacon",
+  "Request",
+  "Response",
+  "caches",
+  "indexedDB",
+]) {
   try {
     Object.defineProperty(self, name, { value: denyNetwork, writable: false, configurable: false });
   } catch {
@@ -56,7 +72,17 @@ for (const timer of ["setTimeout", "setInterval"]) {
   }
 }
 
+const MAX_MODULE_CACHE = 32;
 const cache = new Map();
+
+function safeCloneInput(obj) {
+  if (!obj || typeof obj !== "object") return {};
+  try {
+    return typeof structuredClone === "function" ? structuredClone(obj) : JSON.parse(JSON.stringify(obj));
+  } catch {
+    return { ...obj };
+  }
+}
 
 function progressValue(value) {
   if (value == null || ["string", "number", "boolean"].includes(typeof value)) return value;
@@ -64,7 +90,9 @@ function progressValue(value) {
 }
 
 self.onmessage = async (e) => {
+  if (!e?.data || typeof e.data !== "object") return;
   const { id, bundleCode, cacheKey, className, args, slyData } = e.data;
+  if (id === undefined || id === null) return;
   try {
     if (!CSP_BLOCKS_CODEGEN) {
       throw new Error(
@@ -86,13 +114,16 @@ self.onmessage = async (e) => {
       } finally {
         URL.revokeObjectURL(blobUrl);
       }
+      if (cache.size >= MAX_MODULE_CACHE) {
+        cache.delete(cache.keys().next().value);
+      }
       cache.set(key, mod);
     }
     const ToolClass = resolveClass(mod, className);
     if (!ToolClass) throw new Error(`coded tool class '${className}' not found`);
     const tool = new ToolClass();
-    const sly = { ...(slyData || {}) };
-    const callArgs = { ...(args || {}) };
+    const sly = safeCloneInput(slyData);
+    const callArgs = safeCloneInput(args);
     // Match neuro-san's progress_reporter convention while keeping a small set
     // of ergonomic JS aliases. Reports are lifecycle data, not final tool output.
     const report = (progress, message = "") => {

@@ -62,15 +62,21 @@ export function renderParetoFrontierPlot(page, curCapEur) {
           ? "Plan C"
           : "Alt";
     parts.push(
-      `<g role="button" tabindex="0" style="cursor:pointer" data-pareto-plan="${page.escapeXml(p.plan_id)}">
+      `<g role="button" tabindex="0" aria-pressed="${isSel}" style="cursor:pointer" data-pareto-plan="${page.escapeXml(p.plan_id)}">
         <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${isSel ? 6.5 : 5}" fill="${fill}" stroke="#ffffff" stroke-width="${isSel ? 2.2 : 1.2}" />
         <text x="${(cx + 8).toFixed(1)}" y="${(cy + labelDy).toFixed(1)}" fill="#f8fafc" font-size="9.5" font-weight="700" font-family="system-ui, sans-serif">${page.escapeXml(`${shortTag}: €${p.metrics.totalMissionCostEur.toFixed(0)} (${chg} chg)`)}</text>
       </g>`,
     );
   });
 
+  const prevFocusedPlan =
+    document.activeElement?.closest?.("#pareto-plot-svg [data-pareto-plan]")?.getAttribute("data-pareto-plan") || null;
   svg.innerHTML = parts.join("\n");
-  svg.querySelectorAll("[data-pareto-plan]").forEach((g) => {
+  if (prevFocusedPlan) {
+    svg.querySelector(`[data-pareto-plan="${prevFocusedPlan}"]`)?.focus({ preventScroll: true });
+  }
+  const pointEls = Array.from(svg.querySelectorAll("[data-pareto-plan]"));
+  pointEls.forEach((g, idx) => {
     const selectPoint = () => {
       const pid = g.getAttribute("data-pareto-plan");
       if (pid && pid !== page.selectedPlanId && !page.lastSagaExecution) {
@@ -82,6 +88,12 @@ export function renderParetoFrontierPlot(page, curCapEur) {
       if (ev.key === "Enter" || ev.key === " ") {
         ev.preventDefault();
         selectPoint();
+      } else if (ev.key === "ArrowRight" || ev.key === "ArrowDown") {
+        ev.preventDefault();
+        pointEls[(idx + 1) % pointEls.length]?.focus({ preventScroll: true });
+      } else if (ev.key === "ArrowLeft" || ev.key === "ArrowUp") {
+        ev.preventDefault();
+        pointEls[(idx - 1 + pointEls.length) % pointEls.length]?.focus({ preventScroll: true });
       }
     });
   });

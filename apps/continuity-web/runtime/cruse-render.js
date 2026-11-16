@@ -27,8 +27,16 @@ function node(tag, text) {
   return el;
 }
 
+const MAX_SAFE_HTML_CHARS = 131_072;
+
 function safeLink(value) {
-  try { const u = new URL(value); return ["https:", "http:", "mailto:"].includes(u.protocol) ? u.href : null; } catch { return null; }
+  try {
+    const u = new URL(value);
+    if (u.username || u.password) return null;
+    return ["https:", "http:", "mailto:"].includes(u.protocol) ? u.href : null;
+  } catch {
+    return null;
+  }
 }
 
 function inline(el, text) {
@@ -107,7 +115,7 @@ const dropContent = new Set("script style iframe object embed template noscript 
 export function renderSafeHtml(container, html) {
   // A template is inert while parsing: images cannot fetch, scripts cannot run.
   const template = document.createElement("template");
-  template.innerHTML = html;
+  template.innerHTML = String(html ?? "").slice(0, MAX_SAFE_HTML_CHARS);
   const copy = (source, target) => {
     for (const child of source.childNodes) {
       if (child.nodeType === 3) { target.append(document.createTextNode(child.textContent)); continue; }
@@ -147,25 +155,36 @@ function renderTable(container, columns, rows, markdown = false) {
 }
 
 function renderChart(container, spec) {
+  const safeLabels = Array.isArray(spec?.labels) ? spec.labels.map((l) => String(l ?? "")) : [];
+  const safeSeries = Array.isArray(spec?.series)
+    ? spec.series.map((s) => ({
+        name: String(s?.name ?? "Series"),
+        values: (Array.isArray(s?.values) ? s.values : []).map((v) => (Number.isFinite(Number(v)) ? Number(v) : 0)),
+      }))
+    : [];
+  if (!safeLabels.length || !safeSeries.length) {
+    container.append(node("p", spec?.summary || "No chart data available."));
+    return;
+  }
   const colors = ["#2563eb", "#b45309", "#047857", "#be185d", "#7c3aed", "#0e7490", "#475569", "#a16207"];
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 680 340"); svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", `${spec.title || "Chart"}. ${spec.summary}`);
+  svg.setAttribute("aria-label", `${spec.title || "Chart"}. ${spec.summary || ""}`);
   const add = (tag, attrs, text) => {
     const el = document.createElementNS(svg.namespaceURI, tag);
     Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, String(v)));
     if (text !== undefined) el.textContent = String(text);
     svg.append(el); return el;
   };
-  const values = spec.series.flatMap((s) => s.values);
+  const values = safeSeries.flatMap((s) => s.values);
   // Normalize before subtracting: two finite, very large values can otherwise
   // overflow the range to Infinity and produce invalid SVG coordinates.
-  const scale = Math.max(...values.map(Math.abs)) || 1;
+  const scale = Math.max(0, ...values.map(Math.abs)) || 1;
   const low = Math.min(0, ...values.map((v) => v / scale)), high = Math.max(0, ...values.map((v) => v / scale));
   const span = high - low || 1;
   const normalizedY = (v) => 275 - (v - low) / span * 230;
   const y = (v) => normalizedY(v / scale);
-  const group = 550 / spec.labels.length;
+  const group = 550 / safeLabels.length;
   const x = (i) => 90 + group * (i + .5);
   for (let i = 0; i <= 4; i++) {
     const value = low + span * i / 4;
@@ -175,29 +194,30 @@ function renderChart(container, spec) {
   }
   add("line", { x1: 90, x2: 640, y1: y(0), y2: y(0), stroke: "currentColor" });
   if (spec.unit) add("text", { x: 90, y: 22, "font-size": 12, fill: "currentColor" }, spec.unit);
-  spec.labels.forEach((label, i) => {
-    if (i % Math.max(1, Math.ceil(spec.labels.length / 8)) === 0) add("text", { x: x(i), y: 298, "text-anchor": "middle", "font-size": 10, fill: "currentColor" }, label.length > 16 ? label.slice(0, 14) + "…" : label);
+  safeLabels.forEach((label, i) => {
+    if (i % Math.max(1, Math.ceil(safeLabels.length / 8)) === 0) add("text", { x: x(i), y: 298, "text-anchor": "middle", "font-size": 10, fill: "currentColor" }, label.length > 16 ? label.slice(0, 14) + "…" : label);
   });
-  spec.series.forEach((series, index) => {
+  safeSeries.forEach((series, index) => {
     const color = colors[index % colors.length];
     if (spec.chartType === "line") {
       add("polyline", { points: series.values.map((v, i) => `${x(i)},${y(v)}`).join(" "), fill: "none", stroke: color, "stroke-width": 2.5, "stroke-dasharray": index ? `${index * 3} 3` : "none" });
       series.values.forEach((v, i) => add("circle", { cx: x(i), cy: y(v), r: 3, fill: color }));
     } else {
-      const width = group * .8 / spec.series.length;
+      const width = group * .8 / safeSeries.length;
       series.values.forEach((v, i) => add("rect", { x: x(i) - group * .4 + width * index, y: Math.min(y(v), y(0)), width: Math.max(.5, width - 1), height: Math.abs(y(v) - y(0)), fill: color }));
     }
   });
   const scroll = node("div"); scroll.className = "ns-table-scroll"; scroll.append(svg); container.append(scroll);
   const legend = node("div"); legend.className = "ns-chart-legend";
-  spec.series.forEach((series, i) => { const label = node("span"); const key = node("span"); key.className = "ns-chart-key"; key.style.backgroundColor = colors[i % colors.length]; label.append(key, document.createTextNode(series.name)); legend.append(label); });
+  safeSeries.forEach((series, i) => { const label = node("span"); const key = node("span"); key.className = "ns-chart-key"; key.setAttribute("aria-hidden", "true"); key.style.backgroundColor = colors[i % colors.length]; label.append(key, document.createTextNode(series.name)); legend.append(label); });
   container.append(legend, node("p", spec.summary));
   const data = node("details"); data.className = "ns-chart-data"; data.append(node("summary", "View chart data"));
-  renderTable(data, [spec.unit ? `Category (${spec.unit})` : "Category", ...spec.series.map((s) => s.name)], spec.labels.map((l, i) => [l, ...spec.series.map((s) => s.values[i])]));
+  renderTable(data, [spec.unit ? `Category (${spec.unit})` : "Category", ...safeSeries.map((s) => s.name)], safeLabels.map((l, i) => [l, ...safeSeries.map((s) => s.values[i] ?? "")]));
   container.append(data);
 }
 
 export function renderRichComponent(container, spec) {
+  container.replaceChildren();
   container.classList.add("ns-rich");
   if (spec.kind === "report") renderMarkdown(container, spec.markdown);
   else if (spec.kind === "html") renderSafeHtml(container, spec.html);

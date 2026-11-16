@@ -17,7 +17,7 @@ run(
   [
     "commit",
     "-m",
-    "feat: complete 300-upgrade TITAN OMEGA cycle (Waves 1-5: FIPS SHA-256 fix, SSRF/Tag/Beacon guards, Ed25519 key rings, VALARM .ics, lazy code-split, 36 Chaos, N=150 benchmarks & 106 tests)",
+    "feat: complete 1-to-1 300-upgrade TITAN OMEGA v3.0 campaign (Waves 6-8: runtime sandbox/MCP/LLM/CRUSE hardenings, 4-peer Ed25519 & PEER_RESET, continuity-audit v2.1 CLI, 0 Long Tasks & 111 tests)",
   ],
   { stdio: "inherit" },
 );

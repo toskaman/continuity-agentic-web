@@ -12,19 +12,36 @@ function fmtWeekday(iso) {
 
 exposeActionsToWebMcp(registerActions, { namespace: "powerflow" });
 
+const seenReceipts = new Set();
+
+function applyVerifiedPowerFlowReceipt(check, sourceLabel) {
+  const rb = check.receiptBody;
+  if (rb.receipt_id && seenReceipts.has(rb.receipt_id)) return;
+  if (rb.receipt_id) seenReceipts.add(rb.receipt_id);
+  const keyShort = check.proof?.key_id || "ed25519";
+  const shaShort = String(check.proof?.payload_sha256 || "").slice(0, 12);
+  App.page.version += 1;
+  App.page.activation.scheduledDate = rb.scheduled_date;
+  App.page.activation.scheduledLabel = fmtWeekday(rb.scheduled_date);
+  if (rb.window) App.page.activation.window = rb.window;
+  App.page.stagedDate = null;
+  App.page.lastReceipt = {
+    receiptId: rb.receipt_id,
+    keyId: keyShort,
+    payloadSha256: check.proof?.payload_sha256 || null,
+    trustSource: check.trustSource || sourceLabel,
+  };
+  App.page.render(
+    `✓ ${sourceLabel} Verified (${rb.receipt_id} · ${keyShort} · sha256:${shaShort}…): Smart-meter date synced to ${App.page.activation.scheduledLabel}.`,
+  );
+}
+
 async function syncFromReceiptHash() {
   const m = (location.hash || "").match(/continuity_receipt=([A-Za-z0-9_-]+)/);
   if (!m) return;
   const check = await verifySignedReceiptHandoff("powerflow", m[1]);
   if (!check.valid) return;
-  const rb = check.receiptBody;
-  App.page.version += 1;
-  App.page.activation.scheduledDate = rb.scheduled_date;
-  App.page.activation.scheduledLabel = fmtWeekday(rb.scheduled_date);
-  if (rb.window) App.page.activation.window = rb.window;
-  App.page.render(
-    `✓ Cross-Origin Ed25519 Receipt Verified (${rb.receipt_id}): Smart-meter date synced to ${App.page.activation.scheduledLabel}.`,
-  );
+  applyVerifiedPowerFlowReceipt(check, "Cross-Origin Ed25519 Receipt");
 }
 
 syncFromReceiptHash();
@@ -32,16 +49,16 @@ window.addEventListener("hashchange", syncFromReceiptHash);
 if (typeof BroadcastChannel === "function") {
   const bc = new BroadcastChannel("continuity-peer-powerflow");
   bc.addEventListener("message", async (ev) => {
+    if (ev.data?.type === "PEER_RESET") {
+      seenReceipts.clear();
+      App.page.resetToInitial?.();
+      return;
+    }
     const token = ev.data?.result?.handoff_token;
     if (ev.data?.type !== "PEER_COMMITTED" || typeof token !== "string") return;
     const pinnedKey = await getOrCreateOriginKeyPair("powerflow");
     const check = await verifySignedReceiptHandoff("powerflow", token, { pinnedKey });
     if (!check.valid) return;
-    const rb = check.receiptBody;
-    App.page.version += 1;
-    App.page.activation.scheduledDate = rb.scheduled_date;
-    App.page.activation.scheduledLabel = fmtWeekday(rb.scheduled_date);
-    if (rb.window) App.page.activation.window = rb.window;
-    App.page.render(`✓ Live Bridge Activation Verified (${rb.receipt_id}): ${App.page.activation.scheduledLabel}`);
+    applyVerifiedPowerFlowReceipt(check, "Live Bridge Ed25519 Activation");
   });
 }

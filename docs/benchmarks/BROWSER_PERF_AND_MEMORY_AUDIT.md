@@ -28,17 +28,16 @@ node scripts/audit_browser_perf.mjs
 
 ## 2. Chromium Renderer Trace (`browser.trace.*`) & V8 Heap Snapshot Comparison (`browser.heap.*`)
 
-### Renderer Trace (Full Reload + 5-Origin Peer Probe)
+### Renderer Trace (Full Reload + Parallel 5-Origin Peer Handshake + Dynamic Code-Splitting)
 
 | Event / Metric | Count | Total Duration | Max Single Event |
 |---|---:|---:|---:|
-| **`RunTask`** | `1,522` | `182.30 ms` | `84.43 ms` |
-| **`v8.evaluateModule` (24 ES modules + runtime)** | `4` | `87.46 ms` | `80.80 ms` |
-| **`v8.parseOnBackground`** | `57` | `28.68 ms` | `6.11 ms` |
-| **`Layout`** | `3` | `74.22 ms` | `70.37 ms` |
-| **`UpdateLayoutTree`** | `3` | `11.34 ms` | `9.05 ms` |
-| **`ParseHTML`** | `36` | `4.94 ms` | `2.77 ms` |
-| **Long Task Blocking (`> 50 ms`)** | `1` (initial ES module graph boot) | **`34.43 ms`** | `< 50 ms` TBT budget |
+| **`RunTask`** | `1,172` | `155.63 ms` | **`36.67 ms`** (`< 50 ms`) |
+| **`v8.evaluateModule` (critical boot graph; `chaos-lab` & `adk-hocon-converter` lazy-loaded)** | `5` | `45.32 ms` | **`35.00 ms`** (down from `80.80 ms`) |
+| **`Layout`** | `2` | `20.47 ms` | **`17.06 ms`** (down from `70.37 ms`) |
+| **`TimerFire`** | `1` | `20.13 ms` | `20.13 ms` |
+| **`FunctionCall`** | `10` | `19.16 ms` | `18.66 ms` |
+| **Long Task Count (`> 50 ms`)** | **`0`** | **`0.00 ms`** | **`0.00 ms` TBT (`longTasks: 0`)** |
 
 *Note:* Event durations overlap across main and background parser threads and are reported individually rather than summed.
 

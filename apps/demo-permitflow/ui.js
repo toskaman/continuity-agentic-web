@@ -71,6 +71,7 @@ function renderDossier(state) {
           <div class="record-fact"><dt>Official status</dt><dd>Not submitted</dd></div>
         </dl>
         ${state.previewDate ? `<div class="record-hold">Previewing ${e(state.previewDate.label)} — draft unchanged until you update it</div>` : ""}
+        ${state.lastReceipt?.payloadSha256 ? `<div class="record-hold">✓ Ed25519 Verified (${e(state.lastReceipt.keyId || "ed25519")} · sha256:${e(state.lastReceipt.payloadSha256.slice(0, 12))}…)</div>` : ""}
       </div>
       <div class="record-foot"><span>Preparation only — not an official permit</span><span>Demonstration data</span></div>
     </article>`;

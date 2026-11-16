@@ -1,11 +1,15 @@
 // Site-owned executable capabilities. Agent output is data, never executable code.
-export const plain = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+export const plain = (v) => {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return false;
+  const proto = Object.getPrototypeOf(v);
+  return proto === Object.prototype || proto === null;
+};
 const badKeys = new Set(["__proto__", "prototype", "constructor"]);
 export function cloneData(value) {
   const text = JSON.stringify(value);
   if (!text || text.length > 65536) throw new Error("Action data exceeds 64 KB.");
   return JSON.parse(text, (key, v) => {
-    if (badKeys.has(key)) throw new Error("Unsafe object key.");
+    if (badKeys.has(key) || key.includes("\u0000")) throw new Error("Unsafe object key.");
     return v;
   });
 }

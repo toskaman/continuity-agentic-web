@@ -15,6 +15,7 @@ export class PowerFlowPage {
       { date: "2026-11-19", label: "Thu, Nov 19, 2026", window: "08:00–12:00", feeEur: "€30.00" },
       { date: "2026-11-20", label: "Fri, Nov 20, 2026", window: "08:00–12:00", feeEur: "€30.00" },
     ];
+    this.lastReceipt = null;
   }
 
   dateEnums() {
@@ -36,6 +37,7 @@ export class PowerFlowPage {
         version: this.version,
         activation: this.activation,
         stagedDate: this.stagedDate,
+        lastReceipt: this.lastReceipt,
         availableDates: this.dates,
         policyNote: policyText,
         coordinatorLink: coordinatorHref,
@@ -50,6 +52,47 @@ export class PowerFlowPage {
     this.stagedDate = found;
     this.render(`Staged energization date ${found.label} (${this.activation.activationRef} unchanged).`);
     return { ok: true, version: this.version, staged: JSON.parse(JSON.stringify(found)) };
+  }
+
+  clearStaged() {
+    this.version += 1;
+    this.stagedDate = null;
+    this.render(`Cleared staged date; ${this.activation.activationRef} stays on ${this.activation.scheduledLabel}.`);
+    return { ok: true, version: this.version };
+  }
+
+  resetToInitial() {
+    this.version += 1;
+    this.activation = {
+      activationRef: "PFW-9921",
+      meterPoint: "PRM-7510299481",
+      scheduledDate: "2026-11-17",
+      scheduledLabel: "Tue, Nov 17, 2026",
+      window: "08:00–12:00",
+      feeEur: "€30.00",
+      status: "CONFIRMED",
+    };
+    this.stagedDate = null;
+    this.lastReceipt = null;
+    this.render("Reset PowerFlow activation PFW-9921 to baseline Tue, Nov 17, 2026.");
+    return { ok: true, version: this.version };
+  }
+
+  exportIcs() {
+    const ymd = this.activation.scheduledDate.replace(/-/g, "");
+    return [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//PowerFlow Energy//Open Agentic Web Peer//EN",
+      "BEGIN:VEVENT",
+      `UID:${this.activation.activationRef}@powerflow.agentic.peer`,
+      `DTSTART:${ymd}T080000Z`,
+      `DTEND:${ymd}T120000Z`,
+      `SUMMARY:PowerFlow Energy — Meter ${this.activation.meterPoint} (${this.activation.activationRef})`,
+      `DESCRIPTION:Activation Fee ${this.activation.feeEur} | Remote switch-on`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
   }
 
   checkShift(args) {

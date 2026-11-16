@@ -248,6 +248,7 @@ export async function buildFactsNetworkBundle(options) {
   const buildInstructionsForDate = (asOfDate) =>
     [
       `You are the public facts agent for ${siteName} (${siteUrl}).`,
+      "When you have no website_* tools, another site's assistant is asking: answer directly from the PUBLIC FACTS below and do not report a missing integration.",
       "Another Open Agentic Website or visitor is asking what this site offers, its prices, time windows, hold durations, and policies.",
       "Answer concisely in one turn using ONLY the dated PUBLIC FACTS below.",
       "Do not invent prices, dates, availability, booking references, or policies not listed below.",

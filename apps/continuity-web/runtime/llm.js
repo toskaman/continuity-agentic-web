@@ -50,9 +50,18 @@ export function browserMockCompletion(messages = [], tools = []) {
 // BYOK key is never put in the URL and is sent only to the chosen router as
 // Authorization.
 
+const MAX_LLM_SSE_BUF_CHARS = 1_048_576;
+
 export class LlmClient {
   constructor({ baseUrl, apiKey, trace, mock, fetchImpl, retryDelaysMs }) {
-    this.baseUrl = (baseUrl || "").replace(/\/$/, "");
+    const cleanedBase = (baseUrl || "").replace(/\/$/, "");
+    if (/^https?:\/\//i.test(cleanedBase)) {
+      const parsed = new URL(cleanedBase);
+      if (parsed.username || parsed.password) {
+        throw new Error("LLM router baseUrl must not embed credentials in the URL.");
+      }
+    }
+    this.baseUrl = cleanedBase;
     this.apiKey = apiKey || "";
     this.trace = trace;
     this.mock = !!mock;
@@ -134,7 +143,11 @@ export class LlmClient {
           break;
         }
         await resp.text().catch(() => "");
-        const delayMs = this.retryDelaysMs[attempt];
+        const retryAfterSec = Number(resp.headers?.get?.("retry-after"));
+        const delayMs =
+          resp.status === 429 && Number.isFinite(retryAfterSec) && retryAfterSec > 0
+            ? Math.min(10000, retryAfterSec * 1000)
+            : this.retryDelaysMs[attempt];
         if (delayMs > 0) {
           await new Promise((resolve, reject) => {
             const timer = setTimeout(resolve, delayMs);
@@ -180,6 +193,32 @@ export class LlmClient {
   }
 
   async _readSse(resp, onContentDelta, span, signal) {
+    const ct = String(resp.headers?.get?.("content-type") || "").toLowerCase();
+    if (ct.includes("application/json") || !resp.body?.getReader) {
+      const json = await resp.json();
+      const msg = json?.choices?.[0]?.message || {};
+      const txt = typeof msg.content === "string" ? msg.content : "";
+      if (txt && !signal?.aborted) {
+        onContentDelta?.(txt);
+        this.trace?.update(span, { streamChunk: txt });
+      }
+      const tcs = Array.isArray(msg.tool_calls)
+        ? msg.tool_calls.map((tc, i) => ({
+            id: tc.id || `call_${i}`,
+            type: "function",
+            function: { name: tc.function?.name || "", arguments: tc.function?.arguments || "{}" },
+            ...(tc.extra_content ? { extra_content: tc.extra_content } : {}),
+          }))
+        : [];
+      return {
+        content: txt,
+        toolCalls: tcs,
+        finishReason: json?.choices?.[0]?.finish_reason || "stop",
+        usage: json?.usage || null,
+        model: json?.model || null,
+      };
+    }
+
     const reader = resp.body.getReader();
     const cancel = () => reader.cancel(signal?.reason).catch(() => {});
     signal?.addEventListener("abort", cancel, { once: true });
@@ -244,8 +283,14 @@ export class LlmClient {
       for (;;) {
         const { value, done } = await reader.read();
         signal?.throwIfAborted();
-        if (done) break;
+        if (done) {
+          buf += dec.decode();
+          break;
+        }
         buf += dec.decode(value, { stream: true });
+        if (buf.length > MAX_LLM_SSE_BUF_CHARS) {
+          throw new Error("LLM SSE line buffer exceeded 1 MB safety limit.");
+        }
         let nl;
         while ((nl = buf.indexOf("\n")) >= 0) {
           const line = buf.slice(0, nl).trim();
@@ -260,8 +305,20 @@ export class LlmClient {
           }
         }
       }
+      const tail = buf.trim();
+      if (tail.startsWith("data:")) {
+        const payload = tail.slice(5).trim();
+        if (payload && payload !== "[DONE]") {
+          try {
+            handleChunk(JSON.parse(payload));
+          } catch {}
+        }
+      }
     } finally {
       signal?.removeEventListener("abort", cancel);
+      try {
+        reader.releaseLock();
+      } catch {}
     }
 
     return { content, toolCalls: toolCalls.filter(Boolean), finishReason, usage, model };

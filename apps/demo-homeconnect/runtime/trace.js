@@ -6,10 +6,13 @@
 // ("HAR for agents"). It is platform glue (an intrinsic), not kernel logic.
 
 let SEQ = 0;
+const MAX_TRACE_EVENTS = 2048;
+const MAX_OPEN_SPANS = 512;
 
 export class TraceBus extends EventTarget {
-  constructor() {
+  constructor({ maxEvents = MAX_TRACE_EVENTS } = {}) {
     super();
+    this.maxEvents = maxEvents;
     this.events = [];
     this.spans = new Map();
   }
@@ -18,6 +21,9 @@ export class TraceBus extends EventTarget {
     ev.seq = SEQ++;
     ev.t = performance.now();
     ev.wall = Date.now();
+    if (this.events.length >= this.maxEvents) {
+      this.events.shift();
+    }
     this.events.push(ev);
     this.dispatchEvent(new CustomEvent("event", { detail: ev }));
   }
@@ -27,6 +33,9 @@ export class TraceBus extends EventTarget {
     const id = `s${SEQ}`;
     const span = { id, kind, parent: fields.parent ?? null, status: "running", ...fields };
     span.startedAt = performance.now();
+    if (this.spans.size >= MAX_OPEN_SPANS) {
+      this.spans.delete(this.spans.keys().next().value);
+    }
     this.spans.set(id, span);
     this._emit({ phase: "start", ...span });
     return id;
@@ -46,7 +55,13 @@ export class TraceBus extends EventTarget {
     if (!span) return;
     Object.assign(span, fields, { status: fields.status || "ok" });
     span.durationMs = performance.now() - (span.startedAt ?? performance.now());
+    this.spans.delete(id);
     this._emit({ phase: "end", ...span });
+  }
+
+  clear() {
+    this.events = [];
+    this.spans.clear();
   }
 
   fail(id, error) {
