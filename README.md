@@ -2,6 +2,8 @@
 
 **One change. Every commitment re-aligned.**
 
+*You change one date; CONTINUITY asks every affected company's own agentic website what is possible, holds the replacements, and lets you approve one plan — nothing is cancelled without you.*
+
 Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agenticweb.devpost.com/)** · All 5 sites pass the official Cognizant validators (`build_network.mjs --check`, `check_partner.mjs`) for the **[Worldwide Agentic Web MVP Specification (Profile 0.2)](https://github.com/cognizant-ai-labs/agentic-web/blob/main/docs/worldwide_agentic_web_mvp_spec.md)**.
 
 ![CONTINUITY coordinator](docs/submission/screenshots/01_continuity_mission_baseline.png)
@@ -13,7 +15,7 @@ Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agentic
 1. Open **https://toskaman.github.io/continuity-agentic-web/?demo=1** — the demo starts by itself (or open the site and click **Run the live demo**).
 2. CONTINUITY injects a real provider failure (MoveCo's Friday crew is full), recovers through an overflow partner, compares plans and holds replacements — your original bookings stay untouched.
 3. The approval dialog lists every operation, price and provider. Click **Approve & commit**: three providers commit, three bookings stay untouched (two are never even contacted), and each commit returns an Ed25519-signed receipt.
-4. The page scrolls to **Watch the providers react**: the four providers' real pages, framed from their own origin, each verify their signed receipt and show the new date (PowerFlow is correctly left unchanged).
+4. The page scrolls to **Watch the providers react**: the four providers' real pages, loaded cross-origin from their own deployments, each verify their signed receipt and show the new date (PowerFlow is correctly left unchanged).
 5. Optional: **Try without a key** in *Ask CONTINUITY* runs the real agent networks, `website_*` tools and consent cards with a scripted model.
 
 **Lighthouse 13.6 (desktop), all 5 live sites:** 100 Performance · 100 Accessibility · 100 Best Practices · 100 SEO · 100 Agentic Browsing — [details](docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md).

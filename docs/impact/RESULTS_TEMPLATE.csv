@@ -1,0 +1,11 @@
+participant,order,condition,time_s,actions,sites_touched,premature_cancel,unnecessary_contact,correct_outcome,seq,confidence,quote
+P1,AB,A,,,,,,,,,
+P1,AB,B,,,,,,,,,
+P2,BA,A,,,,,,,,,
+P2,BA,B,,,,,,,,,
+P3,AB,A,,,,,,,,,
+P3,AB,B,,,,,,,,,
+P4,BA,A,,,,,,,,,
+P4,BA,B,,,,,,,,,
+P5,AB,A,,,,,,,,,
+P5,AB,B,,,,,,,,,
