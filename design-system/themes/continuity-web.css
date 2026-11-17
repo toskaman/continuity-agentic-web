@@ -291,8 +291,6 @@
 /* ---------- Assistant ---------- */
 .sample-prompts-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: var(--s-3); }
 .top-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.header-meta.top-actions { flex-wrap: nowrap; flex-shrink: 0; }
-.header-meta.top-actions > * { white-space: nowrap; }
 .protocol-links { display: grid; gap: 10px; font-size: var(--fs-xs); }
 
 /* ---------- Responsive ---------- */
@@ -442,3 +440,16 @@ a.badge { text-decoration: none; }
   border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: 550 var(--fs-sm)/1.35 var(--font); cursor: pointer;
 }
 .cmd-palette-item:hover, .cmd-palette-item:focus-visible { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-strong); outline: none; }
+
+/* ---------- Readability & touch pass (Nov 17) ---------- */
+/* Header: keep the actions on one line on wide screens; on phones the keyboard palette button would collide with the logo. */
+@media (min-width: 900px) { .header-meta.top-actions { flex-wrap: nowrap; flex-shrink: 0; } .header-meta.top-actions > * { white-space: nowrap; } }
+@media (max-width: 720px) { #cmd-palette-open-btn { display: none; } .brand { min-width: 0; } }
+@media (hover: none) { .top-actions kbd { display: none; } }
+/* No running text below 12px. */
+.eco-role, .eco-state, .slack-pill, .live-url, .st-desc, .badge, .spec-pill, .mode-pill, .inv-tag, .strip-label, .artifact-chip { font-size: max(0.75rem, 12px); }
+/* Card links are real targets (WCAG 2.5.8: at least 24px). */
+.agent-links { gap: 4px 14px; }
+.agent-links a { display: inline-flex; align-items: center; min-height: 28px; }
+/* Scrollable tab bars show that they scroll. */
+@media (max-width: 1100px) { .tablist { mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); } }
