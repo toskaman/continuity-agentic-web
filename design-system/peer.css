@@ -46,7 +46,7 @@
 .record-fact { background: var(--surface-2); border-radius: var(--r-md); padding: 12px 14px; }
 .record-fact dt { font-size: var(--fs-xs); color: var(--muted); }
 .record-fact dd { margin: 2px 0 0; font-weight: 640; font-size: 0.95rem; }
-.record-hold { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: var(--r-md); background: var(--warn-bg); border: 1px solid var(--warn-line); color: #93370D; font-size: var(--fs-sm); font-weight: 520; }
+.record-hold { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 14px; border-radius: var(--r-md); background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn); font-size: var(--fs-sm); font-weight: 520; }
 .record-hold::before { content: "⏱"; }
 .record-foot { padding: 12px 24px; background: var(--surface-2); border-top: 1px solid var(--line); font-size: var(--fs-xs); color: var(--muted); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 /* Reserve the space the JS-rendered card and choices will take (avoids layout shift). */
@@ -151,4 +151,5 @@
 .is-embed .route, .is-embed .signal, .is-embed .meter-grid, .is-embed .record-facts, .is-embed .record-foot { display: none; }
 .is-embed .record-when .date-tile { width: 52px; height: 58px; }
 .is-embed .record-when strong { font-size: 1rem; }
-.is-embed .feedback { margin: 0 16px 14px; font-size: var(--fs-xs); background: var(--ok-bg); border-color: var(--ok-line); color: #05603A; }
+.is-embed .feedback { margin: 0 16px 14px; font-size: var(--fs-xs); background: var(--ok-bg); border-color: var(--ok-line); color: var(--ok); }
+[data-theme="dark"] .coord-link .coord-dot { border: 1px solid var(--line-strong); }

@@ -1560,16 +1560,18 @@ export class ContinuityCoordinatorPage {
     const initialProbe = this.probeLivePeerOrigins();
     this.render();
 
+    const themeToggleBtn = document.querySelector("#theme-toggle-btn");
     try {
       const savedTheme = typeof window !== "undefined" ? window.sessionStorage?.getItem("nsweb-continuity-theme") : null;
-      if (savedTheme === "dark" || savedTheme === "light") {
-        document.documentElement.setAttribute("data-theme", savedTheme);
-      }
+      const initialTheme = savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark";
+      document.documentElement.setAttribute("data-theme", initialTheme);
+      themeToggleBtn?.setAttribute("aria-pressed", String(initialTheme === "dark"));
     } catch {}
-    document.querySelector("#theme-toggle-btn")?.addEventListener("click", () => {
+    themeToggleBtn?.addEventListener("click", () => {
       const root = document.documentElement;
       const next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
       root.setAttribute("data-theme", next);
+      themeToggleBtn.setAttribute("aria-pressed", String(next === "dark"));
       try {
         window.sessionStorage?.setItem("nsweb-continuity-theme", next);
       } catch {}

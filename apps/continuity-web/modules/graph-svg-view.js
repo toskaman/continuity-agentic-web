@@ -8,12 +8,12 @@ import { addDaysIso, formatDateWithWeekday } from "../vendor/mission-core/index.
 import { GRAPH_VISUAL_STATES, MissionGraph } from "../vendor/mission-graph/index.js";
 
 export const RELOCATION_PRESET_COORDS = Object.freeze({
-  cmt_moveco_van: { x: 40, y: 155 },
-  cmt_permitflow_bay: { x: 355, y: 24 },
-  cmt_homeconnect_fiber: { x: 665, y: 95 },
-  cmt_powerflow_grid: { x: 355, y: 155 },
-  cmt_storage_pod: { x: 355, y: 285 },
-  cmt_furniture_drop: { x: 665, y: 285 },
+  cmt_moveco_van: { x: 20, y: 155 },
+  cmt_permitflow_bay: { x: 368, y: 24 },
+  cmt_homeconnect_fiber: { x: 715, y: 92 },
+  cmt_powerflow_grid: { x: 368, y: 155 },
+  cmt_storage_pod: { x: 368, y: 288 },
+  cmt_furniture_drop: { x: 715, y: 288 },
 });
 
 export const STATE_PALETTE = Object.freeze({
@@ -53,6 +53,15 @@ export function renderMissionGraphSvg(page) {
   ];
 
   const nodesById = new Map(snap.nodes.map((n) => [n.id, n]));
+  const SHORT_EDGE_NAMES = {
+    SAME_DAY_REQUIRED: "SAME DAY",
+    ON_OR_AFTER: "ON / AFTER",
+    ON_OR_BEFORE: "ON / BEFORE",
+    WITHIN_COVERAGE_SPAN: "IN SPAN",
+    ALTERNATIVE_PROVIDER: "OVERFLOW",
+    COMPENSATION_LINK: "ROLLBACK",
+  };
+  const edgeBadges = [];
 
   for (const edge of snap.edges) {
     const src = coordsMap[edge.from];
@@ -68,27 +77,53 @@ export function renderMissionGraphSvg(page) {
     const markerRef = isCommittedEdge ? "url(#arrow-emerald)" : isRippleEdge ? "url(#arrow-amber)" : "url(#arrow)";
     const dashAttr = isRippleEdge ? ' stroke-dasharray="6 4" class="edge-ripple-path"' : "";
     const statusSuffix = isCommittedEdge
-      ? " · ✓ ALIGNED"
+      ? " · ✓"
       : isRippleEdge
-        ? " · ⚡ RIPPLE"
+        ? " · ⚡"
         : isShieldedEdge
-          ? " · 🛡 PROTECTED"
+          ? " · 🛡"
           : "";
     const labelColor = isCommittedEdge ? "#6ee7b7" : isRippleEdge ? "#fde68a" : "#cbd5e1";
+    const pillStroke = isCommittedEdge ? "#059669" : isRippleEdge ? "#d97706" : "#334155";
 
     const x1 = src.x + 225;
     const y1 = src.y + 44;
     const x2 = dst.x;
     const y2 = dst.y + 44;
+    const spansTwoCols = x2 - x1 > 300;
     const midX = (x1 + x2) / 2;
-    const midY = (y1 + y2) / 2 - 6;
-    const shortEdgeLabel = `${edge.type.replace(/_/g, " ")}${statusSuffix}`;
+    const curveLift = spansTwoCols ? (y2 < y1 ? -52 : 52) : 0;
+    const cy1 = y1 + curveLift * 0.45;
+    const cy2 = y2 + curveLift * 0.45;
+    const t = spansTwoCols ? 0.78 : 0.5;
+    const mt = 1 - t;
+    const bx = mt ** 3 * x1 + 3 * mt ** 2 * t * midX + 3 * mt * t ** 2 * midX + t ** 3 * x2;
+    const by = mt ** 3 * y1 + 3 * mt ** 2 * t * cy1 + 3 * mt * t ** 2 * cy2 + t ** 3 * y2;
+    const baseName = SHORT_EDGE_NAMES[edge.type] || edge.type.replace(/_/g, " ");
+    const shortEdgeLabel = `${baseName}${statusSuffix}`;
+
     parts.push(
       `<g class="graph-edge">
-        <path d="M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}" fill="none" stroke="${strokeColor}" stroke-width="${isCommittedEdge || isRippleEdge ? "2.3" : "1.7"}"${dashAttr} marker-end="${markerRef}" />
-        <text x="${midX}" y="${midY}" text-anchor="middle" fill="${labelColor}" font-size="9.2" font-weight="${isCommittedEdge || isRippleEdge ? "700" : "500"}" font-family="system-ui, sans-serif">${page.escapeXml(shortEdgeLabel)}</text>
+        <path d="M ${x1} ${y1} C ${midX} ${cy1}, ${midX} ${cy2}, ${x2} ${y2}" fill="none" stroke="${strokeColor}" stroke-width="${isCommittedEdge || isRippleEdge ? "2.3" : "1.7"}"${dashAttr} marker-end="${markerRef}" />
       </g>`,
     );
+    edgeBadges.push({
+      x: bx,
+      y: by,
+      label: shortEdgeLabel,
+      labelColor,
+      pillStroke,
+      bold: isCommittedEdge || isRippleEdge,
+    });
+  }
+
+  for (let i = 0; i < edgeBadges.length; i++) {
+    for (let j = 0; j < i; j++) {
+      if (Math.abs(edgeBadges[i].x - edgeBadges[j].x) < 88 && Math.abs(edgeBadges[i].y - edgeBadges[j].y) < 20) {
+        edgeBadges[j].y -= 11;
+        edgeBadges[i].y += 11;
+      }
+    }
   }
 
   for (const node of snap.nodes) {
@@ -110,6 +145,16 @@ export function renderMissionGraphSvg(page) {
         <text x="${pos.x + 12}" y="${pos.y + 44}" fill="${pal.text}" font-size="12" font-weight="700" font-family="system-ui, sans-serif">${page.escapeXml(node.title.length > 28 ? `${node.title.slice(0, 26).trimEnd()}…` : node.title)}</text>
         <text x="${pos.x + 12}" y="${pos.y + 62}" fill="#cbd5e1" font-size="10.5" font-family="system-ui, sans-serif">${page.escapeXml(node.provider_name.length > 30 ? `${node.provider_name.slice(0, 28).trimEnd()}…` : node.provider_name)}</text>
         <text x="${pos.x + 12}" y="${pos.y + 79}" fill="#93c5fd" font-size="10.5" font-weight="600" font-family="system-ui, sans-serif">${page.escapeXml(`${node.booking_ref} · ${formatDateWithWeekday(node.scheduled_date)}`)}</text>
+      </g>`,
+    );
+  }
+
+  for (const b of edgeBadges) {
+    const pillW = Math.max(66, Math.round(b.label.length * 5.6 + 14));
+    parts.push(
+      `<g class="graph-edge-badge" pointer-events="none">
+        <rect x="${(b.x - pillW / 2).toFixed(1)}" y="${(b.y - 9).toFixed(1)}" width="${pillW}" height="17" rx="6" fill="#0b1220" fill-opacity="0.92" stroke="${b.pillStroke}" stroke-width="1" />
+        <text x="${b.x.toFixed(1)}" y="${(b.y + 3).toFixed(1)}" text-anchor="middle" fill="${b.labelColor}" font-size="8.6" font-weight="${b.bold ? "700" : "600"}" font-family="system-ui, sans-serif">${page.escapeXml(b.label)}</text>
       </g>`,
     );
   }

@@ -32,3 +32,18 @@
 .signal strong { font-size: var(--fs-sm); display: block; }
 .signal span { font-size: var(--fs-xs); color: var(--muted); }
 .choice-card:has(input:checked) .date-tile { background: var(--accent-strong); }
+[data-theme="dark"] {
+  --paper: #06101D;
+  --surface: #0D1B2E;
+  --surface-2: #132640;
+  --line: #1E3352;
+  --line-strong: #2A456B;
+  --accent: #0B7285;
+  --accent-hover: #095C6B;
+  --accent-2: #2DD4BF;
+  --accent-strong: #67E8F9;
+  --accent-soft: #0F293D;
+  --accent-line: #1C4B6B;
+}
+[data-theme="dark"] .signal { background: linear-gradient(90deg, #0D2538, #0D292A); border-color: var(--accent-line); }
+[data-theme="dark"] .choice-card:has(input:checked) .date-tile { background: var(--accent); border-color: var(--accent); }

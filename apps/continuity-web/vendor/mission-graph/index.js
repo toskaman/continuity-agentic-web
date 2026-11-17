@@ -312,10 +312,10 @@ export class MissionGraph {
     const colKeys = Array.from(columns.keys()).sort((a, b) => a - b);
     const colX =
       colKeys.length === 1
-        ? [355]
+        ? [368]
         : colKeys.length === 2
-          ? [95, 590]
-          : [40, 355, 665];
+          ? [95, 635]
+          : [20, 368, 715];
 
     const coords = {};
     colKeys.forEach((ck, colIdx) => {

@@ -195,7 +195,7 @@ export function renderChangePackageView(page, plan) {
         <button type="button" class="plan-option ${isSel ? "selected" : ""}" aria-pressed="${isSel}" data-plan-id="${page.escapeXml(p.plan_id)}" ${page.lastSagaExecution ? "disabled" : ""}>
           <div class="plan-option-top">
             <span>${isSel ? "✓ " : ""}${page.escapeXml(p.label)}${paretoHtml}</span>
-            <span>€${p.metrics.totalMissionCostEur.toFixed(2)} (${deltaSign}€${p.metrics.netDeltaEur.toFixed(2)})</span>
+            <span class="plan-price-row"><span class="plan-price-main">€${p.metrics.totalMissionCostEur.toFixed(2)}</span><span class="plan-price-delta">(${deltaSign}€${p.metrics.netDeltaEur.toFixed(2)})</span></span>
           </div>
           <div class="plan-option-meta">
             ${p.metrics.changedCount} changed · ${p.metrics.unchangedCount} preserved${savedTxt} · Headroom: €${p.metrics.budgetHeadroomEur.toFixed(2)} · Front #${p.paretoRank ?? 1} (Crowding ${crowdTxt})

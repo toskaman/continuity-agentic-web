@@ -23,7 +23,7 @@ Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agentic
 ## Live Public HTTPS Deployments (Verified Cross-Origin Ecosystem)
 
 - **Primary Coordinator (`CONTINUITY`):** `https://toskaman.github.io/continuity-agentic-web/`
-  - **Community Builder Kit (5 Zero-Backend Tools):** `https://toskaman.github.io/continuity-agentic-web/community-kit.html`
+  - **Community Builder Kit (8 Zero-Backend Tools):** `https://toskaman.github.io/continuity-agentic-web/community-kit.html`
   - Public Manifest: `https://toskaman.github.io/continuity-agentic-web/agent-manifest.json`
   - Public Network JSON: `https://toskaman.github.io/continuity-agentic-web/continuity_coordinator.network.json`
   - Public Single-Turn Facts Network: `https://toskaman.github.io/continuity-agentic-web/facts/continuity_coordinator_facts.network.json`

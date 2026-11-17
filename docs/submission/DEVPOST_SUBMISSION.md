@@ -1,6 +1,6 @@
 # Devpost Submission Draft — CONTINUITY
 
-> **Status (Nov 14, 2026):** Public URLs live and verified end to end after the UI redesign; 13 fresh screenshots in `docs/submission/screenshots/`. **Still required from the entrant:** (1) a new < 2 min video **narrated in your own voice** (Rules: the entrant must explain the project; the existing `CONTINUITY_JURY_MASTER_OMEGA.mp4` uses Kokoro TTS and the pre-redesign UI, so it must not be submitted) — script in `VIDEO_RECORDING_SCRIPT.md`; (2) your Otari account email; (3) the YouTube link.
+> **Status (Nov 17, 2026):** Public URLs live and verified end to end (night theme by default). **Still required from the entrant:** (1) record your own voice over `CONTINUITY_v2_voice_ready.mp4` with `docs/video-production/v2/TELEPROMPTER_voice_ready.md` (Rules: the entrant must explain the project — never submit a TTS-narrated cut); (2) your Otari account email (form only); (3) the public YouTube link; (4) optional but strong: results of the 5-person timed user test (`docs/impact/USER_TEST_PROTOCOL.md`).
 
 ---
 
@@ -26,7 +26,7 @@
   7. `09_mandate_arbiter_and_bypasses_denied.png` — Mandate & arbiter: 4 bypass attempts denied
   8. `06_open_agentic_web_runtime_otari_byok.png` — Open Agentic Web runtime, consent cards, Otari BYOK
   9. `07`, `10`, `11`, `12` — The four independent provider sites (MoveCo, PermitFlow, HomeConnect, PowerFlow)
-  10. `14_community_builder_kit.png` — Standalone 6-tool Open Agentic Web Community Builder Kit (`community-kit.html`)
+  10. `14_community_builder_kit.png` — Standalone 8-tool Open Agentic Web Community Builder Kit (`community-kit.html`)
   11. `00_architecture_diagram.png` — Topology & trust boundaries
 - **Built With:** `neuro-san`, `nsdeploy`, `open-agentic-web`, `mozilla-otari`, `project-nanda`, `a2a`, `mcp`, `javascript`, `web-crypto`, `html5`
 
@@ -35,38 +35,36 @@
 ## 2. Full Project Description (Copy-Ready Markdown)
 
 ### In one sentence
-When one date in your life changes, CONTINUITY asks every affected provider's own agentic website what is possible, holds replacements before releasing anything, and lets you approve one verified plan instead of calling six companies.
+You change one date; CONTINUITY asks every affected company's own agentic website what is possible, holds the replacements, and lets you approve one plan — nothing is cancelled without you.
 
 ### Try it in 60 seconds — no API key
-Open https://toskaman.github.io/continuity-agentic-web/?demo=1 — the demo starts by itself (or click **Run the live demo**). A provider failure is injected and recovered, plans are compared, replacements are held, and an approval dialog opens. Approve: three providers commit with signed receipts and three bookings stay untouched. The page then shows the four providers' real pages, framed from their own origin: each verifies its signed receipt itself and updates its booking in front of you.
+Open https://toskaman.github.io/continuity-agentic-web/?demo=1. The demo starts by itself: a provider failure is injected and recovered, plans are compared, replacements are held and the approval dialog opens. Approve, then scroll to **Watch the providers react**: the four providers' own pages, loaded cross-origin, each verify their signed receipt and update the booking in front of you.
 
 ### The problem
-Agent demos usually plan something new. Real life breaks *after* things are booked. Moving house from Tuesday to Friday touches a moving crew, a parking permit, a fiber installation, an electricity activation, storage and a furniture delivery — six companies, six websites, and a real risk of cancelling a working booking before a replacement exists, or paying fees nobody needed to pay.
+Agent demos usually book something new. Real life breaks *after* things are booked. Moving house from Tuesday to Friday touches a moving crew, a parking permit, a fiber installation, an electricity switch-on, storage and a furniture delivery — six bookings, six websites (~18 manual steps by our task model), and a real risk of cancelling a working booking before its replacement exists.
 
 ### What CONTINUITY does
-1. **Understands the change.** You write it in plain English (or import confirmation emails or an `.ics` calendar). It becomes hard rules: budget cap, keep existing bookings until replaced, never cancel without asking.
-2. **Finds only what is affected.** A dependency graph of your bookings shows which ones really move. Bookings outside the change are never contacted.
-3. **Asks each provider's own agentic website.** Each provider publishes its own `agent-manifest.json` and agent network. CONTINUITY shows a consent card before contacting one, and sends it only the booking reference and target date.
-4. **Compares plans.** A deterministic optimizer ranks plans by changes, cost and speed (Plan A minimum changes, B lowest cost, C fastest — merged when one plan wins several), with a what-if budget slider.
-5. **Holds first, commits last.** Replacements are held while your original bookings stay active. You approve once; the approval is bound to the exact operations and prices (a €0.01 change invalidates it).
-6. **Verifies.** Every commit returns an Ed25519-signed receipt. Each provider site verifies it on its own origin. You can export the updated calendar and a signed audit file.
+1. **Understands the change** — plain English, pasted confirmation emails or an `.ics` calendar become hard rules: budget cap, hold before release, never cancel without asking.
+2. **Finds only what is affected** — 3 of the 6 bookings move; bookings outside the change are never contacted.
+3. **Asks each provider's own agentic website** — after a consent card, and sending only the booking reference and the new date.
+4. **Compares plans** — fewest changes, lowest cost, fastest; with a what-if budget slider.
+5. **Holds first, commits last** — one approval, cryptographically bound to the exact operations and prices (a €0.01 drift invalidates it).
+6. **Verifies** — every commit returns a signed receipt that the provider's page checks itself; you get the updated calendar and an audit file.
 
-### How it uses the Open Agentic Web
-Five independent websites on two origins — CONTINUITY (`toskaman.github.io`) and four providers (`gpaschercher-sudo.github.io`): MoveCo Express, PermitFlow Civic Prep, HomeConnect Fiber and PowerFlow Energy — connected as a **bidirectional Open Agentic Web mesh** (CONTINUITY consults all four providers, and each provider's assistant can also consult CONTINUITY cross-origin). Each publishes its own UI, `agent-manifest.json`, resolved `.network.json`, single-turn `facts/<network>_facts` network, browser `runtime/`, action bridge, Project NANDA `ai-catalog.json` (`urn:air:...`), and A2A v1.0 agent card. Provider networks run in the visitor's browser on the visitor's own model router (default: Mozilla Otari, plus optional zero-key on-device Chrome `LanguageModel` / local Ollama), so providers never see the visitor's API key. All five sites pass `build_network.mjs --check` (0 warnings) and all 9 `check_partner.mjs` bidirectional checks. Site actions are also exposed through WebMCP (`navigator.modelContext`).
+### Three proofs that it works
+1. **Independent websites really cooperate.** CONTINUITY (`toskaman.github.io`) and four separately deployed provider sites (`gpaschercher-sudo.github.io/...`) each publish their own `agent-manifest.json`, agent network and action bridge. On approval, each provider page verifies an Ed25519 receipt *in its own browsing context* before it moves the booking — visible live on the provider wall.
+2. **Nothing is ever cancelled by accident.** 180 end-to-end runs across 5 scenarios (relocation, provider failure, outpatient surgery, expo freight, calendar import): 100 % verified completion, **0 cancel calls**, 3/3 signed receipts per run (`docs/benchmarks/BEFORE_AFTER.md`).
+3. **Safety is code, not a prompt.** The language model explains and drafts; it cannot raise the budget, cancel or commit. **42 failure scenarios** (forged receipts, price drift after approval, timeouts, data leaks, manifest tampering…) run in your browser in the Chaos Lab; 117 automated tests in 32 suites pass; Lighthouse 100 in every category including *Agentic Browsing*.
 
-### Why you can trust it
-- The language model interprets and explains; it cannot raise the budget, enable cancellations or commit anything. Those rules are enforced in code.
-- Network timeouts after a commit become `UNKNOWN` and are reconciled, not blindly retried.
-- **Checked with a real model, not only mocks:** the real engine on hosted Otari with the default model consulted all four providers — 4 consent cards, no provider contacted before consent, API key sent to the router only (`docs/benchmarks/LIVE_MODEL_CHECK.md`).
-- **Chaos Lab:** 42 failure scenarios (forged & cross-provider spoofed receipts, BroadcastChannel sub-origin forgeries, SSRF & cross-origin manifest escapes, Luhn card & Mod-97 IBAN outbound DLP leaks, post-peer confused-deputy write escalations, RFC 6962 Merkle second-preimage & selective-disclosure proofs, price drift after approval, timeouts, Unicode Tag & Markdown beacon exfiltrations, TOFU SHA-256 rug-pulls, NANDA Reach `410` card moves, hash-ladder overspend & cross-mission replays, Ed25519 key revocations, partial hold rollbacks, sub-agent toolbox escalations, chained multi-wave replans, mandate floor exhaustion, post-export bundle tampering…) run in your browser.
-- **Measured:** 180 end-to-end sagas across 5 regimes (`40` normal relocation + `40` ripple recovery on 5 live origins + `30` outpatient surgery + `30` expo freight + `40` hybrid cold-start `.ics` runs), 100% verified completion, 0 cancel calls, 3/3 signed receipts per run; full live 5-origin run ~10 ms median on loopback, plus an empirical uncoordinated split-brain probe showing 2 premature mutations when MoveCo's Friday van is full (`docs/benchmarks/BEFORE_AFTER.md`). **117 automated tests in 32 suites** (including real Headless Chromium CDP Desktop & `390x844` Mobile E2E) pass in CI. Lighthouse 13.6 scores all five sites 100 on desktop in Performance, Accessibility, Best Practices, SEO and the new **Agentic Browsing** category (`docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md`).
+### How it uses the Open Agentic Web (Profile 0.2)
+Every site ships its UI, `agent-manifest.json`, resolved `.network.json`, a single-turn `facts/` network, the browser `runtime/`, an action bridge, a NANDA `ai-catalog.json` and an A2A agent card. The mesh is bidirectional: CONTINUITY consults the providers and each provider's assistant can consult CONTINUITY. Provider networks run in the visitor's browser on the visitor's own model router (default **Mozilla Otari**, or zero-key on-device models), so no provider ever sees the visitor's API key. Site actions are also exposed through WebMCP.
 
 ### Shared with the community (Apache-2.0)
-- **Live 6-Tool Community Builder Kit Web App:** `https://toskaman.github.io/continuity-agentic-web/community-kit.html` — zero-backend 9-point MVP 0.2 & Project NANDA validator (tested live against external community peers) + GitHub Actions SARIF `.yml` generator, visible-DOM `data-agent-facts` → `facts/` compiler (with build-time hidden prompt-injection guard), NANDA `ai-catalog.json` + Poppy `nandaindex.org/reach` `poppy.json` + A2A `agent-card.json` generator, multi-agent Neuro SAN converter, offline zero-trust cryptographic audit bundle verifier, and pre-execution Peer Instruction Firewall & TOFU Rug-Pull scanner.
-- **26 zero-dependency ES modules (`packages/*`):** cross-origin browser bridge with signed `#continuity_receipt` handoff for static sites; official Issue #32 `engine.addCheck()` runtime safety hooks with ISO/IEC 7812 Luhn payment-card & ISO 13616 Mod-97 IBAN outbound DLP and post-peer taint lock (`@continuity/safety-hooks`); RFC 6962 domain-separated SHA-256 Merkle Mission Passports with salted 1-booking selective disclosure and Critical-Path Slack analyzer (`@continuity/merkle-passport`); pre-execution peer instruction firewall & TOFU SHA-256 rug-pull guard (`@continuity/peer-firewall`); zero-client-ID 1-click OpenRouter OAuth PKCE S256 onboarding (`@continuity/openrouter-pkce`); least-privilege sub-agent `website_*` toolbox scoper & token optimizer (`@continuity/toolbox-scoper`); zero-ceiling-leak SHA-256 hash-ladder budget range proof (`@continuity/zk-budget-attestation`); hybrid Open Agentic Web + legacy Hold-First transition playbook (`@continuity/transition-playbook`) solving the cold-start transition for personal `.ics`/email schedules; 9-point MVP 0.2 + Facts + NANDA (`urn:air`, `ai-catalog.json`, Poppy `nandaindex.org/reach` v1, `POST /resolve` `draft-raskar-02`) conformance auditor & SARIF/bundle-verifier CLI; zero-key on-device Chrome `LanguageModel` (Gemini Nano) & local Ollama router; visible `data-agent-facts` compiler; Pareto + counterfactual MUS relaxation + 6-day horizon sweep solver; Google ADK / OpenAI Agents → Neuro SAN HOCON converter; email/`.ics`/JSON intake compiler & offline cryptographic bundle verifier; and dual `document.modelContext` + `navigator.modelContext` WebMCP confirmation adapter.
+- **Builder Kit** (`community-kit.html`, zero backend): validate any site against the 9-point MVP 0.2 checklist, generate NANDA / A2A cards, convert Google ADK or OpenAI Agents configs to Neuro SAN, scan peer instructions before executing them, verify audit bundles offline.
+- **26 zero-dependency ES modules** (`packages/*`) — cross-origin receipt bridge for static sites, bound approvals, saga engine, impact engine, constraint solver, safety hooks, conformance auditor… Technical details: `README.md`.
 
 ### What is real and what is a demo
-The protocols are real: separate origins, CORS, MCP, signed receipts, consent, approvals. The four providers are demonstration services built for this challenge. No real bookings, payments or municipal permits are touched; PermitFlow only prepares draft applications.
+The protocols are real: separate deployments, CORS, MCP, consent, signed receipts, bound approvals. The four providers are demonstration services built for this challenge. No real bookings, payments or municipal permits are touched; PermitFlow only prepares draft applications.
 
 ### Built during the challenge
 First commit November 13, 2026, after the submission period opened (November 11, 2026, 8:00 pm PT).

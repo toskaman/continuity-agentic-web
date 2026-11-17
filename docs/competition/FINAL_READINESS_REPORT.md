@@ -9,12 +9,12 @@
 
 ## A. Executive Verdict
 
-- **Current project quality:** Award-grade, zero-external-dependency ecosystem of **5 independent Open Agentic Websites** in a **bidirectional cross-origin mesh** (`toskaman.github.io` ↔ `gpaschercher-sudo.github.io`), paired with a standalone **6-tool Community Builder Kit (`community-kit.html`)** and **24 reusable Apache-2.0 ES modules (`packages/*`)**.
+- **Current project quality:** Award-grade, zero-external-dependency ecosystem of **5 independent Open Agentic Websites** in a **bidirectional cross-origin mesh** (`toskaman.github.io` ↔ `gpaschercher-sudo.github.io`) with unified default Night Mode (`data-theme="dark"`), paired with a standalone **8-tool Community Builder Kit (`community-kit.html`)** and **26 reusable Apache-2.0 ES modules (`packages/*`)**.
 - **Competitive position:** While typical submissions agentify a single page (document redaction, repo scanning, or greenfield booking chat), CONTINUITY solves **day-two and day-three post-commitment change reconciliation** across independent organizations — enforcing hold-before-release safety, deterministic Pareto + counterfactual optimization, pre-execution peer instruction firewalling, zero-ceiling-leak SHA-256 hash-ladder budget proofs, and Ed25519 provider receipt verification.
 - **Biggest weakness:** The four provider websites (`MoveCo Express`, `PermitFlow Civic Prep`, `HomeConnect Fiber`, `PowerFlow Energy`) are purpose-built demonstration services rather than live commercial companies, and the `"~18 manual actions"` baseline is an explicit task-step model paired with a measured live endpoint split-brain probe rather than a human-participant clinical study.
 - **Biggest opportunity:** Recording the entrant's **< 2:00 human voiceover** (Official Overview: *"must include the Entrant explaining the Project (not AI generated)"*) over the mastered subtitled cut (`CONTINUITY_v2_subtitled_no_voice.mp4`, `1:50.75`) and submitting with the entrant's Mozilla Otari account email.
 - **Strongest differentiator:** Watching four real provider pages framed from a separate origin (`gpaschercher-sudo.github.io`) independently verify Ed25519-signed receipts and update only the 3 affected commitments (leaving 3 untouched, saving `€90.00` in cancellation fees) — while unagentified `.ics`/email vendors receive dependency-ordered Hold-First `mailto:` drafts (`@continuity/transition-playbook`).
-- **Overall readiness:** **100% engineering, security, benchmark, screenshot, CI, and live multi-origin deployment ready** (**117/117 automated tests in 32 suites**, **30/42 Chaos scenarios**, **`N = 180` measured benchmark sagas**, GitHub Actions CI green in `21s`).
+- **Overall readiness:** **100% engineering, security, benchmark, screenshot, CI, and live multi-origin deployment ready** (**117/117 automated tests in 32 suites**, **42/42 Chaos scenarios**, **`N = 180` measured benchmark sagas**, GitHub Actions CI green in `21s`).
 - **Main recommendation:** Do **not** add further UI panels. Record your human voiceover on `CONTINUITY_v2_subtitled_no_voice.mp4`, upload publicly to YouTube, and submit using `docs/submission/DEVPOST_SUBMISSION.md`.
 
 ---
@@ -87,9 +87,9 @@
 
 ## G. Implementation Report
 
-- **Packages (`24` zero-dependency Apache-2.0 modules in `packages/*`):** Added `@continuity/transition-playbook`, `@continuity/peer-firewall`, `@continuity/openrouter-pkce`, `@continuity/toolbox-scoper`, and `@continuity/zk-budget-attestation`; upgraded `@continuity/intake-compiler`, `@continuity/constraint-solver`, `@continuity/nanda-resolver`, `@continuity/webmcp-adapter`, `@continuity/mission-core`, `@continuity/cross-origin-bridge`, and `@continuity/chaos-lab` (`30` scenarios).
+- **Packages (`26` zero-dependency Apache-2.0 modules in `packages/*`):** Added `@continuity/transition-playbook`, `@continuity/peer-firewall`, `@continuity/openrouter-pkce`, `@continuity/toolbox-scoper`, `@continuity/zk-budget-attestation`, `@continuity/safety-hooks`, and `@continuity/merkle-passport`; upgraded `@continuity/intake-compiler`, `@continuity/constraint-solver`, `@continuity/nanda-resolver`, `@continuity/webmcp-adapter`, `@continuity/mission-core`, `@continuity/cross-origin-bridge`, and `@continuity/chaos-lab` (`42` scenarios).
 - **External npm runtime dependencies:** **`0`** (100% native Web Standards, WebCrypto `SubtleCrypto`, ES Modules, and Node.js >= 22 built-ins).
-- **Automated tests & CI:** **82/117 automated tests passing across 25 suites** (`0` warnings on `build_network.mjs --check`, GitHub Actions Ubuntu CI & Pages deployment green).
+- **Automated tests & CI:** **117/117 automated tests passing across 32 suites** (`0` warnings on `build_network.mjs --check`, GitHub Actions Ubuntu CI & Pages deployment green).
 - **Public HTTPS deployments:** Live and verified (`9/9` CLI score on all 5 sites) across `https://toskaman.github.io/continuity-agentic-web/` and all 4 `https://gpaschercher-sudo.github.io/*-agentic-peer/` origins.
 
 ---
@@ -103,7 +103,7 @@
   - 5-origin boot & handshake: **`~351 ms`**; 5 consecutive full sagas: **`eventListenersDelta: 0`**, **`domNodesDelta: 15`**, **`JSHeapUsedSize: 2.82 MB`**; Desktop Lighthouse 13.6: **100 / 100 / 100 / 100 / 100 (incl. Agentic Browsing)**.
 - **Zero-Key Judge Reproduction (30 seconds):**
   1. Open `https://toskaman.github.io/continuity-agentic-web/?demo=1` → click **Approve & commit change package** when the SHA-256-bound modal opens → watch all 4 cross-origin provider pages verify their Ed25519 receipts live.
-  2. Open `https://toskaman.github.io/continuity-agentic-web/community-kit.html` → test all 6 browser-local community builder tools with zero API key.
+  2. Open `https://toskaman.github.io/continuity-agentic-web/community-kit.html` → test all 8 browser-local community builder tools with zero API key.
   3. CLI: `git clone https://github.com/toskaman/continuity-agentic-web && cd continuity-agentic-web && npm test`.
 
 ---
@@ -133,9 +133,9 @@
 
 | Official Criterion | Official Weight | Internal Estimate | Supporting Evidence | Remaining Honest Limitation |
 | --- | --- | --- | --- | --- |
-| **1. Technological Implementation** | **25% (Tie-Breaker #1)** | **9.8 / 10** | 5 bidirectional sites (`0` build warnings, `9/9` `check_partner.mjs`), Otari + PKCE + Nano, Peer Firewall & TOFU, NANDA Catalog + Poppy Reach v1 + `POST /resolve`, 14-state Saga + Ed25519 + ZK Hash-Ladder, **111/111 tests** | Demo providers rather than commercial third-party APIs |
-| **2. Design** | **25% (Tie-Breaker #2)** | **9.6 / 10** | 5-brand design system, synchronous `0ms` listener boot, `?demo=1` 10s flow, semantic `⚡ RIPPLE` / `🛡 PROTECTED` SVG graph, 6-day horizon strip, EN/FR NL + drag-drop `.ics`, `0px` mobile overflow, Lighthouse 100×5 | Rich 7-tab Trust Center (mitigated by progressive-disclosure tiles) |
-| **3. Potential Impact** | **25% (Tie-Breaker #3)** | **9.6 / 10** | Universal day-two coordination across 4 regimes (`N = 180` sagas) + Cold-Start `.ics` Transition Playbook + **6-tool `community-kit.html`** + **26 zero-dependency Apache-2.0 `@continuity/*` modules** + SARIF CLI | Task-step baseline rather than clinical human timing study |
+| **1. Technological Implementation** | **25% (Tie-Breaker #1)** | **9.8 / 10** | 5 bidirectional sites (`0` build warnings, `9/9` `check_partner.mjs`), Otari + PKCE + Nano, Peer Firewall & TOFU, NANDA Catalog + Poppy Reach v1 + `POST /resolve`, 14-state Saga + Ed25519 + ZK Hash-Ladder, **117/117 tests** | Demo providers rather than commercial third-party APIs |
+| **2. Design** | **25% (Tie-Breaker #2)** | **9.7 / 10** | 5-brand design system with unified default Night Mode (`data-theme="dark"`), synchronous `0ms` listener boot, `?demo=1` 10s flow, pill-backed zero-overlap SVG graph, 6-day horizon strip, EN/FR NL + drag-drop `.ics`, `0px` mobile overflow, Lighthouse 100×5 | Rich 8-tab Trust Center (mitigated by progressive-disclosure tiles) |
+| **3. Potential Impact** | **25% (Tie-Breaker #3)** | **9.6 / 10** | Universal day-two coordination across 5 regimes (`N = 180` sagas) + Cold-Start `.ics` Transition Playbook + **8-tool `community-kit.html`** + **26 zero-dependency Apache-2.0 `@continuity/*` modules** + SARIF CLI | Task-step baseline rather than clinical human timing study |
 | **4. Quality of the Idea** | **25% (Tie-Breaker #4)** | **9.6 / 10** | Non-obvious shift from greenfield single-site chatbots to **post-commitment multi-origin change reconciliation** with deterministic safety invariants around probabilistic LLMs | Full architectural depth shines brightest once `?demo=1` is run |
 
 ---
@@ -144,7 +144,7 @@
 
 - [x] **Public Primary Open Agentic Website URL:** `https://toskaman.github.io/continuity-agentic-web/` (`9/9` CLI PASS)
 - [x] **4 Public Bidirectional Cross-Origin Peer URLs:** `https://gpaschercher-sudo.github.io/{moveco,permitflow,homeconnect,powerflow}-agentic-peer/` (`9/9` CLI PASS)
-- [x] **Public Community Builder Kit (6 tools, 24 modules):** `https://toskaman.github.io/continuity-agentic-web/community-kit.html`
+- [x] **Public Community Builder Kit (8 tools, 26 modules):** `https://toskaman.github.io/continuity-agentic-web/community-kit.html`
 - [x] **Public Open-Source Apache-2.0 Repository & Green CI:** `https://github.com/toskaman/continuity-agentic-web`
 - [x] **14 High-DPI Verified Screenshots + Cover Image (`13_live_provider_wall.png`):** `docs/submission/screenshots/`
 - [x] **Copy-Ready Devpost Text & Verified 2-Sentence Mozilla Otari Feedback:** `docs/submission/DEVPOST_SUBMISSION.md`
@@ -157,7 +157,7 @@
 ## K. Final Recommendation — 9 Direct Answers
 
 1. **What makes this project worth remembering?** One slipped moving date re-aligns across four independent websites framed from their own origin — recovering from a full van crew via sealed-bid overflow, holding replacements before touching originals, leaving unaffected bookings untouched, and verifying Ed25519 receipts live on screen.
-2. **What is its strongest reason to win?** It unites complete, bidirectional mastery of the Open Agentic Web MVP 0.2 specification + Mozilla Otari + MIT Project NANDA (`ai-catalog.json`, `POST /resolve`, and `nandaindex.org/reach` Poppy v1) with genuine distributed-systems safety and a **24-module + 6-tool `community-kit.html`** contribution to the ecosystem.
+2. **What is its strongest reason to win?** It unites complete, bidirectional mastery of the Open Agentic Web MVP 0.2 specification + Mozilla Otari + MIT Project NANDA (`ai-catalog.json`, `POST /resolve`, and `nandaindex.org/reach` Poppy v1) with genuine distributed-systems safety and a **26-module + 8-tool `community-kit.html`** contribution to the ecosystem.
 3. **What is the single most important remaining improvement?** Recording a clear, authentic **human voiceover** (`< 2:00`, no AI TTS) over `CONTINUITY_v2_subtitled_no_voice.mp4` so the video satisfies the mandatory `(not AI generated)` rule while matching the product's polish.
 4. **What makes it clearly superior to its closest competitors?** Competitors agentify a single page or inspect static JSON; CONTINUITY coordinates **stateful post-booking dependencies across 5 bidirectional websites**, includes an in-engine **pre-execution Peer Instruction Firewall & TOFU pinning guard**, bridges unagentified `.ics` vendors via Hold-First playbooks, and proves every invariant across **117 automated tests, 42 Chaos scenarios, and `N = 180` measured sagas**.
 5. **What should be removed or simplified?** Do not add any more tabs, modals, or settings before submission; keep the landing screen's 1-click **Run the live demo** (`?demo=1`) front and center.

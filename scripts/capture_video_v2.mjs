@@ -17,7 +17,14 @@ import { mkdir, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
 
 const OUT = process.argv[2] || "Z:\\continuity-titan-omega\\v2\\footage";
-const SITE = "https://toskaman.github.io/continuity-agentic-web/";
+const LOCAL = process.argv[3] === "local";
+let SITE = "https://toskaman.github.io/continuity-agentic-web/";
+let eco = null;
+if (LOCAL) {
+  const { startAllEcosystemServers } = await import("./serve_ecosystem.mjs");
+  eco = await startAllEcosystemServers({ continuity: 8080, moveco: 8081, permitflow: 8082, homeconnect: 8083, powerflow: 8084 });
+  SITE = "http://127.0.0.1:8080/";
+}
 const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const FFMPEG = ["C:\\Users\\TheBox\\AppData\\Local\\agy\\bin\\ffmpeg.exe", "D:\\Program Files\\ShareX\\ffmpeg.exe"].find((p) => existsSync(p));
 const VW = 1440, VH = 810, DPR = 2; // 1440x810 css -> 2880x1620 media (zoom-safe), shown at 1920x1080
@@ -280,5 +287,6 @@ try {
   await writeFile(path.join(OUT, "proofs.json"), JSON.stringify(proofs, null, 2));
   try { cdp?.ws.close(); } catch {}
   chrome.kill();
+  if (eco) await eco.stopAll();
   console.log("done ->", OUT);
 }

@@ -236,7 +236,7 @@ function update() {
     const kinds = (plan?.co_optimizes || []).map((k) => OBJECTIVE[k]).filter(Boolean);
     const letter = meta?.letter || "+";
     btn.dataset.letter = letter;
-    btn.insertAdjacentHTML("afterbegin", `<span class="plan-letter" aria-hidden="true">${e(letter)}</span><span class="plan-kind">${e(kinds.join(" · ") || meta?.name || "Alternative")}</span>`);
+    btn.insertAdjacentHTML("afterbegin", `<span class="plan-badge-row"><span class="plan-letter" aria-hidden="true">${e(letter)}</span><span class="plan-kind">${e(kinds.join(" · ") || meta?.name || "Alternative")}</span></span>`);
   });
   // Explain merged strategies instead of silently showing fewer than three named plans.
   const note = document.querySelector("#plans-merge-note");

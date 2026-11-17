@@ -137,8 +137,39 @@ function otariRegionHelper() {
   });
 }
 
+/** Shared Night Mode default + sessionStorage sync across all peer sites & embeds. */
+export function initEcosystemTheme() {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  const apply = (theme) => {
+    const resolved = theme === "light" ? "light" : "dark";
+    root.setAttribute("data-theme", resolved);
+    document.querySelectorAll("[data-theme-toggle]").forEach((btn) => {
+      btn.setAttribute("aria-pressed", String(resolved === "dark"));
+    });
+  };
+  try {
+    const saved = typeof window !== "undefined" ? window.sessionStorage?.getItem("nsweb-continuity-theme") : null;
+    apply(saved === "light" || saved === "dark" ? saved : root.getAttribute("data-theme") || "dark");
+  } catch {
+    apply(root.getAttribute("data-theme") || "dark");
+  }
+  document.querySelectorAll("[data-theme-toggle]").forEach((btn) => {
+    if (btn.dataset.themeBound === "1") return;
+    btn.dataset.themeBound = "1";
+    btn.addEventListener("click", () => {
+      const next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+      apply(next);
+      try {
+        window.sessionStorage?.setItem("nsweb-continuity-theme", next);
+      } catch {}
+    });
+  });
+}
+
 /** Header shadow + reveal-on-scroll. */
 export function chrome() {
+  initEcosystemTheme();
   otariRegionHelper();
   const header = document.querySelector(".site-header");
   const onScroll = () => header?.classList.toggle("is-scrolled", window.scrollY > 8);

@@ -158,6 +158,9 @@ test("Cycle 19 — Real Headless Chromium audits mobile (390x844), dark theme, k
       if (openDialog) {
         openDialog.querySelector(".assistant-decline")?.click();
       }
+      const defaultDarkThemeActive = document.documentElement.getAttribute("data-theme") === "dark";
+      document.querySelector("#theme-toggle-btn")?.click();
+      const toggledToLight = document.documentElement.getAttribute("data-theme") === "light";
       document.querySelector("#theme-toggle-btn")?.click();
       const darkThemeActive = document.documentElement.getAttribute("data-theme") === "dark";
 
@@ -179,6 +182,8 @@ test("Cycle 19 — Real Headless Chromium audits mobile (390x844), dark theme, k
 
       return {
         demoOpenedApprovalDialog,
+        defaultDarkThemeActive,
+        toggledToLight,
         darkThemeActive,
         overflowPx,
         unnamedButtons,
@@ -187,28 +192,53 @@ test("Cycle 19 — Real Headless Chromium audits mobile (390x844), dark theme, k
     })()`);
 
     assert.equal(mobileAudit.demoOpenedApprovalDialog, true, "?demo=1 must automatically prepare plans and open the bound approval dialog");
-    assert.equal(mobileAudit.darkThemeActive, true, "Theme toggle must switch to dark mode");
+    assert.equal(mobileAudit.defaultDarkThemeActive, true, "Coordinator must boot in night/dark mode by default");
+    assert.equal(mobileAudit.toggledToLight, true, "Theme toggle must switch to light mode");
+    assert.equal(mobileAudit.darkThemeActive, true, "Theme toggle must switch back to dark mode");
     assert.ok(mobileAudit.overflowPx <= 2, `Expected 0 horizontal overflow on 390px mobile viewport, got +${mobileAudit.overflowPx}px`);
     assert.deepEqual(mobileAudit.unnamedButtons, [], `All visible buttons must have accessible names: ${mobileAudit.unnamedButtons.join(", ")}`);
     assert.equal(mobileAudit.svgKeyboardChangedSelection, true, "ArrowRight on SVG graph node must cycle selected commitment");
 
-    // 2. Check Builder Kit mobile layout & accessible names at 390px
+    // 2. Check Builder Kit mobile layout, default dark theme & accessible names at 390px
     await cdp.send("Page.navigate", { url: `${eco.coordinator.origin()}/community-kit.html` });
     const kitMobile = await cdp.evalJson(`(async () => {
       for (let i = 0; i < 30; i++) {
-        if (document.querySelectorAll("#kit-modules-tbody tr").length === 24) break;
+        if (document.querySelectorAll("#kit-modules-tbody tr").length >= 26) break;
         await new Promise((r) => setTimeout(r, 100));
       }
+      const kitDefaultDark = document.documentElement.getAttribute("data-theme") === "dark";
       const overflowPx = document.documentElement.scrollWidth - document.documentElement.clientWidth;
       const unnamedButtons = Array.from(document.querySelectorAll("button"))
         .filter((b) => !b.hidden && b.offsetParent !== null)
         .filter((b) => !(b.textContent || "").trim() && !(b.getAttribute("aria-label") || "").trim())
         .map((b) => b.id || b.className || "button");
-      return { overflowPx, unnamedButtons };
+      return { kitDefaultDark, overflowPx, unnamedButtons };
     })()`);
 
+    assert.equal(kitMobile.kitDefaultDark, true, "Builder Kit must boot in night/dark mode by default");
     assert.ok(kitMobile.overflowPx <= 2, `Expected 0 horizontal overflow on Builder Kit 390px mobile viewport, got +${kitMobile.overflowPx}px`);
     assert.deepEqual(kitMobile.unnamedButtons, []);
+
+    // 3. Check peer website (MoveCo) + embed.html default night/dark mode & theme toggle round-trip
+    await cdp.send("Page.navigate", { url: `${eco.peers.moveco.origin()}/` });
+    const peerDarkAudit = await cdp.evalJson(`(async () => {
+      for (let i = 0; i < 30; i++) {
+        if (document.querySelector('[data-theme-toggle][data-theme-bound="1"]')) break;
+        await new Promise((r) => setTimeout(r, 80));
+      }
+      const peerDefaultDark = document.documentElement.getAttribute("data-theme") === "dark";
+      const btn = document.querySelector("[data-theme-toggle]");
+      btn?.click();
+      const peerToggledLight = document.documentElement.getAttribute("data-theme") === "light";
+      btn?.click();
+      const peerToggledBackDark = document.documentElement.getAttribute("data-theme") === "dark";
+      const overflowPx = document.documentElement.scrollWidth - document.documentElement.clientWidth;
+      return { peerDefaultDark, peerToggledLight, peerToggledBackDark, overflowPx };
+    })()`);
+    assert.equal(peerDarkAudit.peerDefaultDark, true, "Peer websites must boot in night/dark mode by default");
+    assert.equal(peerDarkAudit.peerToggledLight, true, "Peer theme toggle must switch to light mode");
+    assert.equal(peerDarkAudit.peerToggledBackDark, true, "Peer theme toggle must switch back to dark mode");
+    assert.ok(peerDarkAudit.overflowPx <= 2, `Expected 0 horizontal overflow on peer 390px mobile viewport, got +${peerDarkAudit.overflowPx}px`);
   } finally {
     cdp?.close();
     if (chromeProc) {

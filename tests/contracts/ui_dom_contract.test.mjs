@@ -42,6 +42,7 @@ test("every #id looked up by site scripts exists in that site's index.html", asy
 
   // Also enforce UI <-> JS contract on the standalone Community Builder Kit page
   const kitHtml = await read("continuity-web", "community-kit.html");
+  assert.match(kitHtml, /<html\b[^>]*\bdata-theme="dark"/, "community-kit.html defaults to data-theme=\"dark\"");
   const kitIds = new Set([...kitHtml.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
   const kitJs = await read("continuity-web", "community-kit.js");
   const kitWanted = [...kitJs.matchAll(/(?:querySelector|querySelectorAll)\(\s*["'`]#([A-Za-z][\w-]*)["'`]\s*\)/g)].map(
@@ -55,6 +56,7 @@ test("every #id looked up by site scripts exists in that site's index.html", asy
 test("all 5 sites keep the runtime mount, status line and deploy-script anchors", async () => {
   for (const app of APPS) {
     const html = await read(app, "index.html");
+    assert.match(html, /<html\b[^>]*\bdata-theme="dark"/, `${app}: index.html defaults to data-theme="dark"`);
     assert.match(html, /<p id="assistant-status" role="status"/, `${app}: #assistant-status`);
     assert.match(html, /<div id="agent-app">/, `${app}: #agent-app`);
     for (const slot of ["header", "chat", "agents", "settings"]) {
@@ -75,6 +77,7 @@ test("each provider ships a compact embed.html that runs its real scripts", asyn
   const panels = { "demo-moveco": "booking-panel", "demo-permitflow": "dossier-panel", "demo-homeconnect": "appt-panel", "demo-powerflow": "grid-panel" };
   for (const [app, panel] of Object.entries(panels)) {
     const html = await read(app, "embed.html");
+    assert.match(html, /<html\b[^>]*\bdata-theme="dark"/, `${app}/embed.html defaults to data-theme="dark"`);
     assert.ok(html.includes(`id="${panel}"`), `${app}/embed.html: #${panel}`);
     for (const src of ["script.js", "peer-sync.js", "ui.js"]) assert.ok(html.includes(`src="${src}"`), `${app}/embed.html loads ${src}`);
     assert.ok(!html.includes("site.js"), `${app}/embed.html must not boot the agent runtime`);

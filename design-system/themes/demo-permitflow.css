@@ -31,3 +31,18 @@
 .summary-grid h3 { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
 .summary-grid ul { margin: 0; padding-left: 18px; font-size: var(--fs-sm); color: var(--ink-2); display: grid; gap: 4px; }
 @media (max-width: 600px) { .summary-grid { grid-template-columns: 1fr; } .check-item { grid-template-columns: 28px 1fr; } .check-item .badge { grid-column: 2; justify-self: start; } }
+[data-theme="dark"] {
+  --paper: #09101B;
+  --surface: #101929;
+  --surface-2: #172338;
+  --accent: #255EA8;
+  --accent-hover: #1D4B87;
+  --accent-2: #6EE7B7;
+  --accent-strong: #93C5FD;
+  --accent-soft: #132744;
+  --accent-line: #244573;
+}
+[data-theme="dark"] .check-item[data-status="ready"] .check-icon { background: var(--ok-bg); color: var(--ok); border-color: var(--ok-line); }
+[data-theme="dark"] .check-item[data-status="review"] .check-icon { background: var(--surface); color: var(--warn); border-color: var(--warn-line); }
+[data-theme="dark"] .check-item[data-status="progress"] .check-icon { background: var(--accent-soft); color: var(--accent-strong); border-color: var(--accent-line); }
+[data-theme="dark"] .official-banner { background: var(--surface-2); border-color: var(--line-strong); color: var(--ink-2); }

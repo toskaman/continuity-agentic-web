@@ -335,16 +335,18 @@ async function generateKitNanda() {
 }
 
 function initKit() {
+  const kitThemeBtn = document.querySelector("#kit-theme-btn");
   try {
     const savedTheme = typeof window !== "undefined" ? window.sessionStorage?.getItem("nsweb-continuity-theme") : null;
-    if (savedTheme === "dark" || savedTheme === "light") {
-      document.documentElement.setAttribute("data-theme", savedTheme);
-    }
+    const initialTheme = savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark";
+    document.documentElement.setAttribute("data-theme", initialTheme);
+    kitThemeBtn?.setAttribute("aria-pressed", String(initialTheme === "dark"));
   } catch {}
-  document.querySelector("#kit-theme-btn")?.addEventListener("click", () => {
+  kitThemeBtn?.addEventListener("click", () => {
     const root = document.documentElement;
     const next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
     root.setAttribute("data-theme", next);
+    kitThemeBtn.setAttribute("aria-pressed", String(next === "dark"));
     try {
       window.sessionStorage?.setItem("nsweb-continuity-theme", next);
     } catch {}
