@@ -9,15 +9,15 @@
     "Before and after CONTINUITY\nWITHOUT CONTINUITY\n\n~18 actions\non 6 websites\n\nLook up, check and rebook each booking by hand — and hope you don't cancel one before its replacement exists.\n\nEstimate · task model, not a user study\n→\nWITH CONTINUITY\n\n2 decisions\none request, one approval\n\n4 providers asked, 2 never contacted\n0 cancel calls in 180 benchmark runs\n3 / 3 commits return a verified signed receipt\nMeasured · see the benchmark ↗"
   ],
   "clip_01_hero_idle": {
-    "frames": 625,
+    "frames": 617,
     "seconds": 6.25
   },
   "clip_02_scroll_proof": {
-    "frames": 222,
+    "frames": 217,
     "seconds": 2.25
   },
   "clip_03_scroll_workspace": {
-    "frames": 99,
+    "frames": 97,
     "seconds": 2.06
   },
   "missionInput": "My move was originally scheduled for Tuesday, but I need to move everything to Friday.\nUpdate every affected service.\nKeep my current reservations until replacements are secured.\nMaintain my total budget below €700.\nDo not cancel anything or approve additional fees without my confirmation.",
@@ -25,15 +25,15 @@
     "Cap ≤ €700.00"
   ],
   "clip_04_arm_failure": {
-    "frames": 36,
-    "seconds": 2.2
+    "frames": 33,
+    "seconds": 2.18
   },
   "statusArmed": [
     "Ripple Failure Armed: Primary anchor provider will refuse the requested Friday slot, triggering automatic overflow partner recovery."
   ],
   "clip_05_analyze": {
     "frames": 36,
-    "seconds": 4.37
+    "seconds": 4.39
   },
   "statusAnalyzed": [
     "Prepared Plan A — Minimum Changes (Recommended Default): 3 modifications prepared, 3 commitments preserved untouched, total €659.00 (<= €700.00)."
@@ -46,26 +46,26 @@
   ],
   "clip_05b_scroll_kpis": {
     "frames": 79,
-    "seconds": 1.86
+    "seconds": 1.88
   },
   "clip_06_scroll_mission": {
-    "frames": 150,
+    "frames": 175,
     "seconds": 2.17
   },
   "changeSummary": [
     "Change Package Prepared: Primary anchor shifts from Tue, Nov 17, 2026 to Fri, Nov 20, 2026. 3 service arrangements need modification; 3 existing arrangements remain unchanged. Replacements are prepared and held — your original bookings remain intact until you approve.\n⚡ MoveCo Alert: Primary MoveCo 08:00 crew is at 100% capacity on 2026-11-20; partner overflow slot returned over cross-origin bridge."
   ],
   "holds": [
-    "🔒 2 Non-Destructive Replacement Hold(s) Active (hold_hc_1, hold_mc_1) · Lock TTL 09:48 remaining · Original bookings untouched"
+    "🔒 2 Non-Destructive Replacement Hold(s) Active (hold_hc_1, hold_mc_1) · Lock TTL 09:47 remaining · Original bookings untouched"
   ],
   "ops": [
-    "Gigabit Fiber ONT Installation → Sat, Nov 21, 2026\nAWAITING_APPROVAL\nProvider: HomeConnect Fiber (Demo) (https://gpaschercher-sudo.github.io/homeconnect-agentic-peer) · Capability: change_fiber_appointment\nChannel: Open Agentic Web · Autonomous Hold & Signed Receipt\nWindow: 09:00–12:00 · Total: €39.00 (Fee €0.00) · Reversible: No (Irreversible Booking)\nIdempotency Key: idem_cmt_homeconnect_fiber_4a291d4c5a3063de81c6 · Hold: hold_hc_1",
-    "Moving Crew & 20m³ Luton Van → Fri, Nov 20, 2026\nAWAITING_APPROVAL\nProvider: MoveCo Partner Overflow Fleet (Demo) (https://gpaschercher-sudo.github.io/moveco-agentic-peer) · Capability: reschedule_van_booking\nChannel: Open Agentic Web · Autonomous Hold & Signed Receipt\nWindow: 09:30–14:30 · Total: €425.00 (Fee €0.00) · Reversible: No (Irreversible Booking)\nIdempotency Key: idem_cmt_moveco_van_6eada813d72385090d2e · Hold: hold_mc_1",
-    "Curbside Loading Bay Permit Draft → Fri, Nov 20, 2026\nAWAITING_APPROVAL\nProvider: PermitFlow Civic Prep (Demo) (https://gpaschercher-sudo.github.io/permitflow-agentic-peer) · Capability: prepare_permit_date_update\nChannel: Open Agentic Web · Autonomous Hold & Signed Receipt\nWindow: 07:30–14:00 · Total: €45.00 (Fee €10.00) · Reversible: Yes (Draft)\nIdempotency Key: idem_cmt_permitflow_bay_bf231b649a3a05451d79"
+    "Gigabit Fiber ONT Installation → Sat, Nov 21, 2026\nWaiting for your approval\nWith HomeConnect Fiber (Demo) · 09:00–12:00 · €39.00 (incl. €0.00 change fee)\nFinal once confirmed: this booking is changed for real.\nTechnical details",
+    "Moving Crew & 20m³ Luton Van → Fri, Nov 20, 2026\nWaiting for your approval\nWith MoveCo Partner Overflow Fleet (Demo) · 09:30–14:30 · €425.00 (incl. €0.00 change fee)\nFinal once confirmed: this booking is changed for real.\nTechnical details",
+    "Curbside Loading Bay Permit Draft → Fri, Nov 20, 2026\nWaiting for your approval\nWith PermitFlow Civic Prep (Demo) · 07:30–14:00 · €45.00 (incl. €10.00 change fee)\nCan be undone: it stays a draft until you submit it.\nTechnical details"
   ],
   "clip_07_scroll_plans": {
-    "frames": 84,
-    "seconds": 2.18
+    "frames": 80,
+    "seconds": 2.17
   },
   "plans": [
     "A\nMINIMUM CHANGES · LOWEST COST\n✓ Plan A — Minimum Changes (Recommended Default)PARETO OPTIMAL\n€659.00\n(+€35.00)\n3 changed · 3 preserved · €90 cancel fees saved · Headroom: €41.00 · Front #1 (Crowding ∞)",
@@ -76,8 +76,8 @@
     "Plan A is also the best plan for: lowest cost — so those strategies are merged into one card."
   ],
   "clip_08_scroll_wall": {
-    "frames": 78,
-    "seconds": 2.39
+    "frames": 77,
+    "seconds": 2.38
   },
   "wallBefore": [
     "Replacement held — page unchanged until you approve",
@@ -92,14 +92,14 @@
     "https://gpaschercher-sudo.github.io/powerflow-agentic-peer/embed.html"
   ],
   "clip_09_open_approval": {
-    "frames": 42,
+    "frames": 41,
     "seconds": 2.42
   },
   "dialog": [
-    "Approve and commit this multi-provider change package?\n\nEach prepared modification below will be cryptographically bound to your approval, dispatched with idempotency keys, and verified before finalizing.\n\nSelected Plan\nPlan A — Minimum Changes (Recommended Default)\nOperations to Commit\nHomeConnect Fiber (Demo): 2026-11-21 (09:00–12:00) · €39.00 | MoveCo Partner Overflow Fleet (Demo): 2026-11-20 (09:30–14:30) · €425.00 | PermitFlow Civic Prep (Demo): 2026-11-20 (07:30–14:00) · €45.00\nPreserved Untouched\nModular Sofa & Desk Delivery, Smart Meter & Grid Activation, Climate-Controlled Buffer Storage (14-Day) (€90.00 cancel fees avoided)\nProjected Total Cost\n€659.00 (Hard ceiling €700.00 · +€35.00 vs baseline)\nCryptographic Binding\nMandate sha256:481387207bfe450e6a57… · Version v4 (€0.01 drift invalidates)\nReversibility\nMoving & Fiber bookings become final Ed25519-signed reservations on confirm; PermitFlow draft remains reversible.\nTechnical details\nApprove & commit change packageKeep original reservations unchanged"
+    "Approve and commit this multi-provider change package?\n\nEach prepared modification below will be cryptographically bound to your approval, dispatched with idempotency keys, and verified before finalizing.\n\nSelected Plan\nPlan A — Minimum Changes (Recommended Default)\nOperations to Commit\nHomeConnect Fiber (Demo): 2026-11-21 (09:00–12:00) · €39.00 | MoveCo Partner Overflow Fleet (Demo): 2026-11-20 (09:30–14:30) · €425.00 | PermitFlow Civic Prep (Demo): 2026-11-20 (07:30–14:00) · €45.00\nPreserved Untouched\nModular Sofa & Desk Delivery, Smart Meter & Grid Activation, Climate-Controlled Buffer Storage (14-Day) (€90.00 cancel fees avoided)\nProjected Total Cost\n€659.00 (Hard ceiling €700.00 · +€35.00 vs baseline)\nCryptographic Binding\nMandate sha256:ce660974150068b4ecf8… · Version v4 (€0.01 drift invalidates)\nReversibility\nMoving & Fiber bookings become final Ed25519-signed reservations on confirm; PermitFlow draft remains reversible.\nTechnical details\nApprove & commit change packageKeep original reservations unchanged"
   ],
   "clip_10_commit_wall": {
-    "frames": 103,
+    "frames": 104,
     "seconds": 10.1
   },
   "wallAfter": [
@@ -116,9 +116,9 @@
     "https://gpaschercher-sudo.github.io/permitflow-agentic-peer/peer-rpc-bridge.html": "https://gpaschercher-sudo.github.io/permitflow-agentic-peer/peer-rpc-bridge.html",
     "https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/peer-rpc-bridge.html": "https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/peer-rpc-bridge.html",
     "https://gpaschercher-sudo.github.io/powerflow-agentic-peer/peer-rpc-bridge.html": "https://gpaschercher-sudo.github.io/powerflow-agentic-peer/peer-rpc-bridge.html",
-    "https://gpaschercher-sudo.github.io/moveco-agentic-peer/embed.html": "https://gpaschercher-sudo.github.io/moveco-agentic-peer/embed.html#continuity_receipt=eyJ2IjoxLCJwZWVyT3JpZ2luIjoiaHR0cHM6Ly9ncGFzY2hlcmNoZXItc3Vkby5naXRodWIuaW8vbW92ZWNvLWFnZW50aWMtcGVlciIsImtleUlkIjoiZGVtby1rZXktbW92ZWNvLXYxIiwicHVibGljSndrIjp7ImFsZyI6IkVkMjU1MTkiLCJjcnYiOiJFZDI1NTE5IiwiZXh0Ijp0cnVlLCJrZXlfb3BzIjpbInZlcmlmeSJdLCJrdHkiOiJPS1AiLCJ4IjoiR2ZTOEFHVnRuemx0dDdieThpVmNKY0lCVG1VOE1HcFRHZ1dNZ3UxZnVhQSJ9LCJlbnZlbG9wZSI6eyJyZWNlaXB0X2JvZHkiOnsicmVjZWlwdF9pZCI6InJjcHRfbW92ZWNvXzEiLCJwcm92aWRlcl9pZCI6Im1vdmVjbyIsImJvb2tpbmdfcmVmIjoiTUMtODg0MSIsIm9wZXJhdGlvbiI6InJlc2NoZWR1bGVfdmFuX2Jvb2tpbmciLCJpZGVtcG90ZW5jeV9rZXkiOiJpZGVtX2NtdF9tb3ZlY29fdmFuXzZlYWRhODEzZDcyMzg1MDkwZDJlIiwiY29tbWl0dGVkX3N0YXR1cyI6IkNPTU1JVFRFRCIsInNjaGVkdWxlZF9kYXRlIjoiMjAyNi0xMS0yMCIsIndpbmRvdyI6IjA5OjMw4oCTMTQ6MzAiLCJiYXNlX3ByaWNlX2V1ciI6NDA1LCJjaGFuZ2VfZmVlX2V1ciI6MCwidG90YWxfcHJpY2VfZXVyIjo0MDUsInRvdGFsX2NoYXJnZWRfZXVyIjo0MjUsImlzc3VlZF9hdCI6IjIwMjYtMTEtMTdUMTQ6MjE6MzcuNjkwWiJ9LCJwcm9vZiI6eyJhbGdvcml0aG0iOiJFZDI1NTE5Iiwia2V5X2lkIjoiZGVtby1rZXktbW92ZWNvLXYxIiwicGF5bG9hZF9zaGEyNTYiOiJiYWFhOTY4YzE3YjE0ZWJiMzQwYmFiZTE3OThmMjQ4YjdiNTU4MjUwZmExYmNmNDA4NTE5NDIzODdkZmEyNzVjIiwic2lnbmVkX2F0IjoiMjAyNi0xMS0xN1QxNDoyMTozNy42OTBaIiwic2lnbmF0dXJlX2I2NHUiOiJOWlZIdVNoTTczRTU0aFprYXhMNU5wa0JCVmtvMTlNUGdfaTlNWEczN200bG1tckNXSmR2aW44a0hFZFJCWVNGQjZuR1A1Si00M0dRdUNMWDM1WEdBdyJ9fX0",
-    "https://gpaschercher-sudo.github.io/permitflow-agentic-peer/embed.html": "https://gpaschercher-sudo.github.io/permitflow-agentic-peer/embed.html#continuity_receipt=eyJ2IjoxLCJwZWVyT3JpZ2luIjoiaHR0cHM6Ly9ncGFzY2hlcmNoZXItc3Vkby5naXRodWIuaW8vcGVybWl0Zmxvdy1hZ2VudGljLXBlZXIiLCJrZXlJZCI6ImRlbW8ta2V5LXBlcm1pdGZsb3ctdjEiLCJwdWJsaWNKd2siOnsiYWxnIjoiRWQyNTUxOSIsImNydiI6IkVkMjU1MTkiLCJleHQiOnRydWUsImtleV9vcHMiOlsidmVyaWZ5Il0sImt0eSI6Ik9LUCIsIngiOiJOZ0t3dmN6WXNGMjRfSDBuc3VWN3dnT1R6emZsMlNGYVhhakdzTHVpX3NVIn0sImVudmVsb3BlIjp7InJlY2VpcHRfYm9keSI6eyJyZWNlaXB0X2lkIjoicmNwdF9wZXJtaXRmbG93XzEiLCJwcm92aWRlcl9pZCI6InBlcm1pdGZsb3ciLCJib29raW5nX3JlZiI6IlBGLTIwNDkiLCJvcGVyYXRpb24iOiJwcmVwYXJlX3Blcm1pdF9kYXRlX3VwZGF0ZSIsImlkZW1wb3RlbmN5X2tleSI6ImlkZW1fY210X3Blcm1pdGZsb3dfYmF5X2JmMjMxYjY0OWEzYTA1NDUxZDc5IiwiY29tbWl0dGVkX3N0YXR1cyI6IkNPTU1JVFRFRCIsInNjaGVkdWxlZF9kYXRlIjoiMjAyNi0xMS0yMCIsIndpbmRvdyI6IjA3OjMw4oCTMTQ6MDAiLCJiYXNlX3ByaWNlX2V1ciI6MzUsImNoYW5nZV9mZWVfZXVyIjoxMCwidG90YWxfcHJpY2VfZXVyIjo0NSwidG90YWxfY2hhcmdlZF9ldXIiOjQ1LCJpc3N1ZWRfYXQiOiIyMDI2LTExLTE3VDE0OjIxOjM3LjY5OFoifSwicHJvb2YiOnsiYWxnb3JpdGhtIjoiRWQyNTUxOSIsImtleV9pZCI6ImRlbW8ta2V5LXBlcm1pdGZsb3ctdjEiLCJwYXlsb2FkX3NoYTI1NiI6IjFiNWFhMmMyNjFmYTVmNWZhYzhkZDUzOTM2MzM2ZDc4MjdjOThmMTczM2JhMDA4N2FkYjYwODkzNjMxMDUxODYiLCJzaWduZWRfYXQiOiIyMDI2LTExLTE3VDE0OjIxOjM3LjY5OVoiLCJzaWduYXR1cmVfYjY0dSI6IlN6VXlXUlUwTXR6cG5PeUtGRFQtM2ZHX2s3OGJwWUQzblpHWjRTUFpOUUszc2E4cFFRNURfTmMxaFEtZktUbEc5M3JSd3NHYzdGU1lyMlpHcTFVbUFRIn19fQ",
-    "https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/embed.html": "https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/embed.html#continuity_receipt=eyJ2IjoxLCJwZWVyT3JpZ2luIjoiaHR0cHM6Ly9ncGFzY2hlcmNoZXItc3Vkby5naXRodWIuaW8vaG9tZWNvbm5lY3QtYWdlbnRpYy1wZWVyIiwia2V5SWQiOiJkZW1vLWtleS1ob21lY29ubmVjdC12MSIsInB1YmxpY0p3ayI6eyJhbGciOiJFZDI1NTE5IiwiY3J2IjoiRWQyNTUxOSIsImV4dCI6dHJ1ZSwia2V5X29wcyI6WyJ2ZXJpZnkiXSwia3R5IjoiT0tQIiwieCI6ImpVcnVYTjNlSW16OGJzcGh5d3E1aEMydjlPSDhjS3FUMzdvNmpWLWc4ZlEifSwiZW52ZWxvcGUiOnsicmVjZWlwdF9ib2R5Ijp7InJlY2VpcHRfaWQiOiJyY3B0X2hvbWVjb25uZWN0XzEiLCJwcm92aWRlcl9pZCI6ImhvbWVjb25uZWN0IiwiYm9va2luZ19yZWYiOiJIQy01NTEwIiwib3BlcmF0aW9uIjoiY2hhbmdlX2ZpYmVyX2FwcG9pbnRtZW50IiwiaWRlbXBvdGVuY3lfa2V5IjoiaWRlbV9jbXRfaG9tZWNvbm5lY3RfZmliZXJfNGEyOTFkNGM1YTMwNjNkZTgxYzYiLCJjb21taXR0ZWRfc3RhdHVzIjoiQ09NTUlUVEVEIiwic2NoZWR1bGVkX2RhdGUiOiIyMDI2LTExLTIxIiwid2luZG93IjoiMDk6MDDigJMxMjowMCIsImJhc2VfcHJpY2VfZXVyIjozOSwiY2hhbmdlX2ZlZV9ldXIiOjAsInRvdGFsX3ByaWNlX2V1ciI6MzksInRvdGFsX2NoYXJnZWRfZXVyIjozOSwiaXNzdWVkX2F0IjoiMjAyNi0xMS0xN1QxNDoyMTozNy42NzBaIn0sInByb29mIjp7ImFsZ29yaXRobSI6IkVkMjU1MTkiLCJrZXlfaWQiOiJkZW1vLWtleS1ob21lY29ubmVjdC12MSIsInBheWxvYWRfc2hhMjU2IjoiZGQyYTI1NzYxNmEyOGZkOGZkMmFiODcyZGY3OGNkZDE1ZjdhOWY5Y2M3ZWQ4MGU5ZDA0ZjhkOTQ2M2E1NjhkMSIsInNpZ25lZF9hdCI6IjIwMjYtMTEtMTdUMTQ6MjE6MzcuNjcwWiIsInNpZ25hdHVyZV9iNjR1IjoiR2ZUQ3FFTzNuaXhnRTkzYng5R3VfRjExMkNUQWVKeHhXSDZmM2E5dW5UQkZmN29Ha3FsTG1KMm5mNDhvbWZfaFdLSGt3djZxUkkwY2tqRU1ZVDJLQ0EifX19",
+    "https://gpaschercher-sudo.github.io/moveco-agentic-peer/embed.html": "https://gpaschercher-sudo.github.io/moveco-agentic-peer/embed.html#continuity_receipt=eyJ2IjoxLCJwZWVyT3JpZ2luIjoiaHR0cHM6Ly9ncGFzY2hlcmNoZXItc3Vkby5naXRodWIuaW8vbW92ZWNvLWFnZW50aWMtcGVlciIsImtleUlkIjoiZGVtby1rZXktbW92ZWNvLXYxIiwicHVibGljSndrIjp7ImFsZyI6IkVkMjU1MTkiLCJjcnYiOiJFZDI1NTE5IiwiZXh0Ijp0cnVlLCJrZXlfb3BzIjpbInZlcmlmeSJdLCJrdHkiOiJPS1AiLCJ4IjoiR2ZTOEFHVnRuemx0dDdieThpVmNKY0lCVG1VOE1HcFRHZ1dNZ3UxZnVhQSJ9LCJlbnZlbG9wZSI6eyJyZWNlaXB0X2JvZHkiOnsicmVjZWlwdF9pZCI6InJjcHRfbW92ZWNvXzEiLCJwcm92aWRlcl9pZCI6Im1vdmVjbyIsImJvb2tpbmdfcmVmIjoiTUMtODg0MSIsIm9wZXJhdGlvbiI6InJlc2NoZWR1bGVfdmFuX2Jvb2tpbmciLCJpZGVtcG90ZW5jeV9rZXkiOiJpZGVtX2NtdF9tb3ZlY29fdmFuXzZlYWRhODEzZDcyMzg1MDkwZDJlIiwiY29tbWl0dGVkX3N0YXR1cyI6IkNPTU1JVFRFRCIsInNjaGVkdWxlZF9kYXRlIjoiMjAyNi0xMS0yMCIsIndpbmRvdyI6IjA5OjMw4oCTMTQ6MzAiLCJiYXNlX3ByaWNlX2V1ciI6NDA1LCJjaGFuZ2VfZmVlX2V1ciI6MCwidG90YWxfcHJpY2VfZXVyIjo0MDUsInRvdGFsX2NoYXJnZWRfZXVyIjo0MjUsImlzc3VlZF9hdCI6IjIwMjYtMTEtMTdUMTU6NTE6NDMuMjU3WiJ9LCJwcm9vZiI6eyJhbGdvcml0aG0iOiJFZDI1NTE5Iiwia2V5X2lkIjoiZGVtby1rZXktbW92ZWNvLXYxIiwicGF5bG9hZF9zaGEyNTYiOiI2YWU5MmUyYTZiM2U0MzJiMDJjNDA4NWUxMDgwNjAyODdjODhhNGU4NTFhYThjNWVkZTNlOTA0MWM4N2U5MWFlIiwic2lnbmVkX2F0IjoiMjAyNi0xMS0xN1QxNTo1MTo0My4yNThaIiwic2lnbmF0dXJlX2I2NHUiOiJmdlJmbFlWbFFKTzlPbExSUmExSGlEZ2hlWllIQ2VJVkFNRDdBQi1FMnBVNXplUDFmVW41Y05INGI2VU5VSUhCVHEyV0ljR25SeExqMVZWNmpkV2lCQSJ9fX0",
+    "https://gpaschercher-sudo.github.io/permitflow-agentic-peer/embed.html": "https://gpaschercher-sudo.github.io/permitflow-agentic-peer/embed.html#continuity_receipt=eyJ2IjoxLCJwZWVyT3JpZ2luIjoiaHR0cHM6Ly9ncGFzY2hlcmNoZXItc3Vkby5naXRodWIuaW8vcGVybWl0Zmxvdy1hZ2VudGljLXBlZXIiLCJrZXlJZCI6ImRlbW8ta2V5LXBlcm1pdGZsb3ctdjEiLCJwdWJsaWNKd2siOnsiYWxnIjoiRWQyNTUxOSIsImNydiI6IkVkMjU1MTkiLCJleHQiOnRydWUsImtleV9vcHMiOlsidmVyaWZ5Il0sImt0eSI6Ik9LUCIsIngiOiJOZ0t3dmN6WXNGMjRfSDBuc3VWN3dnT1R6emZsMlNGYVhhakdzTHVpX3NVIn0sImVudmVsb3BlIjp7InJlY2VpcHRfYm9keSI6eyJyZWNlaXB0X2lkIjoicmNwdF9wZXJtaXRmbG93XzEiLCJwcm92aWRlcl9pZCI6InBlcm1pdGZsb3ciLCJib29raW5nX3JlZiI6IlBGLTIwNDkiLCJvcGVyYXRpb24iOiJwcmVwYXJlX3Blcm1pdF9kYXRlX3VwZGF0ZSIsImlkZW1wb3RlbmN5X2tleSI6ImlkZW1fY210X3Blcm1pdGZsb3dfYmF5X2JmMjMxYjY0OWEzYTA1NDUxZDc5IiwiY29tbWl0dGVkX3N0YXR1cyI6IkNPTU1JVFRFRCIsInNjaGVkdWxlZF9kYXRlIjoiMjAyNi0xMS0yMCIsIndpbmRvdyI6IjA3OjMw4oCTMTQ6MDAiLCJiYXNlX3ByaWNlX2V1ciI6MzUsImNoYW5nZV9mZWVfZXVyIjoxMCwidG90YWxfcHJpY2VfZXVyIjo0NSwidG90YWxfY2hhcmdlZF9ldXIiOjQ1LCJpc3N1ZWRfYXQiOiIyMDI2LTExLTE3VDE1OjUxOjQzLjI2NVoifSwicHJvb2YiOnsiYWxnb3JpdGhtIjoiRWQyNTUxOSIsImtleV9pZCI6ImRlbW8ta2V5LXBlcm1pdGZsb3ctdjEiLCJwYXlsb2FkX3NoYTI1NiI6IjUwZWYwODhlNDQwY2VjNWMxMGRjMTc3MWQzZWY5ZTU2YTE4MjJkOTc5MDAyMTZkZWQxMDMyODkwYTk5M2I4Y2EiLCJzaWduZWRfYXQiOiIyMDI2LTExLTE3VDE1OjUxOjQzLjI2NloiLCJzaWduYXR1cmVfYjY0dSI6IjE2eDdhMjFRSXlSdENoOWlaeTBsaHFsajlTa2l1RkNmdk14cFRuNXVienNSUGlHcnIzcW1qYWNha0Z6MVdDV25KOUhMTkJNeUZ1WW9Ga1JJZ3g4ZUN3In19fQ",
+    "https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/embed.html": "https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/embed.html#continuity_receipt=eyJ2IjoxLCJwZWVyT3JpZ2luIjoiaHR0cHM6Ly9ncGFzY2hlcmNoZXItc3Vkby5naXRodWIuaW8vaG9tZWNvbm5lY3QtYWdlbnRpYy1wZWVyIiwia2V5SWQiOiJkZW1vLWtleS1ob21lY29ubmVjdC12MSIsInB1YmxpY0p3ayI6eyJhbGciOiJFZDI1NTE5IiwiY3J2IjoiRWQyNTUxOSIsImV4dCI6dHJ1ZSwia2V5X29wcyI6WyJ2ZXJpZnkiXSwia3R5IjoiT0tQIiwieCI6ImpVcnVYTjNlSW16OGJzcGh5d3E1aEMydjlPSDhjS3FUMzdvNmpWLWc4ZlEifSwiZW52ZWxvcGUiOnsicmVjZWlwdF9ib2R5Ijp7InJlY2VpcHRfaWQiOiJyY3B0X2hvbWVjb25uZWN0XzEiLCJwcm92aWRlcl9pZCI6ImhvbWVjb25uZWN0IiwiYm9va2luZ19yZWYiOiJIQy01NTEwIiwib3BlcmF0aW9uIjoiY2hhbmdlX2ZpYmVyX2FwcG9pbnRtZW50IiwiaWRlbXBvdGVuY3lfa2V5IjoiaWRlbV9jbXRfaG9tZWNvbm5lY3RfZmliZXJfNGEyOTFkNGM1YTMwNjNkZTgxYzYiLCJjb21taXR0ZWRfc3RhdHVzIjoiQ09NTUlUVEVEIiwic2NoZWR1bGVkX2RhdGUiOiIyMDI2LTExLTIxIiwid2luZG93IjoiMDk6MDDigJMxMjowMCIsImJhc2VfcHJpY2VfZXVyIjozOSwiY2hhbmdlX2ZlZV9ldXIiOjAsInRvdGFsX3ByaWNlX2V1ciI6MzksInRvdGFsX2NoYXJnZWRfZXVyIjozOSwiaXNzdWVkX2F0IjoiMjAyNi0xMS0xN1QxNTo1MTo0My4yMzVaIn0sInByb29mIjp7ImFsZ29yaXRobSI6IkVkMjU1MTkiLCJrZXlfaWQiOiJkZW1vLWtleS1ob21lY29ubmVjdC12MSIsInBheWxvYWRfc2hhMjU2IjoiMzg0YWZiZjcyOGUyYmQxMmExMWVlYzdmMGY4YjIwNjVjMGYzMTY4OWVhMDQ5NmM0MTAyOGYwMWZmMTkxM2E5ZCIsInNpZ25lZF9hdCI6IjIwMjYtMTEtMTdUMTU6NTE6NDMuMjM3WiIsInNpZ25hdHVyZV9iNjR1IjoiMFJpXzdnTXpRZXVIanBDN0RnM3N2aE5wTkp4TjJiVzJHMm5zVXVqVnBzc05ULUlNRmFnZk5DdHJOYlVkeTV2Ty1SYlJXUFJhRGpVTzAzbE96WjllQmcifX19",
     "https://gpaschercher-sudo.github.io/powerflow-agentic-peer/embed.html": "https://gpaschercher-sudo.github.io/powerflow-agentic-peer/embed.html"
   },
   "agents": [
@@ -128,7 +128,7 @@
     "PowerFlow Energy\n\nSmart-meter activation\n\nConsulted\nget_powerflow_state\nstage_energization_date\nconfirm_energization_shift\n\nReceived only booking_ref (PFW-9921), target_date (2026-11-20).\n\nOpen site ↗\nInbound → CONTINUITY ↗\nManifest\nAgent card"
   ],
   "clip_12_trust_chaos": {
-    "frames": 143,
+    "frames": 142,
     "seconds": 6.71
   },
   "chaos": [
@@ -138,7 +138,7 @@
     "Providers receive only the target date and the booking fields they need — never your full mission, your budget ceiling, or your AI key.\n\nProvider origin\tFields sent\tKept on this device\tAI key exposure\nMoveCo Express (Demo)\nhttps://gpaschercher-sudo.github.io/moveco-agentic-peer\tbooking_ref (MC-8841), target_date (2026-11-20)\tFull mission graph, maximum_budget_eur, customer email/phone, other bookings\tNONE (LLM BYOK key stays on caller router)\nPermitFlow Civic Prep (Demo)\nhttps://gpaschercher-sudo.github.io/permitflow-agentic-peer\tbooking_ref (PF-2049), target_date (2026-11-20)\tFull mission graph, maximum_budget_eur, customer email/phone, other bookings\tNONE (LLM BYOK key stays on caller router)\nHomeConnect Fiber (Demo)\nhttps://gpaschercher-sudo.github.io/homeconnect-agentic-peer\tbooking_ref (HC-5510), target_date (2026-11-20)\tFull mission graph, maximum_budget_eur, customer email/phone, other bookings\tNONE (LLM BYOK key stays on caller router)\nPowerFlow Energy (Demo)\nhttps://gpaschercher-sudo.github.io/powerflow-agentic-peer\tbooking_ref (PFW-9921), target_date (2026-11-20)\tFull mission graph, maximum_budget_eur, customer email/phone, other bookings\tNONE (LLM BYOK key stays on caller router)"
   ],
   "chain": [
-    "✓ SHA-256 Hash Chain Verified (21/21 events intact · Head 7a82e0a1d1b1fa79…)"
+    "✓ SHA-256 Hash Chain Verified (21/21 events intact · Head 0af6e90ebe37c28d…)"
   ],
   "assistant": [
     "Open Agentic Web Runtime ready. Add your Otari or OpenAI-compatible API key in ⚙ AI model settings below to run live LLM turns, or use the deterministic coordinator above immediately.",
@@ -148,8 +148,8 @@
     "All commitments verified"
   ],
   "clip_15_hero_after_idle": {
-    "frames": 422,
-    "seconds": 4.24
+    "frames": 417,
+    "seconds": 4.25
   },
   "request_outpatient_surgery": "My knee arthroscopy moved from Tuesday to Friday.\nRealign pre-op bloodwork, wheelchair discharge transport, and post-op home physiotherapy.\nHold replacement slots before changing existing appointments and stay below €560.",
   "status_outpatient_surgery": [

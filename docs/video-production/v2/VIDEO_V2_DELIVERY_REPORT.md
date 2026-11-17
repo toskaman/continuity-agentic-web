@@ -1,6 +1,6 @@
 # CONTINUITY — v2 jury film: delivery, QC and review report
 
-**Final render: r9 (2026-11-17)** — refreshed with the current numbers (42 chaos scenarios, 180 runs, 117 tests) and a new S9b scene showing the same engine on two other life changes. Master folder `Z:\continuity-titan-omega\v3\deliverables\` (r7 kept in `v2\deliverables` for history).
+**Final render: r10 (2026-11-17, re-filmed after the plain-language UI pass)** — refreshed with the current numbers (42 chaos scenarios, 180 runs, 117 tests) and a new S9b scene showing the same engine on two other life changes. Master folder `Z:\continuity-titan-omega\v3\deliverables\` (r7 kept in `v2\deliverables` for history).
 
 ## 1. Deliverables
 
