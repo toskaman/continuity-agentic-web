@@ -92,7 +92,7 @@ test("Cycle 19 — Real Headless Chromium audits mobile (390x844), dark theme, k
     powerflow: 0,
   });
   const profileDir = await mkdtemp(path.join(os.tmpdir(), "continuity-a11y-chrome-"));
-  const cdpPort = await getFreeTcpPort();
+  let cdpPort = 0; // Chrome picks a free port itself (no bind race); read back from DevToolsActivePort
   let chromeProc = null;
   let cdp = null;
 
@@ -105,7 +105,7 @@ test("Cycle 19 — Real Headless Chromium audits mobile (390x844), dark theme, k
         "--disable-extensions",
         "--disable-background-networking",
         ...(process.platform === "linux" ? ["--no-sandbox", "--disable-dev-shm-usage"] : []),
-        `--remote-debugging-port=${cdpPort}`,
+        "--remote-debugging-port=0",
         "--window-size=390,844",
         "--no-first-run",
         "--no-default-browser-check",
@@ -116,8 +116,15 @@ test("Cycle 19 — Real Headless Chromium audits mobile (390x844), dark theme, k
     );
 
     let targets = null;
-    for (let i = 0; i < 100; i++) {
+    // Cold Chrome starts on shared CI runners can take well over 15 s: wait up to 60 s.
+    for (let i = 0; i < 400; i++) {
       try {
+        if (!cdpPort) {
+          const { readFile } = await import("node:fs/promises");
+          const first = (await readFile(path.join(profileDir, "DevToolsActivePort"), "utf8")).split(/\r?\n/)[0];
+          cdpPort = Number(first) || 0;
+          if (!cdpPort) throw new Error("port not written yet");
+        }
         const r = await fetch(`http://127.0.0.1:${cdpPort}/json/list`);
         if (r.ok) {
           const list = await r.json();
@@ -130,7 +137,7 @@ test("Cycle 19 — Real Headless Chromium audits mobile (390x844), dark theme, k
       await new Promise((r) => setTimeout(r, 150));
     }
 
-    assert.ok(Array.isArray(targets), "Headless browser CDP /json/list did not become ready in 15s");
+    assert.ok(Array.isArray(targets), "Headless browser CDP /json/list did not become ready in 60s");
     const pageTarget = targets.find((x) => x.type === "page");
     cdp = new CdpClient(pageTarget.webSocketDebuggerUrl);
     await cdp.connect();

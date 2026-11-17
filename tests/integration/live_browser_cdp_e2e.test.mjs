@@ -104,7 +104,7 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
     powerflow: 0,
   });
   const profileDir = await mkdtemp(path.join(os.tmpdir(), "continuity-e2e-chrome-"));
-  const cdpPort = await getFreeTcpPort();
+  let cdpPort = 0; // Chrome picks a free port itself (no bind race); read back from DevToolsActivePort
   let chromeProc = null;
   let cdp = null;
 
@@ -117,7 +117,7 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
         "--disable-extensions",
         "--disable-background-networking",
         ...(process.platform === "linux" ? ["--no-sandbox", "--disable-dev-shm-usage"] : []),
-        `--remote-debugging-port=${cdpPort}`,
+        "--remote-debugging-port=0",
         "--window-size=1440,1050",
         "--no-first-run",
         "--no-default-browser-check",
@@ -128,8 +128,15 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
     );
 
     let targets = null;
-    for (let i = 0; i < 100; i++) {
+    // Cold Chrome starts on shared CI runners can take well over 15 s: wait up to 60 s.
+    for (let i = 0; i < 400; i++) {
       try {
+        if (!cdpPort) {
+          const { readFile } = await import("node:fs/promises");
+          const first = (await readFile(path.join(profileDir, "DevToolsActivePort"), "utf8")).split(/\r?\n/)[0];
+          cdpPort = Number(first) || 0;
+          if (!cdpPort) throw new Error("port not written yet");
+        }
         const r = await fetch(`http://127.0.0.1:${cdpPort}/json/list`);
         if (r.ok) {
           const list = await r.json();
@@ -142,7 +149,7 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
       await new Promise((r) => setTimeout(r, 150));
     }
 
-    assert.ok(Array.isArray(targets), "Headless browser CDP /json/list did not become ready in 15s");
+    assert.ok(Array.isArray(targets), "Headless browser CDP /json/list did not become ready in 60s");
     const pageTarget = targets.find((x) => x.type === "page");
     assert.ok(pageTarget?.webSocketDebuggerUrl, "Expected headless browser page target");
 
