@@ -1077,3 +1077,4 @@ a.badge { text-decoration: none; }
 .tech-details > div { margin-top: 4px; overflow-wrap: anywhere; }
 .panel-plain { margin: 6px 0 4px; color: var(--ink-2); font-size: var(--fs-sm); max-width: 70ch; }
 .panel-plain + .panel-sub { font-size: var(--fs-xs); color: var(--muted); }
+.proof-ok { color: var(--ok, #34D399); font-weight: 600; font-size: var(--fs-xs); margin-top: 4px; }

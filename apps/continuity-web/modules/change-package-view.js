@@ -221,7 +221,7 @@ export function renderChangePackageView(page, plan) {
   });
   if (pbDrawer && pbSummary && pbBody) {
     pbDrawer.hidden = false;
-    pbSummary.textContent = `Ordered Hold-First Playbook (${playbook.agenticStepsCount} autonomous Agentic Web · ${playbook.legacyStepsCount} legacy mailto: draft(s) · €${playbook.avoidedPenaltiesTotalEur.toFixed(2)} cancel fees avoided)`;
+    pbSummary.textContent = `Step-by-step plan: ${playbook.agenticStepsCount} handled by the providers' own sites · ${playbook.legacyStepsCount} by email · €${playbook.avoidedPenaltiesTotalEur.toFixed(2)} in cancellation fees avoided`;
     pbBody.textContent = playbook.markdown;
   }
   const playbookStepByCommitment = new Map(playbook.steps.map((s) => [s.commitmentId, s]));
@@ -232,10 +232,10 @@ export function renderChangePackageView(page, plan) {
         Number(op.base_price_eur) + Number(op.change_fee_eur || 0) + Number(op.cancellation_penalty_eur || 0);
       const stepInfo = playbookStepByCommitment.get(op.commitment_id);
       const proofBadge = op.proof_verification?.level
-        ? `<div>Proof: <code>${page.escapeXml(op.proof_verification.level)}</code></div>`
+        ? `<div class="proof-ok" title="${page.escapeXml(op.proof_verification.level)}">✓ Signed by the provider and checked</div>`
         : "";
       const receiptDrawer = op.receipt_envelope?.proof
-        ? `<details class="receipt-drawer"><summary>Inspect Ed25519 signature (${page.escapeXml(op.receipt_envelope.proof.key_id)})</summary><pre class="receipt-pre">${page.escapeXml(JSON.stringify(op.receipt_envelope, null, 2))}</pre></details>`
+        ? `<details class="receipt-drawer"><summary>Show the provider's signature (${page.escapeXml(op.receipt_envelope.proof.key_id)})</summary><pre class="receipt-pre">${page.escapeXml(JSON.stringify(op.receipt_envelope, null, 2))}</pre></details>`
         : "";
       const legacyDraftDrawer =
         stepInfo && stepInfo.executionChannel === "LEGACY_VENDOR_HOLD_FIRST_DRAFT"
