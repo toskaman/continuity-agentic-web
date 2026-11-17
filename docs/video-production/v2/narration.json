@@ -82,8 +82,16 @@
         "C17",
         "C18"
       ],
-      "tts": "And every step is auditable: a hash-chained log, exactly what each provider saw, and fifteen failure scenarios you can replay in the browser. Zero cancel calls, in sixty benchmark runs.",
-      "caption": "And every step is auditable: a hash-chained log, exactly what each provider saw, and 15 failure scenarios you can replay in the browser. Zero cancel calls in 60 benchmark runs."
+      "tts": "Every step is auditable: a hash-chained log, exactly what each provider saw, and forty-two failure scenarios you can replay in the browser. Zero cancel calls, in a hundred and eighty runs.",
+      "caption": "Every step is auditable: a hash-chained log, exactly what each provider saw, and 42 failure scenarios you can replay in the browser. Zero cancel calls in 180 runs."
+    },
+    {
+      "id": "s09b",
+      "claims": [
+        "C20"
+      ],
+      "tts": "And it's not just moving house. The same engine re-plans a surgery, or a delayed freight shipment.",
+      "caption": "And it's not just moving house. The same engine re-plans a surgery, or a delayed freight shipment."
     },
     {
       "id": "s10",

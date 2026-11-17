@@ -1,6 +1,6 @@
 # CONTINUITY — teleprompter for the voice-ready cut (read it in your own voice)
 
-Play `CONTINUITY_v2_voice_ready.mp4` (final picture + original music + sound effects, **no voice, no subtitles**) and read each line when its time comes. Lines are timed for a calm pace (~150 words/min). If you speak slower, shorten a line — never rush.
+Play `CONTINUITY_v2_voice_ready.mp4` (1:56.5) (final picture + original music + sound effects, **no voice, no subtitles**) and read each line when its time comes. Lines are timed for a calm pace (~150 words/min). If you speak slower, shorten a line — never rush.
 
 | Start | Scene | Say |
 |---|---|---|
@@ -12,8 +12,9 @@ Play `CONTINUITY_v2_voice_ready.mp4` (final picture + original music + sound eff
 | 0:55.66 | Plans | Three plans, compared on changes, cost and speed. The winner moves the fewest bookings, for €659 — under my cap. |
 | 1:05.49 | Your bound approval | Nothing happens without me. My approval is bound to the exact operations, prices and providers. Change one fee, and it no longer matches. |
 | 1:15.61 | Providers verify receipts | I approve. These are the providers' own pages, loaded cross-origin. Each one receives a signed receipt, checks it itself, and only then moves my booking. PowerFlow was consulted — and correctly left alone. |
-| 1:30.41 | Trust center | And every step is auditable: a hash-chained log, exactly what each provider saw, and 15 failure scenarios you can replay in the browser. Zero cancel calls in 60 benchmark runs. |
-| 1:43.87 | Close | CONTINUITY. One change. Every commitment re-aligned. |
+| 1:30.41 | Trust center | Every step is auditable: a hash-chained log, exactly what each provider saw, and 42 failure scenarios you can replay in the browser. Zero cancel calls, in 180 runs. |
+| 1:43.50 | Same engine, other lives | And it's not just moving house. The same engine re-plans a surgery, or a delayed freight shipment. |
+| 1:50.00 | Close | CONTINUITY. One change. Every commitment re-aligned. |
 
 **Record:** quiet room, phone/headset mic ~15 cm away, one take while the video plays, then place the take at 0:00 over the voice-ready file (any editor, or `ffmpeg -i CONTINUITY_v2_voice_ready.mp4 -i myvoice.wav -filter_complex "[1:a]volume=1.0[v];[0:a][v]amix=inputs=2:normalize=0[a]" -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 256k CONTINUITY_final.mp4`).
 The voice-ready mix sits at −23 LUFS so a normal speaking voice (≈ −16 LUFS) stays clearly on top.

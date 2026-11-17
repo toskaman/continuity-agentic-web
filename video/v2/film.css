@@ -133,3 +133,12 @@ body { font-family: "Inter Variable", sans-serif; color: #F8FAFC; -webkit-font-s
 .built { margin-top: 26px; font-size: 26px; color: #94A3B8; font-weight: 550; }
 
 .veil { position: absolute; inset: 0; background: rgba(5,8,18,.74); }
+
+/* ---------- S9b other scenarios ---------- */
+.s9b-row { position: absolute; left: 0; right: 0; top: 200px; height: 700px; }
+.scard-wrap { position: absolute; top: 0; width: 880px; }
+.scard { width: 880px; height: 495px; border-radius: 22px; overflow: hidden; border: 2px solid rgba(199,210,254,.4); box-shadow: 0 40px 100px rgba(0,0,0,.55); background: #0B1220; }
+.scard img { display: block; width: 880px; height: 495px; object-fit: cover; }
+.scard-cap { margin-top: 26px; text-align: center; display: flex; flex-direction: column; gap: 8px; }
+.scard-cap b { font-size: 36px; font-weight: 720; letter-spacing: -0.02em; color: #F8FAFC; }
+.scard-cap span { font-size: 28px; font-weight: 600; color: #5EEAD4; }

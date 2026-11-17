@@ -1,6 +1,6 @@
 # CONTINUITY — v2 jury film: delivery, QC and review report
 
-**Final render: r7 (2026-11-15).** Master folder `Z:\continuity-titan-omega\v2\deliverables\`.
+**Final render: r9 (2026-11-17)** — refreshed with the current numbers (42 chaos scenarios, 180 runs, 117 tests) and a new S9b scene showing the same engine on two other life changes. Master folder `Z:\continuity-titan-omega\v3\deliverables\` (r7 kept in `v2\deliverables` for history).
 
 ## 1. Deliverables
 
@@ -18,10 +18,10 @@
 
 | Property | Kokoro reference | Voice-ready | Brag |
 |---|---|---|---|
-| Duration | **110.75 s** (limit 120 s, margin 9.25 s) | 110.75 s | 20.00 s |
+| Duration | **116.50 s** (limit 120 s, margin 3.5 s) | 116.50 s | 20.00 s |
 | Video | H.264 High, 1920×1080, 30 fps CFR, yuv420p | same | same |
 | Audio | AAC-LC 48 kHz stereo 320 kb/s | same | same |
-| Loudness | −16.0 LUFS integrated, −1.5 dBTP, LRA 2.1 LU | −22.9 LUFS (bed, leaves room for your voice), −4.3 dBTP | −16.0 LUFS, −1.5 dBTP |
+| Loudness | −16.0 LUFS integrated, −1.5 dBTP, LRA 2.1 LU | −22.9 LUFS (bed, leaves room for your voice), −3.2 dBTP | −16.0 LUFS, −1.5 dBTP |
 | Black / freeze detection | none (blackdetect 0.2 s, freezedetect 3 s) | none | none |
 | HyperFrames `check` | pass — 0 errors, contrast 31/31 WCAG AA | pass | pass |
 
@@ -49,14 +49,14 @@
 No third-party logos or trademarks appear; the demo providers are the project's own demonstration sites.
 
 ## 6. Improvement cycles
-20 logged cycles — see `Z:\continuity-titan-omega\v2\PRODUCTION_LOG.md` (outline-geometry verification, seam audit with push transitions, voice-led audit, craft/readability pass, audio levels, posters, cut-on-action, technical-truth correction of the "origin" wording, negation glyphs, final validation…).
+20 logged cycles on r1–r7, plus the Nov 17 refresh (r8–r9: new numbers, S9b, S9b pacing fix after frame review) — see `Z:\continuity-titan-omega\v2\PRODUCTION_LOG.md` (outline-geometry verification, seam audit with push transitions, voice-led audit, craft/readability pass, audio levels, posters, cut-on-action, technical-truth correction of the "origin" wording, negation glyphs, final validation…).
 
 ## 7. Independent review (honest scores, 1–10)
 | Criterion | Score | Why | Remaining risk |
 |---|---|---|---|
 | Technological implementation | 9 | Shows real cross-origin receipt verification, bound approval, hash chain, chaos lab — all live footage, claims traced to code | Viewers may not grasp "cross-origin" without the voice; the narration carries it |
 | Design | 9 | One focus at a time, measured outlines, consistent type/palette, scroll-like transitions | Some UI text is small at phone size (the product UI itself) |
-| Potential impact | 7.5 | Universal moving-day pain in the first 11 s | Only one scenario is shown (others exist in the product) |
+| Potential impact | 8.5 | Universal moving-day pain in the first 11 s, then S9b shows the same engine re-planning a surgery and a delayed freight shipment | The two extra scenarios are shown as stills, not walked through |
 | Quality of the idea | 8.5 | "Coordinator of other companies' agentic websites" is stated and then proven on the provider wall | — |
 | Rules compliance | pass* | < 2:00, public site running, no third-party music | *Submit only after recording your own voice over the voice-ready cut |
 

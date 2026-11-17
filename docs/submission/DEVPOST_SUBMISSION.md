@@ -15,19 +15,20 @@
   - `https://gpaschercher-sudo.github.io/permitflow-agentic-peer/` (`permitflow_advisor`)
   - `https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/` (`homeconnect_scheduler`)
   - `https://gpaschercher-sudo.github.io/powerflow-agentic-peer/` (`powerflow_grid`)
-- **Screenshots to upload (`docs/submission/screenshots/`, captured from the redesigned UI):**
-  0. **`13_live_provider_wall.png` — use this as the cover image.** Four real provider pages, framed from their own origin, each showing *Receipt Verified* after one approval (captured on the public deployment)
+- **Screenshots to upload (`docs/submission/screenshots/`, captured on the public deployment, Nov 17):**
+  0. **`13_live_provider_wall.png` — use this as the cover image.** Four real provider pages, loaded cross-origin from their own deployments, each showing *Receipt Verified* after one approval (captured on the public deployment)
   1. `01_continuity_mission_baseline.png` — Landing: one change, every commitment re-aligned + live network map
   2. `02_ripple_recovery_prepared_plan.png` — Mission map + Approval Center after a provider failure is recovered
   3. `08_pareto_frontier_and_hold_countdown.png` — Plan comparison (A/C/Alternative) + what-if budget frontier
   4. `03_bound_approval_modal.png` — SHA-256-bound human approval dialog
   5. `04_committed_verified_ed25519.png` — Committed & verified with Ed25519 receipts
-  6. `05_chaos_lab_15_passed.png` — Chaos Lab: 42 failure scenarios passing in the browser
+  6. `05_chaos_lab_42_passed.png` — Chaos Lab: 42 failure scenarios passing in the browser
   7. `09_mandate_arbiter_and_bypasses_denied.png` — Mandate & arbiter: 4 bypass attempts denied
   8. `06_open_agentic_web_runtime_otari_byok.png` — Open Agentic Web runtime, consent cards, Otari BYOK
   9. `07`, `10`, `11`, `12` — The four independent provider sites (MoveCo, PermitFlow, HomeConnect, PowerFlow)
-  10. `14_community_builder_kit.png` — Standalone 8-tool Open Agentic Web Community Builder Kit (`community-kit.html`)
-  11. `00_architecture_diagram.png` — Topology & trust boundaries
+  10. `15_same_engine_surgery.png`, `16_same_engine_freight.png` — Same engine, other lives: an outpatient surgery moved (3 of 5 bookings, €510 ≤ €560 cap) and a delayed expo freight shipment (3 of 6, €1,865 ≤ €1,980)
+  11. `14_community_builder_kit.png` — Standalone 8-tool Open Agentic Web Community Builder Kit (`community-kit.html`)
+  12. `00_architecture_diagram.png` — Topology & trust boundaries
 - **Built With:** `neuro-san`, `nsdeploy`, `open-agentic-web`, `mozilla-otari`, `project-nanda`, `a2a`, `mcp`, `javascript`, `web-crypto`, `html5`
 
 ---

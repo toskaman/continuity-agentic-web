@@ -1,5 +1,5 @@
 {
- "end": 110.75,
+ "end": 116.5,
  "vo": {},
  "sfx": [
   [
@@ -258,22 +258,22 @@
    0.3
   ],
   [
-   93.46,
+   93.3,
    "sfx_whoosh_soft.wav",
    0.16
   ],
   [
-   95.83,
+   95.75,
    "sfx_whoosh_soft.wav",
    0.16
   ],
   [
-   96.62,
+   96.54,
    "sfx_click.wav",
    0.45
   ],
   [
-   97.92,
+   97.84,
    "sfx_verify_2.wav",
    0.16
   ],
@@ -283,7 +283,27 @@
    0.16
   ],
   [
-   103.85,
+   104.15,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   104.5,
+   "sfx_tick.wav",
+   0.2
+  ],
+  [
+   105.4,
+   "sfx_whoosh_soft.wav",
+   0.16
+  ],
+  [
+   105.75,
+   "sfx_tick.wav",
+   0.2
+  ],
+  [
+   109.98,
    "sfx_final.wav",
    0.34
   ]
@@ -304,13 +324,13 @@
   "33.12–33.79 video 01_hero_idle @0.4",
   "33.04–34.64 video 03_scroll_workspace @0.7",
   "34.54–38.86 still 03_workspace",
-  "34.74s focus 03_workspace [191,673,1539,225]",
-  "35.55s focus→ 03_workspace [1153,620,576,34]",
+  "34.74s focus 03_workspace [191,740,1539,225]",
+  "35.55s focus→ 03_workspace [1153,676,576,45]",
   "36.13s chip \"Rules it can’t break\"",
   "38.61–40.14 video 04_arm_failure @0",
   "39.04s sfx sfx_click.wav click",
   "40.04–43.86 still 04_armed",
-  "40.24s focus 04_armed [554,936,1175,29]",
+  "40.24s focus 04_armed [554,1004,1175,29]",
   "40.22s chip \"Simulated: Friday crew full\"",
   "39.92s sfx sfx_error.wav failure armed",
   "42.63s sfx sfx_click.wav click",
@@ -325,15 +345,16 @@
   "51.60s focus→ 06_mission [1126,927,601,121]",
   "53.28s chip \"Originals stay active until you approve\"",
   "55.31–65.94 still 07_plans",
-  "55.98s focus 07_plans [160,503,941,623]",
-  "59.22s focus→ 07_plans [160,503,461,302]",
+  "55.98s focus 07_plans [160,503,941,639]",
+  "59.22s focus→ 07_plans [160,503,461,310]",
   "63.64s sfx sfx_tick.wav under cap",
   "65.21–66.59 video 09_open_approval @0",
   "65.64s sfx sfx_click.wav click",
   "66.49–75.96 still 09_dialog",
-  "69.06s focus 09_dialog [557,381,822,136]",
-  "70.17s focus→ 09_dialog [557,589,822,84]",
-  "70.97s focus→ 09_dialog [770,383,616,132]",
+  "68.19s focus 09_dialog [557,615,822,74]",
+  "69.11s focus→ 09_dialog [557,335,822,136]",
+  "70.17s focus→ 09_dialog [557,573,822,43]",
+  "70.97s focus→ 09_dialog [776,337,616,132]",
   "73.43s sfx sfx_error.wav hash mismatch",
   "75.80s sfx sfx_click.wav click",
   "75.37–76.22 video 10_commit_wall @0",
@@ -348,20 +369,21 @@
   "87.45s sfx sfx_tick.wav powerflow consulted",
   "87.65s chip \"Consulted — nothing to change\"",
   "76.38s chip \"Real before/after states of the live pages · replayed slower\"",
-  "90.01–94.18 still 13_timeline",
-  "92.23s chip \"Tamper-evident chain\"",
-  "92.08s focus 13_timeline [193,752,1533,64]",
-  "93.48–97.12 still 12b_privacy",
-  "94.15s focus 12b_privacy [195,893,1531,123]",
-  "94.18s chip \"MoveCo receives only booking_ref + date\"",
-  "95.85–97.92 video 12_trust_chaos @1.95",
-  "96.62s sfx sfx_click.wav click",
-  "97.82–99.99 still 12_chaos",
-  "98.02s focus 12_chaos [193,898,1533,64]",
-  "97.92s sfx sfx_verify_2.wav 15/15",
-  "99.29–103.82 still 02_proof_b",
-  "99.96s focus 02_proof_b [940,618,392,24]",
-  "103.37–110.75 still 15_hero_after",
-  "103.85s sfx sfx_final.wav final chime"
+  "90.01–94.02 still 13_timeline",
+  "92.07s chip \"Tamper-evident chain\"",
+  "91.92s focus 13_timeline [193,898,1533,64]",
+  "93.32–97.04 still 12b_privacy",
+  "93.99s focus 12b_privacy [195,893,1531,123]",
+  "94.02s chip \"MoveCo receives only booking_ref + date\"",
+  "95.77–97.84 video 12_trust_chaos @1.95",
+  "96.54s sfx sfx_click.wav click",
+  "97.74–99.99 still 12_chaos",
+  "97.94s focus 12_chaos [193,711,1533,140]",
+  "97.99s chip \"Simulation suite: 42 / 42 passed · 0 live bookings touched\"",
+  "97.84s sfx sfx_verify_2.wav 15/15",
+  "99.29–103.65 still 02_proof_b",
+  "99.96s focus 02_proof_b [944,626,334,26]",
+  "109.65–116.50 still 15_hero_after",
+  "109.98s sfx sfx_final.wav final chime"
  ]
 }

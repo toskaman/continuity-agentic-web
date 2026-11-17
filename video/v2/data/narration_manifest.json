@@ -2,7 +2,7 @@
   "voice": "af_heart",
   "speed": 1,
   "engine": "Kokoro-82M via HyperFrames 0.9.19 (local, offline)",
-  "generatedAt": "2026-11-15T07:42:39.400Z",
+  "generatedAt": "2026-11-17T14:23:20.294Z",
   "segments": [
     {
       "id": "s01",
@@ -94,13 +94,23 @@
     {
       "id": "s09",
       "durationSec": 12.459,
-      "words": 30,
-      "tts": "And every step is auditable: a hash-chained log, exactly what each provider saw, and fifteen failure scenarios you can replay in the browser. Zero cancel calls, in sixty benchmark runs.",
-      "caption": "And every step is auditable: a hash-chained log, exactly what each provider saw, and 15 failure scenarios you can replay in the browser. Zero cancel calls in 60 benchmark runs.",
+      "words": 31,
+      "tts": "Every step is auditable: a hash-chained log, exactly what each provider saw, and forty-two failure scenarios you can replay in the browser. Zero cancel calls, in a hundred and eighty runs.",
+      "caption": "Every step is auditable: a hash-chained log, exactly what each provider saw, and 42 failure scenarios you can replay in the browser. Zero cancel calls in 180 runs.",
       "claims": [
         "C16",
         "C17",
         "C18"
+      ]
+    },
+    {
+      "id": "s09b",
+      "durationSec": 5.76,
+      "words": 17,
+      "tts": "And it's not just moving house. The same engine re-plans a surgery, or a delayed freight shipment.",
+      "caption": "And it's not just moving house. The same engine re-plans a surgery, or a delayed freight shipment.",
+      "claims": [
+        "C20"
       ]
     },
     {

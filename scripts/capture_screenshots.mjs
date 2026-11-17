@@ -117,6 +117,10 @@ const archSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 820" 
 await writeFile(path.join(OUT_DIR, "00_architecture_diagram.svg"), archSvg, "utf8");
 
 // 2. Boot live 5-origin ecosystem + headless Chrome CDP to capture real PNG screenshots
+// --public: shoot the live GitHub Pages deployment instead of the local servers (no 127.0.0.1 in any frame).
+const PUBLIC = process.argv.includes("--public");
+const COORD = PUBLIC ? "https://toskaman.github.io/continuity-agentic-web/" : "http://127.0.0.1:8080/";
+const PEER = (repo, port, host = "127.0.0.1") => (PUBLIC ? `https://gpaschercher-sudo.github.io/${repo}/` : `http://${host}:${port}/`);
 const eco = await startAllEcosystemServers({
   continuity: 8080,
   moveco: 8081,
@@ -205,6 +209,9 @@ try {
   });
 
   const snapPng = async (filename) => {
+    // Close the post-commit toast so it never covers the content being shown.
+    await cdp.send("Runtime.evaluate", { expression: `document.querySelector("#outcome-panel .outcome-close")?.click(); true` });
+    await new Promise((r) => setTimeout(r, 200));
     const { data } = await cdp.send("Page.captureScreenshot", {
       format: "png",
       captureBeyondViewport: false,
@@ -215,14 +222,14 @@ try {
   };
 
   // Screenshot 1: Baseline 6-Commitment Mission & SVG Dependency Graph
-  await cdp.send("Page.navigate", { url: "http://127.0.0.1:8080/" });
-  await new Promise((r) => setTimeout(r, 900));
+  await cdp.send("Page.navigate", { url: COORD });
+  await new Promise((r) => setTimeout(r, PUBLIC ? 4000 : 900));
   await snapPng("01_continuity_mission_baseline.png");
 
   // Screenshot 2: Ripple Failure Armed + Minimal-Change Plan Prepared (3 affected, 3 preserved)
   await cdp.send("Runtime.evaluate", {
     expression: `(async () => {
-      const { App } = await import("./script.js");
+      const { App } = await import(new URL("script.js", location.href).href);
       await App.page.resetMission({ rippleFailureInjected: true });
       await App.page.analyzeAndPrepareChange(document.querySelector("#mission-input").value);
     })()`,
@@ -262,17 +269,19 @@ try {
   await new Promise((r) => setTimeout(r, 250));
   await snapPng("04_committed_verified_ed25519.png");
 
-  // Screenshot 5: Chaos Lab (15/15 Scenarios Passed)
+  // Screenshot 5: Chaos Lab (42/42 scenarios passed)
   await cdp.send("Runtime.evaluate", {
     expression: `(async () => {
       document.querySelector("#tab-btn-chaos").click();
       await new Promise(r => setTimeout(r, 500));
+      document.querySelector("#run-chaos-suite-btn")?.click();
+      await new Promise(r => setTimeout(r, 6000));
       document.querySelector(".tabs-section")?.scrollIntoView({ behavior: "instant" });
     })()`,
     awaitPromise: true,
   });
   await new Promise((r) => setTimeout(r, 250));
-  await snapPng("05_chaos_lab_15_passed.png");
+  await snapPng("05_chaos_lab_42_passed.png");
 
   // Screenshot 5B: Mandate Authority, Sealed-Bid Nash Arbiter & 4 Adversarial Bypasses Denied
   await cdp.send("Runtime.evaluate", {
@@ -294,28 +303,28 @@ try {
   await snapPng("06_open_agentic_web_runtime_otari_byok.png");
 
   // Screenshot 7: Independent Peer Website (MoveCo Express)
-  await cdp.send("Page.navigate", { url: "http://127.0.0.1:8081/" });
-  await new Promise((r) => setTimeout(r, 700));
+  await cdp.send("Page.navigate", { url: PEER("moveco-agentic-peer", 8081) });
+  await new Promise((r) => setTimeout(r, PUBLIC ? 3000 : 700));
   await snapPng("07_independent_peer_moveco.png");
 
   // Screenshots 10-12: the other three independent peers (each has its own identity and origin)
-  for (const [port, host, name] of [
-    [8082, "localhost", "10_independent_peer_permitflow.png"],
-    [8083, "127.0.0.1", "11_independent_peer_homeconnect.png"],
-    [8084, "localhost", "12_independent_peer_powerflow.png"],
+  for (const [port, host, name, repo] of [
+    [8082, "localhost", "10_independent_peer_permitflow.png", "permitflow-agentic-peer"],
+    [8083, "127.0.0.1", "11_independent_peer_homeconnect.png", "homeconnect-agentic-peer"],
+    [8084, "localhost", "12_independent_peer_powerflow.png", "powerflow-agentic-peer"],
   ]) {
-    await cdp.send("Page.navigate", { url: `http://${host}:${port}/` });
-    await new Promise((r) => setTimeout(r, 700));
+    await cdp.send("Page.navigate", { url: PEER(repo, port, host) });
+    await new Promise((r) => setTimeout(r, PUBLIC ? 3000 : 700));
     await snapPng(name);
   }
 
   // Screenshot 14: Standalone 5-Tool Open Agentic Web Community Builder Kit
-  await cdp.send("Page.navigate", { url: "http://127.0.0.1:8080/community-kit.html" });
-  await new Promise((r) => setTimeout(r, 800));
+  await cdp.send("Page.navigate", { url: COORD + "community-kit.html" });
+  await new Promise((r) => setTimeout(r, PUBLIC ? 3000 : 800));
   await snapPng("14_community_builder_kit.png");
 
   // Screenshot 13: live provider wall on the PUBLIC deployment (only when --capture-public-wall is passed).
-  if (process.argv.includes("--capture-public-wall")) {
+  if (PUBLIC || process.argv.includes("--capture-public-wall")) {
     try {
       await cdp.send("Page.navigate", { url: "https://toskaman.github.io/continuity-agentic-web/?demo=1" });
       await cdp.send("Runtime.evaluate", {

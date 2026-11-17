@@ -291,6 +291,8 @@
 /* ---------- Assistant ---------- */
 .sample-prompts-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: var(--s-3); }
 .top-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.header-meta.top-actions { flex-wrap: nowrap; flex-shrink: 0; }
+.header-meta.top-actions > * { white-space: nowrap; }
 .protocol-links { display: grid; gap: 10px; font-size: var(--fs-xs); }
 
 /* ---------- Responsive ---------- */

@@ -229,6 +229,7 @@ try {
   const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
   for (const tg of targets.filter((x) => x.type === "iframe")) proofs.frameTexts[tg.url.split("#")[0]] = tg.title;
 
+  await evalJs(`document.querySelector("#outcome-panel .outcome-close")?.click(); true`);
   // ---- 11 agent grid (network cards)
   await jumpTo("#agent-grid", "center"); await sleep(700);
   await measure("agents", { grid: "#agent-grid", cards: "#agent-grid > *" });
@@ -266,6 +267,22 @@ try {
   await measure("heroAfter", { eco: "#eco", peers: "#eco [data-peer]", core: "#eco-core-state", steps: "#mission-steps", demoBtn: "#guided-demo-btn" });
   await still("15_hero_after");
   await record("15_hero_after_idle", () => sleep(4000), 0);
+
+  // ---- 15b the same engine on other life changes (real scenario switch + analysis)
+  for (const [sid, tag] of [["outpatient_surgery", "17_surgery"], ["product_launch_expo", "19_freight"]]) {
+    await jumpTo("#workspace"); await sleep(600);
+    await click(`[data-scenario-id="${sid}"]`, "scenario_" + sid); await sleep(1500);
+    await jumpTo("#workspace"); await sleep(500);
+    proofs["request_" + sid] = await evalJs(`document.querySelector("#mission-input")?.value || ""`);
+    await measure("ws_" + sid, { input: "#mission-input", pills: ".scenario-pill", analyze: "#analyze-plan-btn" });
+    await still(tag + "_request");
+    await click("#analyze-plan-btn", "analyze_" + sid); await sleep(2500);
+    proofs["status_" + sid] = await text("#status-banner");
+    proofs["kpis_" + sid] = await text(".kpi-grid > *");
+    await jumpTo("#mission"); await sleep(900);
+    await measure("mission_" + sid, { graph: "#graph-viewport", summary: "#change-summary-box", pkg: ".package-panel" });
+    await still(tag + "_mission");
+  }
 
   // ---- 16 the four providers' own sites + coordinator, opened directly (for the 3D origin scene)
   for (const u of proofs.wallUrls || []) {

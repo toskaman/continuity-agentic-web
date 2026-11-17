@@ -517,10 +517,12 @@ let dlgShot;
   const c1 = camOn(960, 470, 1.2);
   camTo(dl, tClick + 0.9, c1, 1.0);
   const ops_ = [557, rows[1].y - 6, 822, rows[1].h + 12];
-  const cost = [557, rows[3].y - 6, 822, rows[4].y + rows[4].h - rows[3].y + 12];
+  const cost = [557, rows[3].y - 6, 822, rows[3].h + 12];
+  const bind = [557, rows[4].y - 6, 822, rows[4].h + 12];
   const c2 = camOn(965, 520, 1.42);
   camTo(dl, W("s07", "bound") - 0.3, c2, 0.9);
-  focus(dl, W("s07", "operations") - 0.35, ops_, { pad: 6, radius: 12 });
+  focus(dl, W("s07", "bound") - 0.1, bind, { pad: 6, radius: 12 });
+  focusMove(dl, W("s07", "operations") - 0.3, ops_, { pad: 6, radius: 12 });
   focusMove(dl, W("s07", "prices") - 0.2, cost, { pad: 6, radius: 12 });
   focusMove(dl, W("s07", "providers") - 0.2, [rows[1].x + rows[1].w + 6, rows[1].y - 4, 616, rows[1].h + 8], { pad: 6, radius: 12 });
   // binding explainer (graphic, values from packages/approval-engine semantics)
@@ -612,36 +614,61 @@ let dlgShot;
   const cb = camOn(bn.x + 520, bn.y + 30, 1.75);
   camTo(tl_, st + 0.2, cb, 1.3);
   const pb = screen(cb, bn.x, bn.y + bn.h + 22);
-  chip("Tamper-evident chain", W("s09", "hash") - 0.1, W("s09", "exactly") + 0.15, pb.x, pb.y, { tone: "solid", size: 30 });
-  focus(tl_, W("s09", "hash") - 0.25, [bn.x, bn.y, bn.w, bn.h], { pad: 8, radius: 12 });
-  const pv = still("12b_privacy", "assets/stills/12b_privacy.jpg", W("s09", "exactly") - 0.45, W("s09", "15") + 0.95, { push: "left" });
+  chip("Tamper-evident chain", W("s09", "hash-chained") - 0.1, W("s09", "exactly") + 0.15, pb.x, pb.y, { tone: "solid", size: 30 });
+  focus(tl_, W("s09", "hash-chained") - 0.25, [bn.x, bn.y, bn.w, bn.h], { pad: 8, radius: 12 });
+  const pv = still("12b_privacy", "assets/stills/12b_privacy.jpg", W("s09", "exactly") - 0.45, W("s09", "42") + 0.95, { push: "left" });
   const row = B.privacy.rows[0];
   const cp = camOn(row.x + 560, row.y + 70, 1.5);
   set(`#${pv.sid}-cam`, 0, { x: cp.x, y: cp.y, scale: cp.z }); pv.camKeys = [{ t: 0, ...cp }];
   focus(pv, W("s09", "exactly") - 0.2, [row.x, row.y, row.w, row.h], { pad: 4, radius: 10 });
   const pr = screen(cp, row.x + 10, row.y - 62);
-  chip("MoveCo receives only booking_ref + date", W("s09", "exactly") + 0.25, W("s09", "15") + 0.2, pr.x, pr.y, { tone: "solid", size: 28 });
+  chip("MoveCo receives only booking_ref + date", W("s09", "exactly") + 0.25, W("s09", "42") + 0.2, pr.x, pr.y, { tone: "solid", size: 28 });
   // chaos lab: real click on "Run all 15 scenarios"
   const run = B.click_chaosRun;
-  const tRun = W("s09", "15") + 0.45;
+  const tRun = W("s09", "42") + 0.45;
   const ms0 = 1.95; const clickInClip = 2.72;
   video("12_trust_chaos", "assets/footage/12_trust_chaos.mp4", tRun - (clickInClip - ms0), tRun + 1.3, ms0, { push: "left" });
   cursor(tRun - 0.6, tRun + 0.6, [[tRun - 0.6, 1300, 900], [tRun - 0.12, run.x, run.y], [tRun + 0.6, run.x + 6, run.y + 4]], [tRun]);
   const ch = still("12_chaos", "assets/stills/12_chaos.jpg", tRun + 1.2, W("s09", "Zero") + 0.3, { fadeIn: 0.15 });
   const sm = B.chaos.summary;
-  const cc = camOn(sm.x + 520, sm.y + 40, 1.7);
+  // The summary line sits at the bottom edge of this capture (under the captions), so frame the
+  // Chaos Lab card instead and state the real summary in a chip at the top.
+  const runB = B.chaos.run;
+  const cc = camOn(960, runB.y + 120, 1.15);
   camTo(ch, tRun + 1.2, cc, 0.8);
-  focus(ch, tRun + 1.3, [sm.x, sm.y, sm.w, sm.h], { pad: 6, radius: 12 });
+  focus(ch, tRun + 1.3, [193, runB.y - 40, 1533, 140], { pad: 6, radius: 14 });
+  chip("Simulation suite: 42 / 42 passed · 0 live bookings touched", tRun + 1.45, W("s09", "Zero") + 0.2, 960, 90, { tone: "solid", anchor: "center", size: 30 });
   S(tRun + 1.3, "sfx_verify_2.wav", 0.16, "15/15");
-  const pf = still("02_proof_b", "assets/stills/02_proof.jpg", W("s09", "Zero") - 0.4, SC.S10 + 0.45, { push: "down" });
-  const cz = camOn(1136, 630, 2.1);
+  const pf = still("02_proof_b", "assets/stills/02_proof.jpg", W("s09", "Zero") - 0.4, SC.S9b + 0.45, { push: "down" });
+  const cz = camOn(1110, 640, 2.1);
   set(`#${pf.sid}-cam`, 0, { x: cz.x, y: cz.y, scale: cz.z }); pf.camKeys = [{ t: 0, ...cz }];
-  focus(pf, W("s09", "Zero") - 0.1, [940, 618, 392, 24], { pad: 6, radius: 10 });
-  const chips = ["42 automated tests", "Lighthouse 100 · all categories", "15 / 15 chaos scenarios", "0 cancel calls · 60 runs"];
-  const tC = W("s09", "60") - 0.2;
-  const CH = layer(tC, SC.S10 + 0.3, (C) => `<div class="proofchips">${chips.map((c, i) => `<span id="${C}-p${i}">${c}</span>`).join("")}</div>`, "", "", true);
+  focus(pf, W("s09", "Zero") - 0.1, [944, 626, 334, 26], { pad: 7, radius: 10 });
+  const chips = ["117 automated tests", "Lighthouse 100 · all categories", "42 / 42 chaos scenarios", "0 cancel calls · 180 runs"];
+  const tC = W("s09", "180") - 0.2;
+  const CH = layer(tC, SC.S9b + 0.3, (C) => `<div class="proofchips">${chips.map((c, i) => `<span id="${C}-p${i}">${c}</span>`).join("")}</div>`, "", "", true);
   chips.forEach((_, i) => { fromTo(`#${CH}-p${i}`, tC + i * 0.12, 0.4, { opacity: 0, y: -10 }, { opacity: 1, y: 0 }); });
-  to(`#${CH}`, SC.S10 - 0.1, 0.35, { opacity: 0 }, "power2.in");
+  to(`#${CH}`, SC.S9b - 0.1, 0.35, { opacity: 0 }, "power2.in");
+}
+
+// =====================================================================
+// S9b — same engine, other life changes (real captures of the two other scenarios)
+// =====================================================================
+{
+  const st = SC.S9b, en = SC.S10 + 0.05;
+  const cards = [
+    { img: "assets/stills/17_surgery_mission.jpg", t: W("s09b", "moving") - 0.15, x: 80, rot: 7, title: "Outpatient surgery moved", sub: "3 of 5 bookings move · €510 ≤ €560 cap" },
+    { img: "assets/stills/19_freight_mission.jpg", t: W("s09b", "same") - 0.1, x: 960, rot: -7, title: "Expo freight delayed", sub: "3 of 6 bookings move · €1,865 ≤ €1,980 cap" },
+  ];
+  const L = layer(st, en, (L) => `<div class="eyebrow-big" id="${L}-eb">Same engine · any life change</div>
+    <div class="s9b-row">${cards.map((c, i) => `<div class="scard-wrap" style="left:${c.x}px"><div class="scard" id="${L}-c${i}"><img src="${c.img}" alt=""></div><div class="scard-cap" id="${L}-k${i}"><b>${c.title}</b><span>${c.sub}</span></div></div>`).join("")}</div>`, "s9b");
+  fromTo(`#${L}-eb`, st + 0.25, 0.6, { opacity: 0, y: 14 }, { opacity: 1, y: 0 });
+  cards.forEach((c, i) => {
+    set(`#${L}-c${i}`, 0, { transformPerspective: 1600, transformOrigin: "50% 50%" });
+    fromTo(`#${L}-c${i}`, c.t, 0.85, { opacity: 0, y: 60, rotationY: c.rot * 2.2, scale: 0.94 }, { opacity: 1, y: 0, rotationY: c.rot, scale: 1 }, "power3.out");
+    fromTo(`#${L}-k${i}`, c.t + 0.35, 0.5, { opacity: 0, y: 12 }, { opacity: 1, y: 0 });
+    S(c.t, "sfx_whoosh_soft.wav", 0.16); S(c.t + 0.35, "sfx_tick.wav", 0.2);
+  });
+  to(`#${L}`, en - 0.45, 0.4, { opacity: 0 }, "power2.in");
 }
 
 // =====================================================================
