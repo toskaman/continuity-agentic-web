@@ -83,7 +83,7 @@ export async function verifySignedReceiptHandoff(expectedProviderId, rawToken, o
         return { valid: false, reason: "Handoff peerOrigin must not embed credentials." };
       }
     }
-    if (options.expectedOrigin && parsed.peerOrigin) {
+    if (options.expectedOrigin) {
       const cleanExpected = String(options.expectedOrigin).replace(/\/+$/, "");
       const cleanTokenOrigin = String(parsed.peerOrigin).replace(/\/+$/, "");
       if (cleanExpected !== cleanTokenOrigin) {
@@ -122,6 +122,36 @@ export async function verifySignedReceiptHandoff(expectedProviderId, rawToken, o
   } catch (err) {
     return { valid: false, reason: err.message };
   }
+}
+
+/** Resolve the receiving site's key independently of the handoff and report the check to its embedder. */
+export async function verifyProviderPageHandoff(providerId, token) {
+  const expectedOrigin = new URL("./", location.href).href;
+  const pinnedKey = await getOrCreateOriginKeyPair(providerId);
+  const check = await verifySignedReceiptHandoff(providerId, token, { pinnedKey, expectedOrigin });
+  if (check.valid || !["localhost", "127.0.0.1", "[::1]"].includes(location.hostname)) return check;
+
+  // The loopback HTTP demo server has its own signer, separate from the browser bridge.
+  try {
+    const response = await fetch(new URL("/api/public-key", expectedOrigin), { redirect: "error" });
+    if (response.ok) {
+      const providerKey = await response.json();
+      return verifySignedReceiptHandoff(providerId, token, { pinnedKey: providerKey, expectedOrigin });
+    }
+  } catch {
+    // The static browser demo does not require an HTTP signing service.
+  }
+  return check;
+}
+
+export function reportProviderPageReceipt(providerId, check) {
+  if (window.parent === window || !document.referrer) return;
+  const origin = new URL(document.referrer).origin;
+  window.parent.postMessage({
+    protocol: "continuity-provider-receipt/v1",
+    providerId,
+    digest: check.proof.payload_sha256,
+  }, origin);
 }
 
 /**
@@ -227,6 +257,28 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
   let state = initialByProvider[providerId]();
   const holds = new Map();
   const idempotencyStore = new Map();
+  const storage = options.sessionStorage;
+  const storageKey = `continuity-provider-demo/v1/${providerId}`;
+  if (storage) {
+    try {
+      const saved = JSON.parse(storage.getItem(storageKey));
+      if (saved?.state?.booking?.booking_ref === state.booking.booking_ref) {
+        state = saved.state;
+        for (const [key, value] of saved.holds || []) holds.set(key, value);
+        for (const [key, value] of saved.receipts || []) idempotencyStore.set(key, value);
+      }
+    } catch {
+      // Storage restrictions leave the demo usable for the current page.
+    }
+  }
+
+  const saveSession = () => {
+    try {
+      storage?.setItem(storageKey, JSON.stringify({ state, holds: [...holds], receipts: [...idempotencyStore] }));
+    } catch {
+      // The coordinator will treat an unavailable receipt as unconfirmed after reload.
+    }
+  };
   let signerPromise = null;
 
   const ensureSigner = () => {
@@ -239,6 +291,7 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
     state.injected_scenario = injectScenario;
     holds.clear();
     idempotencyStore.clear();
+    saveSession();
     return { ok: true, providerId, injected_scenario: state.injected_scenario };
   };
 
@@ -448,22 +501,27 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
       const prefix = providerId === "moveco" ? "hold_mc" : "hold_hc";
       const holdResp = {
         ok: true,
-        hold_id: `${prefix}_${holds.size + 1}`,
+        hold_id: `${prefix}_${crypto.randomUUID()}`,
         booking_ref: args.booking_ref,
         offer_id: args.offer_id,
         proposed_date: args.proposed_date,
         original_booking_preserved: true,
-        expires_at: "2027-01-20T23:59:59Z",
+        expires_at: new Date(Date.now() + (providerId === "moveco" ? 15 : 10) * 60_000).toISOString(),
       };
       holds.set(idem, holdResp);
+      saveSession();
       return holdResp;
     }
 
     if (tool === "release_hold") {
       const hid = String(args.hold_id || "");
       for (const [k, v] of holds.entries()) {
-        if (v.hold_id === hid) holds.delete(k);
+        if (v.hold_id !== hid) continue;
+        if (v.booking_ref !== args.booking_ref) return { ok: false, reason: "Hold belongs to a different booking." };
+        holds.delete(k);
+        break;
       }
+      saveSession();
       return { ok: true, released: true, hold_id: hid, fee_charged_eur: 0 };
     }
 
@@ -479,6 +537,12 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
       const idem = String(args.idempotency_key || "");
       if (idempotencyStore.has(idem)) {
         return idempotencyStore.get(idem);
+      }
+      const holdEntry = args.hold_id && [...holds].find(([, hold]) => hold.hold_id === args.hold_id
+        && hold.booking_ref === args.booking_ref && hold.offer_id === args.offer_id
+        && hold.proposed_date === args.new_date && Date.parse(hold.expires_at) > Date.now());
+      if (args.hold_id && !holdEntry) {
+        return { execution_state: "REJECTED_NO_SIDE_EFFECT", reason: "The approved hold is no longer active." };
       }
 
       let basePrice = state.booking.base_price_eur;
@@ -525,6 +589,8 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
       };
       if (idempotencyStore.size >= 512) idempotencyStore.delete(idempotencyStore.keys().next().value);
       idempotencyStore.set(idem, fullResult);
+      if (holdEntry) holds.delete(holdEntry[0]);
+      saveSession();
       return fullResult;
     }
 
@@ -590,7 +656,9 @@ export function mountPeerRpcBridgeServer({ providerId, allowedCallerOrigins = []
     return false;
   };
 
-  const engine = createPeerBrowserDomainEngine(providerId);
+  let sessionStorage;
+  try { sessionStorage = window.sessionStorage; } catch {}
+  const engine = createPeerBrowserDomainEngine(providerId, { sessionStorage });
   const channel =
     typeof BroadcastChannel === "function" ? new BroadcastChannel(`continuity-peer-${providerId}`) : null;
 

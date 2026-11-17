@@ -36,7 +36,7 @@ import { exposeActionsToWebMcp } from "../../packages/webmcp-adapter/index.js";
 import { App } from "../../apps/continuity-web/script.js";
 import { startAllEcosystemServers } from "../../scripts/serve_ecosystem.mjs";
 
-test("V2.1 — Intake Compiler parses unstructured confirmation emails, infers dependencies, and executes Ed25519 Saga", async () => {
+test("V2.1 — Imported email bookings require provider confirmation before execution", async () => {
   const imp = await App.page.importCustomSchedule(SAMPLE_RAW_CONFIRMATION_EMAILS);
   assert.equal(imp.ok, true);
   assert.equal(imp.format, "emails");
@@ -54,9 +54,12 @@ test("V2.1 — Intake Compiler parses unstructured confirmation emails, infers d
     expectedVersion: state.version,
     expectedTotalEur: state.selectedPlanSummary.metrics.totalMissionCostEur,
   });
-  assert.equal(commit.ok, true);
-  assert.equal(commit.sagaStatus, "ALL_COMMITTED_AND_VERIFIED");
-  assert.ok(commit.receipts.every((r) => r.proof_level === "VERIFIED_ED25519_DEMO_PROVIDER_SIGNATURE"));
+  assert.equal(commit.ok, false);
+  assert.equal(App.page.preparedOps.length, 0);
+  const playbook = App.page.getTransitionPlaybook();
+  assert.equal(playbook.agenticStepsCount, 0);
+  assert.ok(playbook.steps.every((step) => step.currentState === "AWAITING_PROVIDER_CONFIRMATION" && !step.receiptVerified));
+  assert.equal(App.page.canDownloadUpdatedCalendar, false);
 });
 
 test("V2.2 — Multi-Domain Scenarios (Outpatient Surgery & Product Launch Expo) + RFC 5545 .ics round-trip + Audit Bundle", async () => {
@@ -89,6 +92,41 @@ test("V2.2 — Multi-Domain Scenarios (Outpatient Surgery & Product Launch Expo)
   assert.equal(roundTrip.format, "ics");
   assert.equal(roundTrip.mission.commitments.length, 5);
 
+  const relocation = createSignatureMoveMission();
+  const relocationGraph = MissionGraph.fromMission(relocation);
+  const movingCrew = {
+    commitment_id: "cmt_moveco_van",
+    original_booking_ref: "MC-8841",
+    state: "AWAITING_APPROVAL",
+    proposed_date: "2026-11-20",
+    window: "09:30–14:30",
+    provider_name: "Overflow Crew (Demo)",
+  };
+  const crewEvent = (operation) => exportMissionToIcs(relocation, relocationGraph, [operation]).split("BEGIN:VEVENT")[1];
+  const pending = crewEvent(movingCrew);
+  assert.match(pending, /DTSTART:20261117T080000/);
+  assert.match(pending, /DTEND:20261117T130000/);
+  assert.match(pending, /LOCATION:MoveCo Express/);
+  assert.doesNotMatch(pending, /20261120|Overflow Crew/);
+  assert.match(crewEvent({ ...movingCrew, state: "NEEDS_USER" }), /STATUS:TENTATIVE/);
+
+  const digest = "a".repeat(64);
+  const result = {
+    ...movingCrew,
+    state: "COMMITTED",
+    receipt_envelope: { receipt_body: { booking_ref: "MC-OVERFLOW" }, proof: { payload_sha256: digest } },
+  };
+  const unverified = crewEvent(result);
+  assert.match(unverified, /RECEIPT UNVERIFIED/);
+  assert.doesNotMatch(unverified, /MC-OVERFLOW|payload SHA-256/);
+  const verified = crewEvent({ ...result, proof_verification: { valid: true, trusted: true, payload_sha256: digest } });
+  assert.match(verified, /DTSTART:20261120T093000/);
+  assert.match(verified, /DTEND:20261120T143000/);
+  assert.match(verified, /LOCATION:Overflow Crew \(Demo\)/);
+  assert.match(verified, /Ref: MC-OVERFLOW/);
+  assert.ok(verified.includes(`Verified demo receipt payload SHA-256: ${digest}`));
+  assert.equal(verified.match(/^UID:.*$/m)[0], pending.match(/^UID:.*$/m)[0]);
+
   const bundle = await exportVerifiableAuditBundle({
     mission: m,
     selectedPlan: null,
@@ -102,9 +140,15 @@ test("V2.2 — Multi-Domain Scenarios (Outpatient Surgery & Product Launch Expo)
 });
 
 test("V2.3 — Cross-Origin Browser Bridge Engine signs verifiable Ed25519 receipt handoffs & rejects tampering", async () => {
-  const moveco = createPeerBrowserDomainEngine("moveco", {
+  const savedEntries = new Map();
+  const options = {
     origin: "https://gpaschercher-sudo.github.io/moveco-agentic-peer",
-  });
+    sessionStorage: {
+      getItem: (name) => savedEntries.get(name),
+      setItem: (name, value) => savedEntries.set(name, value),
+    },
+  };
+  const moveco = createPeerBrowserDomainEngine("moveco", options);
   moveco.reset("primary_fri_full");
 
   const quote = await moveco.callTool("get_moving_quote", {
@@ -139,6 +183,11 @@ test("V2.3 — Cross-Origin Browser Bridge Engine signs verifiable Ed25519 recei
   const okHandoff = await verifySignedReceiptHandoff("moveco", commit.handoff_token);
   assert.equal(okHandoff.valid, true);
   assert.equal(okHandoff.receiptBody.scheduled_date, "2026-11-20");
+
+  const restored = createPeerBrowserDomainEngine("moveco", options);
+  const observed = await restored.callTool("get_booking_status", { idempotency_key: "idem_bridge_commit_1" });
+  assert.equal(observed.execution_state, "COMMITTED");
+  assert.deepEqual(observed.receipt_envelope, commit.receipt_envelope);
 
   // Reject wrong expectedProviderId
   const wrongProv = await verifySignedReceiptHandoff("permitflow", commit.handoff_token);

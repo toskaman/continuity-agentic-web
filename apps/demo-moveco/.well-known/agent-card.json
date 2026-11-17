@@ -2,14 +2,7 @@
   "name": "MoveCo Express Assistant",
   "description": "Check MoveCo Express residential moving van availability, place a 15-minute slot hold, or confirm a crew reschedule.",
   "version": "1.0.0",
-  "url": "http://127.0.0.1:8081/moveco_dispatch",
-  "supportedInterfaces": [
-    {
-      "url": "http://127.0.0.1:8081/moveco_dispatch",
-      "protocolBinding": "HTTP+JSON",
-      "protocolVersion": "1.0"
-    }
-  ],
+  "url": "http://127.0.0.1:8081/moveco_dispatch.network.json",
   "capabilities": {
     "streaming": false,
     "pushNotifications": false,
@@ -41,7 +34,7 @@
       "mvpProfile": "0.2",
       "manifestUrl": "http://127.0.0.1:8081/agent-manifest.json",
       "networkUrl": "http://127.0.0.1:8081/moveco_dispatch.network.json",
-      "factsNetworkUrl": "http://127.0.0.1:8081/facts/moveco_dispatch_facts",
+      "factsNetworkUrl": "http://127.0.0.1:8081/facts/moveco_dispatch_facts.network.json",
       "browserExecuted": true
     },
     "org.projectnanda": {

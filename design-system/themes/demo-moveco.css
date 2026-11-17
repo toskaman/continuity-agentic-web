@@ -23,7 +23,7 @@
 .choice-card:has(input:checked)::after { border-color: var(--accent-2); }
 .record-when .date-tile { background: var(--accent); }
 .stepper li[data-state="current"]::before { background: var(--accent-2-ink); border-color: var(--accent-2-ink); }
-[data-theme="dark"] {
+html[data-theme="dark"] {
   --paper: #090E1A;
   --surface: #111827;
   --surface-2: #182235;

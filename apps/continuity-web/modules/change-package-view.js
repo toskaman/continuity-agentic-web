@@ -3,7 +3,6 @@
  */
 
 import { formatDateWithWeekday } from "../vendor/mission-core/index.js";
-import { buildHybridTransitionPlaybook } from "../vendor/transition-playbook/index.js";
 
 export function renderHoldCountdownView(page) {
   const el = document.querySelector("#hold-countdown-strip");
@@ -167,10 +166,13 @@ export function renderChangePackageView(page, plan) {
     ? `<div class="provider-alerts-banner">${page.providerAlerts.map((a) => `⚡ ${page.escapeXml(a)}`).join("<br>")}</div>`
     : "";
 
-  const committedBanner =
-    page.lastSagaExecution?.status === "ALL_COMMITTED_AND_VERIFIED"
-      ? `<strong>Mission Re-Aligned &amp; Cryptographically Verified.</strong> ${plan.metrics.changedCount} service arrangements have been committed for ${formatDateWithWeekday(page.compiledProposal.requested_change.new_value)}. ${plan.metrics.unchangedCount} unaffected commitments remained untouched throughout. Download your updated <code>.ics</code> calendar or click any synced peer above.`
-      : `<strong>Change Package Prepared:</strong> Primary anchor shifts from ${formatDateWithWeekday(page.compiledProposal.requested_change.previous_value)} to <strong>${formatDateWithWeekday(page.compiledProposal.requested_change.new_value)}</strong>. <strong>${plan.metrics.changedCount}</strong> service arrangements need modification; <strong>${plan.metrics.unchangedCount}</strong> existing arrangements remain unchanged. Replacements are prepared and held — your original bookings remain intact until you approve.`;
+  const manualCount = page.manualCommitmentIds.length;
+  const committedCount = page.lastSagaExecution?.committedOperationIds.length;
+  const committedBanner = page.lastSagaExecution
+    ? `<strong>${committedCount} changes verified.</strong> ${manualCount ? `${manualCount} still need confirmation. Follow the checklist below.` : ""}`
+    : `<strong>${page.preparedOps.length} changes ready for review.</strong> ${manualCount
+        ? `${manualCount} still need confirmation through the checklist below.`
+        : "Your original bookings remain in place while you decide."}`;
 
   summaryBox.innerHTML = `${committedBanner}${alertsHtml}`;
 
@@ -187,7 +189,7 @@ export function renderChangePackageView(page, plan) {
               (sum, c) => sum + Number(cmtMap.get(c.commitment_id)?.cancellation_fee_eur || 0),
               0,
             );
-      const savedTxt = avoidedCancelEur > 0 ? ` · €${avoidedCancelEur.toFixed(0)} cancel fees saved` : "";
+      const savedTxt = avoidedCancelEur > 0 ? ` · €${avoidedCancelEur.toFixed(0)} potential cancellation fees` : "";
       const crowdTxt = typeof p.crowdingDistance === "number" && Number.isFinite(p.crowdingDistance)
         ? p.crowdingDistance.toFixed(2)
         : "∞";
@@ -214,14 +216,10 @@ export function renderChangePackageView(page, plan) {
     });
   });
 
-  const playbook = buildHybridTransitionPlaybook({
-    mission: page.mission,
-    plan,
-    preparedOps: page.preparedOps,
-  });
+  const playbook = page.getTransitionPlaybook();
   if (pbDrawer && pbSummary && pbBody) {
     pbDrawer.hidden = false;
-    pbSummary.textContent = `Step-by-step plan: ${playbook.agenticStepsCount} handled by the providers' own sites · ${playbook.legacyStepsCount} by email · €${playbook.avoidedPenaltiesTotalEur.toFixed(2)} in cancellation fees avoided`;
+    pbSummary.textContent = `Step-by-step plan: ${playbook.agenticStepsCount} handled by the providers' own sites · ${playbook.legacyStepsCount} by email`;
     pbBody.textContent = playbook.markdown;
   }
   const playbookStepByCommitment = new Map(playbook.steps.map((s) => [s.commitmentId, s]));
@@ -237,17 +235,6 @@ export function renderChangePackageView(page, plan) {
       const receiptDrawer = op.receipt_envelope?.proof
         ? `<details class="receipt-drawer"><summary>Show the provider's signature (${page.escapeXml(op.receipt_envelope.proof.key_id)})</summary><pre class="receipt-pre">${page.escapeXml(JSON.stringify(op.receipt_envelope, null, 2))}</pre></details>`
         : "";
-      const legacyDraftDrawer =
-        stepInfo && stepInfo.executionChannel === "LEGACY_VENDOR_HOLD_FIRST_DRAFT"
-          ? `<details class="receipt-drawer">
-               <summary>Step #${stepInfo.stepNumber} Hold-First Reschedule Draft (for real-world / legacy vendor)</summary>
-               <pre class="receipt-pre">${page.escapeXml(`Subject: ${stepInfo.subject}\n\n${stepInfo.messageDraft}`)}</pre>
-               <div class="draft-actions-row">
-                 <a class="mini-btn" href="${page.escapeXml(stepInfo.mailtoHref)}">✉ Open in Mail</a>
-                 <button type="button" class="mini-btn" data-copy-draft="${page.escapeXml(op.commitment_id)}">Copy the request</button>
-               </div>
-             </details>`
-          : "";
       const channelLine = stepInfo
         ? `<div>Channel: <code>${page.escapeXml(stepInfo.channelBadge)}</code></div>`
         : "";
@@ -266,11 +253,32 @@ export function renderChangePackageView(page, plan) {
           </details>
           ${proofBadge}
           ${receiptDrawer}
-          ${legacyDraftDrawer}
         </div>
       `;
     })
     .join("");
+
+  for (const step of playbook.steps.filter((item) => page.manualCommitmentIds.includes(item.commitmentId))) {
+    const card = document.createElement("article");
+    card.className = "op-card";
+    card.innerHTML = `
+      <div class="op-card-head">
+        <span>${page.escapeXml(step.commitmentTitle)}</span>
+        <span class="state-tag">Awaiting provider confirmation</span>
+      </div>
+      <div>${page.escapeXml(formatDateWithWeekday(step.fromDate))} → ${page.escapeXml(formatDateWithWeekday(step.toDate))}
+        · ${page.escapeXml(step.providerName)} · estimated €${step.expectedTotalEur.toFixed(2)}</div>
+      <details class="receipt-drawer">
+        <summary>Read the request before sending</summary>
+        <pre class="receipt-pre">${page.escapeXml(step.messageDraft)}</pre>
+        <div class="draft-actions-row">
+          <a class="mini-btn" href="${page.escapeXml(step.mailtoHref)}">Open in Mail</a>
+          <button type="button" class="mini-btn" data-copy-draft="${page.escapeXml(step.commitmentId)}">Copy the request</button>
+        </div>
+      </details>
+    `;
+    opsContainer.append(card);
+  }
 
   opsContainer.querySelectorAll("[data-copy-draft]").forEach((btn) => {
     btn.addEventListener("click", async () => {

@@ -1,6 +1,6 @@
 // CONTINUITY — presentation layer. Reads the coordinator's real state after
 // every render. It never mutates mission state, never commits, never approves.
-import { App } from "./script.js";
+import { App, SIMULATION_NOTICE } from "./script.js";
 import { chrome, setTimeline, escapeHtml as e } from "./ui-kit.js";
 
 const PEERS = ["moveco", "permitflow", "homeconnect", "powerflow"];
@@ -32,6 +32,7 @@ function peerOfOp(page, op) {
 
 function peerStates(page) {
   const out = Object.fromEntries(PEERS.map((p) => [p, { state: "idle", last: "" }]));
+  if (page.preparedInSimulation) return out;
   for (const d of page.privacyDisclosures || []) {
     const pid = PEERS.find((p) => sameOrigin(d.origin, page.peerOrigins[p]) || PEER_KEYWORD[p].test(d.providerName || ""));
     if (pid) {
@@ -68,7 +69,7 @@ function missionStage(page) {
 }
 
 /* ---------- Live provider wall: the providers' own pages, framed from their own origin ---------- */
-const wall = { loaded: false, justCommitted: false };
+const wall = { loaded: false };
 
 function wallTarget(page, pid) {
   const base = String(page.peerOrigins?.[pid] || "").replace(/\/+$/, "");
@@ -81,7 +82,7 @@ function makeFrame(pid, url) {
   const f = document.createElement("iframe");
   f.title = `${pid} — live page served from its own origin`;
   f.setAttribute("sandbox", "allow-scripts allow-same-origin");
-  f.setAttribute("referrerpolicy", "no-referrer");
+  f.setAttribute("referrerpolicy", "origin");
   f.dataset.want = url;
   f.src = url;
   return f;
@@ -92,8 +93,10 @@ function syncWall(page, states) {
   const scenNote = document.querySelector("#live-wall-scenario-note");
   if (scenNote) {
     const hasLivePeers = page.hasLivePeerCommitments?.() ?? page.isRelocationScenario?.() ?? true;
-    scenNote.hidden = hasLivePeers;
-    if (!hasLivePeers) {
+    scenNote.hidden = hasLivePeers && !page.preparedInSimulation;
+    if (page.preparedInSimulation) {
+      scenNote.textContent = SIMULATION_NOTICE;
+    } else if (!hasLivePeers) {
       scenNote.textContent =
         "These four live cross-origin websites (MoveCo, PermitFlow, HomeConnect, PowerFlow) power the Home relocation & Hybrid .ics ecosystems. Switch to 'Home relocation' or load 'Hybrid .ics (Agentic + Legacy)' in the Workspace above to watch live cross-origin signed receipt commits.";
     }
@@ -102,8 +105,6 @@ function syncWall(page, states) {
   wall.loaded = true;
   const loadBtn = document.querySelector("#live-wall-load");
   if (loadBtn) loadBtn.hidden = true;
-  const delay = wall.justCommitted ? 1300 : 0;
-  wall.justCommitted = false;
   for (const pid of PEERS) {
     const slot = document.querySelector(`[data-live-frame="${pid}"]`);
     if (!slot) continue;
@@ -112,68 +113,113 @@ function syncWall(page, states) {
     if (urlEl) urlEl.textContent = base.replace(/^https?:\/\//, "");
     let frame = slot.querySelector("iframe");
     if (!frame) {
-      slot.replaceChildren(makeFrame(pid, url));
+      frame = makeFrame(pid, url);
+      slot.replaceChildren(frame);
     } else if (frame.dataset.want !== url) {
       const hadToken = frame.dataset.want.includes("#");
       frame.dataset.want = url;
-      if (hadToken && !token) slot.replaceChildren(makeFrame(pid, url)); // mission reset: fresh page
-      else setTimeout(() => { if (frame.dataset.want === url) frame.src = url; }, delay); // hash only: no reload, the page verifies the receipt
+      delete frame.dataset.verifiedDigest;
+      if (hadToken && !token) {
+        frame = makeFrame(pid, url);
+        slot.replaceChildren(frame);
+      } else {
+        frame.src = url;
+      }
     }
+    const operation = page.preparedOps.find((op) => op.provider_id === pid && op.handoff_token === token);
+    frame.dataset.receiptDigest = operation?.proof_verification?.payload_sha256 || "";
+    const providerVerified = Boolean(token && frame.dataset.receiptDigest && frame.dataset.receiptDigest === frame.dataset.verifiedDigest);
+    const sync = document.querySelector(`#peer-sync-${pid}`);
+    if (sync) sync.hidden = !providerVerified;
     const label = document.querySelector(`[data-live-state="${pid}"]`);
     if (label) {
       const st = states[pid].state;
-      label.textContent = token ? "Signed receipt delivered — verified by this page"
+      label.textContent = page.preparedInSimulation ? "Provider page separate from this simulation"
+        : providerVerified ? "Signed receipt verified by this page"
+        : token ? "Waiting for this page to verify the receipt"
         : st === "committed" ? "Committed in the coordinator — no receipt reached this page (offline mode)"
         : st === "prepared" ? "Replacement held — page unchanged until you approve"
         : st === "contacted" ? (page.lastSagaExecution ? "Consulted — kept as is, nothing to change" : "Consulted")
         : "Live — no change requested";
-      label.dataset.state = token ? "committed" : st;
+      label.dataset.state = providerVerified ? "committed" : token ? "prepared" : st;
     }
   }
 }
+
+window.addEventListener("message", (event) => {
+  const message = event.data;
+  if (message?.protocol !== "continuity-provider-receipt/v1" || !PEERS.includes(message.providerId)) return;
+  const frame = document.querySelector(`[data-live-frame="${message.providerId}"] iframe`);
+  if (!frame || event.source !== frame.contentWindow || event.origin !== new URL(frame.src).origin) return;
+  if (!frame.dataset.receiptDigest || message.digest !== frame.dataset.receiptDigest) return;
+  frame.dataset.verifiedDigest = message.digest;
+  update();
+});
 
 let lastOutcome = null;
 
 /** Completion panel: shown once when a commit finishes (verified or halted), dismissible. */
 function showOutcome(page) {
-  const status = page.lastSagaExecution?.status;
+  const release = page.lastHoldRelease;
+  const status = page.lastSagaExecution?.status || release;
   if (!status || status === lastOutcome) return;
   lastOutcome = status;
   document.querySelector("#outcome-panel")?.remove();
   const plan = page.getSelectedPlan?.();
-  const ok = status === "ALL_COMMITTED_AND_VERIFIED";
-  const committedPeer = PEERS.find((pid) => (page.preparedOps || []).some((op) => op.state === "COMMITTED" && peerOfOp(page, op) === pid));
+  const ok = status === "ALL_COMMITTED_AND_VERIFIED" || release?.ok;
+  const manual = status === "MANUAL_FOLLOWUP_REQUIRED";
+  const simulation = page.preparedInSimulation;
+  const committedPeer = !simulation && PEERS.find((pid) => (page.preparedOps || []).some((op) => op.state === "COMMITTED" && peerOfOp(page, op) === pid));
   const peerLink = committedPeer ? document.querySelector(`#peer-link-${committedPeer}`) : null;
   const panel = document.createElement("aside");
   panel.id = "outcome-panel";
   panel.className = `outcome-panel ${ok ? "is-ok" : "is-warn"}`;
   panel.setAttribute("role", "status");
-  panel.innerHTML = ok
+  panel.innerHTML = release
+    ? `<div class="outcome-icon" aria-hidden="true">${release.ok ? "✓" : "!"}</div>
+       <div class="outcome-body">
+         <strong>${simulation ? "Simulated hold release" : "Your bookings are still in place"}</strong>
+         <span>${release.ok ? `${e(release.releasedHoldIds.length)} temporary holds released at no cost.` : e(release.reason)}</span>
+         ${release.ok ? "" : '<div class="outcome-actions"><button type="button" class="btn btn-sm" data-outcome="release">Retry hold release</button></div>'}
+       </div>
+       <button type="button" class="outcome-close" aria-label="Close"><span aria-hidden="true">×</span></button>`
+    : ok
     ? `<div class="outcome-icon" aria-hidden="true">✓</div>
        <div class="outcome-body">
-         <strong>Mission re-aligned and verified</strong>
-         <span>${e(plan?.metrics?.changedCount ?? "")} bookings moved · ${e(plan?.metrics?.unchangedCount ?? "")} left untouched · total €${e(Number(plan?.metrics?.totalMissionCostEur || 0).toFixed(2))} · every commit has a signed receipt.</span>
+         <strong>${simulation ? "Simulation complete" : page.lastSagaExecution.recovered ? "Booking changes recovered and verified" : "Mission re-aligned and verified"}</strong>
+         <span>${e(page.lastSagaExecution.committedOperationIds.length)} ${simulation ? "demo bookings changed locally" : "changes verified"} · ${e(plan?.metrics?.unchangedCount ?? "")} bookings kept · total €${e(Number(plan?.metrics?.totalMissionCostEur || 0).toFixed(2))}.</span>
          <div class="outcome-actions">
-           ${peerLink ? `<a class="btn btn-primary btn-sm" href="${e(peerLink.getAttribute("href"))}" target="_blank" rel="noopener">See it on ${e(peerLink.querySelector(".eco-name")?.textContent || "the provider")} ↗</a>` : ""}
-           <button type="button" class="btn btn-sm" data-outcome="ics">Download updated calendar</button>
+           ${peerLink ? `<a class="btn btn-primary btn-sm" href="#live-wall">See provider confirmations</a>` : ""}
+           <button type="button" class="btn btn-sm" data-outcome="ics">Download demo calendar</button>
            <button type="button" class="btn btn-sm btn-ghost" data-outcome="reset">Run it again</button>
          </div>
        </div>
        <button type="button" class="outcome-close" aria-label="Close"><span aria-hidden="true">×</span></button>`
     : `<div class="outcome-icon" aria-hidden="true">!</div>
        <div class="outcome-body">
-         <strong>Stopped safely</strong>
-         <span>${e(page.lastSagaExecution?.partialFailureReason || "Some operations could not be confirmed.")} Nothing else was changed; details are in the Trust center.</span>
-         <div class="outcome-actions"><a class="btn btn-sm" href="#trust" data-open-tab="tab-btn-timeline">Open the saga log</a></div>
+         <strong>${simulation ? "Simulation stopped" : manual ? "Provider follow-up needed" : status === "RECOVERY_UNCONFIRMED" ? "Some changes still need verification" : "Confirmation stopped"}</strong>
+         <span>${manual
+           ? `${e(page.lastSagaExecution.committedOperationIds.length)} verified · ${e(page.manualCommitmentIds.length)} still need confirmation.`
+           : e(page.lastSagaExecution?.partialFailureReason || "Some operations could not be confirmed.")}</span>
+         <div class="outcome-actions">${manual
+           ? '<a class="btn btn-sm" href="#operations-list">See what still needs confirmation</a>'
+           : status === "RECOVERY_UNCONFIRMED"
+             ? '<button type="button" class="btn btn-sm" data-outcome="retry">Check with providers again</button>'
+             : '<a class="btn btn-sm" href="#trust" data-open-tab="tab-btn-timeline">Check provider status</a>'}</div>
        </div>
        <button type="button" class="outcome-close" aria-label="Close"><span aria-hidden="true">×</span></button>`;
   document.body.append(panel);
-  if (ok) {
-    wall.justCommitted = true;
+  if (ok && !release && !simulation) {
     document.querySelector("#live-wall")?.scrollIntoView({ behavior: document.hidden || matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
   }
   panel.querySelector(".outcome-close")?.addEventListener("click", () => panel.remove());
   panel.querySelector('[data-outcome="ics"]')?.addEventListener("click", () => document.querySelector("#export-ics-btn")?.click());
+  panel.querySelector('[data-outcome="release"]')?.addEventListener("click", () => { void page.releasePreparedHolds(); });
+  panel.querySelector('[data-outcome="retry"]')?.addEventListener("click", async (event) => {
+    const trigger = event.currentTarget;
+    trigger.disabled = true;
+    try { await page.recoverGuidedDemo(); } finally { trigger.disabled = false; }
+  });
   panel.querySelector('[data-outcome="reset"]')?.addEventListener("click", () => {
     panel.remove();
     document.querySelector("#reset-mission-btn")?.click();
@@ -185,7 +231,7 @@ function update() {
   const page = App.page;
   const stages = missionStage(page);
   setTimeline(document.querySelector("#mission-steps"), stages);
-  if (page.lastSagaExecution) showOutcome(page);
+  if (page.lastSagaExecution || page.lastHoldRelease) showOutcome(page);
   else {
     lastOutcome = null;
     document.querySelector("#outcome-panel")?.remove();
@@ -194,14 +240,14 @@ function update() {
   const core = document.querySelector("#eco-core-state");
   if (core) {
     core.textContent =
-      stages.verify === "done" ? "All commitments verified"
+      stages.verify === "done" ? (page.preparedInSimulation ? "Simulation complete" : "All commitments verified")
       : stages.approve === "current" ? "Waiting for your approval"
       : stages.impact === "done" ? "Plans ready"
       : "Coordinator";
   }
 
   const states = peerStates(page);
-  const live = page.livePeersDetected || page.crossOriginBridgeConnected;
+  const live = !page.preparedInSimulation && (page.livePeersDetected || page.crossOriginBridgeConnected);
   document.querySelector("#eco")?.classList.toggle("is-live", Boolean(live));
   for (const pid of PEERS) {
     const st = states[pid];
@@ -327,18 +373,7 @@ if (wallEl && "IntersectionObserver" in window) {
   wallIo.observe(wallEl);
 }
 
-// Demo button: show progress until the approval dialog (or an outcome) appears.
 const demoBtn = document.querySelector("#guided-demo-btn");
-demoBtn?.addEventListener("click", () => {
-  demoBtn.setAttribute("aria-busy", "true");
-  const started = Date.now();
-  const timer = setInterval(() => {
-    if (document.querySelector("dialog[open]") || App.page.lastSagaExecution || Date.now() - started > 15000) {
-      demoBtn.removeAttribute("aria-busy");
-      clearInterval(timer);
-    }
-  }, 200);
-});
 
 // Deep link for judges: ?demo=1 starts the guided demo. It stops at the approval
 // dialog like a manual run — nothing is ever approved automatically.
@@ -350,7 +385,9 @@ if (new URLSearchParams(location.search).get("demo") === "1") {
     const badge = document.querySelector("#transport-badge")?.textContent || "";
     if (!/Detecting/i.test(badge) || Date.now() - startedAt > 15000) {
       clearInterval(ready);
-      setTimeout(() => demoBtn?.click(), 600);
+      if (!App.page.lastSagaExecution) setTimeout(() => {
+        if (!App.page.lastSagaExecution && !App.page._recovering) demoBtn?.click();
+      }, 200);
     }
   }, 150);
 }

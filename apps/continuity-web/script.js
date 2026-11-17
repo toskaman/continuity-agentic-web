@@ -57,6 +57,7 @@ import {
   verifyBlindedBudgetAttestation,
 } from "./vendor/zk-budget-attestation/index.js";
 import { buildFallbackOffersForRelocationNode } from "./modules/fallback-offers.js";
+import { clearDemoCheckpoint, readDemoCheckpoint, recoverDemoOperations, saveDemoCheckpoint } from "./modules/demo-recovery.js";
 import {
   renderChangePackageView,
   renderHoldCountdownView,
@@ -76,7 +77,11 @@ import {
   renderPrivacyTableView,
 } from "./modules/trust-tables-view.js";
 
+export const SIMULATION_NOTICE = "Simulation mode — changes apply only in this browser.";
+
 export class ContinuityCoordinatorPage {
+  #missionOperationActive = false;
+
   constructor() {
     this.version = 1;
     const isHttpsHosted =
@@ -118,6 +123,9 @@ export class ContinuityCoordinatorPage {
     this.selectedPlanId = null;
     this.saga = null;
     this.preparedOps = [];
+    this.preparedProviderClients = null;
+    this.preparedInSimulation = false;
+    this.manualCommitmentIds = [];
     this.lastSagaExecution = null;
     this.privacyDisclosures = [];
     this.providerAlerts = [];
@@ -178,7 +186,7 @@ export class ContinuityCoordinatorPage {
           // Fall back cleanly to baseHarness if live peer read fails
         }
       }
-      return baseHarness;
+      return { ...baseHarness, simulation: true };
     }
 
     if (this.livePeersDetected) {
@@ -196,7 +204,7 @@ export class ContinuityCoordinatorPage {
         m.createSimulatedProviderHarness(),
       );
     }
-    return this.providerHarnessPromise;
+    return { ...await this.providerHarnessPromise, simulation: true };
   }
 
   probeLivePeerOrigins() {
@@ -318,6 +326,8 @@ export class ContinuityCoordinatorPage {
                   proposed_date: proposedDate,
                   idempotency_key: idempotencyKey,
                 }),
+              releaseHold: ({ holdId, bookingRef }) =>
+                callPeer("release_hold", { hold_id: holdId, booking_ref: bookingRef }),
             }
           : {}),
         executeCommit: ({ idempotencyKey, arguments: a }) =>
@@ -344,8 +354,8 @@ export class ContinuityCoordinatorPage {
     const out = {};
     for (const [pid, origin] of Object.entries(this.peerOrigins)) {
       const baseHref = `${String(origin).replace(/\/+$/, "")}/`;
-      const token =
-        this.latestPeerHandoffTokens[pid] || this.crossOriginBridge?.latestHandoffTokens?.[pid] || null;
+      const token = this.preparedOps.find((op) =>
+        op.provider_id === pid && op.state === "COMMITTED" && op.proof_verification?.trusted)?.handoff_token;
       out[pid] = token ? `${baseHref}#continuity_receipt=${token}` : baseHref;
     }
     return out;
@@ -368,6 +378,7 @@ export class ContinuityCoordinatorPage {
             ? "LIVE_CROSS_ORIGIN_BROWSER_BRIDGE"
             : "BROWSER_DETERMINISTIC_SIMULATION_FALLBACK",
         webMcpToolsExposed: 8,
+        simulation: this.preparedInSimulation,
         rippleFailureInjected: this.rippleFailureInjected,
         mission: {
           mission_id: this.mission.mission_id,
@@ -446,7 +457,30 @@ export class ContinuityCoordinatorPage {
     return ["home_relocation", "outpatient_surgery", "product_launch_expo", "custom_intake"];
   }
 
-  async switchScenario(scenarioId) {
+  async #runMissionOperation(operation) {
+    if (this.#missionOperationActive) {
+      const reason = "Wait for the current booking operation to finish, then try again.";
+      if (typeof document !== "undefined") {
+        const banner = document.querySelector("#status-banner");
+        if (banner) banner.textContent = reason;
+      }
+      return { ok: false, reason };
+    }
+    this.#missionOperationActive = true;
+    try {
+      return await operation();
+    } finally {
+      this.#missionOperationActive = false;
+    }
+  }
+
+  switchScenario(scenarioId) {
+    return this.#runMissionOperation(() => this.#switchScenario(scenarioId));
+  }
+
+  async #switchScenario(scenarioId) {
+    const discard = await this.#discardPreparedPlan();
+    if (!discard.ok) return discard;
     this.activeScenarioId = scenarioId;
     this.mission = createScenarioMission(scenarioId, { origins: this.peerOrigins });
     this.selectedNodeId = this.mission.anchor_commitment_id || this.mission.commitments[0]?.id;
@@ -471,7 +505,11 @@ export class ContinuityCoordinatorPage {
     };
   }
 
-  async importCustomSchedule(rawText) {
+  importCustomSchedule(rawText) {
+    return this.#runMissionOperation(() => this.#importCustomSchedule(rawText));
+  }
+
+  async #importCustomSchedule(rawText) {
     let compiled;
     try {
       compiled = compileUnstructuredIntake(rawText);
@@ -479,6 +517,8 @@ export class ContinuityCoordinatorPage {
       return { ok: false, field: "rawScheduleText", reason: err.message };
     }
 
+    const discard = await this.#discardPreparedPlan();
+    if (!discard.ok) return discard;
     this.activeScenarioId = "custom_intake";
     this.mission = compiled.mission;
     this.selectedNodeId = this.mission.anchor_commitment_id;
@@ -508,6 +548,9 @@ export class ContinuityCoordinatorPage {
   }
 
   async _resetExecutionState() {
+    clearDemoCheckpoint();
+    this.guidedDemoActive = false;
+    this.lastHoldRelease = null;
     this.graph = MissionGraph.fromMission(this.mission);
     this.compiledProposal = null;
     this.impactReport = null;
@@ -518,6 +561,9 @@ export class ContinuityCoordinatorPage {
     this.selectedPlanId = null;
     this.saga = null;
     this.preparedOps = [];
+    this.preparedProviderClients = null;
+    this.preparedInSimulation = false;
+    this.manualCommitmentIds = [];
     this.lastSagaExecution = null;
     this.privacyDisclosures = [];
     this.providerAlerts = [];
@@ -555,7 +601,13 @@ export class ContinuityCoordinatorPage {
     }
   }
 
-  async resetMission(options = {}) {
+  resetMission(options = {}) {
+    return this.#runMissionOperation(() => this.#resetMission(options));
+  }
+
+  async #resetMission(options) {
+    const discard = await this.#discardPreparedPlan();
+    if (!discard.ok) return discard;
     this.rippleFailureInjected = Boolean(options.rippleFailureInjected ?? false);
     if (options.resetToDefaultScenario || !this.mission) {
       this.activeScenarioId = "home_relocation";
@@ -575,16 +627,15 @@ export class ContinuityCoordinatorPage {
     return { ok: true, version: this.version, rippleFailureInjected: this.rippleFailureInjected };
   }
 
-  async analyzeAndPrepareChange(requestText) {
+  analyzeAndPrepareChange(requestText) {
+    return this.#runMissionOperation(() => this.#analyzeAndPrepareChange(requestText));
+  }
+
+  async #analyzeAndPrepareChange(requestText) {
     const cleanText = String(requestText || "").trim();
     if (!cleanText) {
       return { ok: false, field: "requestText", reason: "Enter a natural-language change request first." };
     }
-
-    if (this.lastSagaExecution) {
-      this.lastSagaExecution = null;
-    }
-    this.graph = MissionGraph.fromMission(this.mission);
 
     let compiled;
     try {
@@ -593,6 +644,11 @@ export class ContinuityCoordinatorPage {
       return { ok: false, field: "requestText", reason: err.message };
     }
 
+    const discard = await this.#discardPreparedPlan();
+    if (!discard.ok) return discard;
+    this.lastSagaExecution = null;
+    this.lastHoldRelease = null;
+    this.graph = MissionGraph.fromMission(this.mission);
     this.compiledProposal = compiled.proposal;
     this.activeMandate = await issuePolicyBoundMandate(this.mission, this.compiledProposal);
     await this._evaluateMandateArbiter();
@@ -602,7 +658,7 @@ export class ContinuityCoordinatorPage {
 
     const targetDate = this.compiledProposal.requested_change.new_value;
     const harness = await this.ensureProviderClients();
-    const { clients, verifier } = harness;
+    const { clients } = harness;
 
     const normalizedOffers = [];
     for (const contact of this.impactReport.providersToContact) {
@@ -700,10 +756,14 @@ export class ContinuityCoordinatorPage {
       },
     });
 
-    return await this._solveAndPrepareFromCachedOffers({ clients, verifier });
+    return await this._solveAndPrepareFromCachedOffers(harness);
   }
 
-  async switchTargetAnchorDate(newTargetIso) {
+  switchTargetAnchorDate(newTargetIso) {
+    return this.#runMissionOperation(() => this.#switchTargetAnchorDate(newTargetIso));
+  }
+
+  #switchTargetAnchorDate(newTargetIso) {
     const cap =
       this.compiledProposal?.invariants?.maximum_budget_eur
       ?? this.mission.authoritative_invariants.maximum_budget_eur;
@@ -712,10 +772,14 @@ export class ContinuityCoordinatorPage {
       const inp = document.querySelector("#mission-input");
       if (inp) inp.value = promptText;
     }
-    return await this.analyzeAndPrepareChange(promptText);
+    return this.#analyzeAndPrepareChange(promptText);
   }
 
-  async recalculateWithBudgetCeiling(newBudgetEur) {
+  recalculateWithBudgetCeiling(newBudgetEur) {
+    return this.#runMissionOperation(() => this.#recalculateWithBudgetCeiling(newBudgetEur));
+  }
+
+  async #recalculateWithBudgetCeiling(newBudgetEur) {
     if (!this.compiledProposal || !this.impactReport) return null;
     const cap = Number(newBudgetEur);
     if (!Number.isFinite(cap) || cap <= 0) return null;
@@ -730,7 +794,11 @@ export class ContinuityCoordinatorPage {
     return await this._solveAndPrepareFromCachedOffers(harness);
   }
 
-  async togglePinCommitment(nodeId) {
+  togglePinCommitment(nodeId) {
+    return this.#runMissionOperation(() => this.#togglePinCommitment(nodeId));
+  }
+
+  async #togglePinCommitment(nodeId) {
     if (!nodeId || nodeId === this.mission.anchor_commitment_id || this.lastSagaExecution) {
       return { ok: false, reason: "Cannot pin primary change anchor or post-commit node." };
     }
@@ -747,7 +815,11 @@ export class ContinuityCoordinatorPage {
     return { ok: true, pinned: this.pinnedNodeIds.has(nodeId) };
   }
 
-  async applyCounterfactualRelaxation() {
+  applyCounterfactualRelaxation() {
+    return this.#runMissionOperation(() => this.#applyCounterfactualRelaxation());
+  }
+
+  async #applyCounterfactualRelaxation() {
     const rx = this.solverResult?.counterfactualPrescription;
     if (!rx?.relaxationFound || !this.compiledProposal || !this.impactReport) {
       return { ok: false, reason: "No minimal counterfactual relaxation available." };
@@ -774,7 +846,9 @@ export class ContinuityCoordinatorPage {
     return await this._solveAndPrepareFromCachedOffers(harness);
   }
 
-  async _solveAndPrepareFromCachedOffers({ clients, verifier }) {
+  async _solveAndPrepareFromCachedOffers(harness) {
+    const discard = await this.#discardPreparedPlan();
+    if (!discard.ok) return discard;
     this.solverResult = solveMinimalChangePlans({
       graph: this.graph,
       proposal: this.compiledProposal,
@@ -796,8 +870,8 @@ export class ContinuityCoordinatorPage {
       };
     }
 
-    this.selectedPlanId = this.solverResult.recommendedPlanId;
-    await this.prepareSelectedPlan(this.selectedPlanId, { clients, verifier });
+    const preparation = await this.#preparePlan(this.solverResult.recommendedPlanId, harness);
+    if (!preparation.ok) return preparation;
 
     const selected = this.getSelectedPlan();
     try {
@@ -840,6 +914,7 @@ export class ContinuityCoordinatorPage {
         metrics: p.metrics,
       })),
       preparedOperationsCount: this.preparedOps.length,
+      simulation: this.preparedInSimulation,
       unaffectedCommitmentsCount: selected.metrics.unchangedCount,
       providerAlerts: this.providerAlerts,
     };
@@ -855,7 +930,11 @@ export class ContinuityCoordinatorPage {
     });
   }
 
-  async prepareSelectedPlan(planId, existingHarness = null) {
+  prepareSelectedPlan(planId, existingHarness = null) {
+    return this.#runMissionOperation(() => this.#preparePlan(planId, existingHarness));
+  }
+
+  async #preparePlan(planId, existingHarness) {
     if (!this.solverResult?.feasible) {
       return { ok: false, field: "planId", reason: "Analyze a change request first so feasible plans exist." };
     }
@@ -864,6 +943,10 @@ export class ContinuityCoordinatorPage {
       return { ok: false, field: "planId", reason: `Plan "${planId}" is not among current feasible plans.` };
     }
 
+    const discard = await this.#discardPreparedPlan();
+    if (!discard.ok) return discard;
+
+    this.lastHoldRelease = null;
     this.graph = MissionGraph.fromMission(this.mission);
     for (const id of this.impactReport.unaffectedIds) {
       this.graph.updateNode(id, { visual_state: "UNCHANGED" });
@@ -872,31 +955,53 @@ export class ContinuityCoordinatorPage {
       this.graph.updateNode(p.commitment_id, { visual_state: "UNCHANGED" });
     }
 
-    const { clients, verifier } = existingHarness || (await this.ensureProviderClients());
+    const { clients, verifier, liveClientIds, simulation } = existingHarness || (await this.ensureProviderClients());
+    const requiresHuman = new Set();
+    if (this.activeScenarioId === "custom_intake") {
+      for (const item of chosen.operations) {
+        if (!liveClientIds?.has(item.offer.provider_id)) requiresHuman.add(item.commitment_id);
+      }
+      // A dependent operation cannot use an estimated date for a manually confirmed prerequisite.
+      for (const id of requiresHuman) {
+        for (const edge of this.graph.edges) {
+          if (edge.from === id && chosen.operations.some((op) => op.commitment_id === edge.to)) requiresHuman.add(edge.to);
+        }
+      }
+    }
+    this.manualCommitmentIds = [...requiresHuman];
+    this.selectedPlanId = chosen.plan_id;
+    this.preparedProviderClients = clients;
+    this.preparedInSimulation = Boolean(simulation);
     this.saga = new SagaCoordinator({ graph: this.graph, receiptVerifier: verifier });
 
     const prep = await this.saga.preparePlan({
       missionId: this.mission.mission_id,
-      plan: chosen,
+      plan: { ...chosen, operations: chosen.operations.filter((op) => !requiresHuman.has(op.commitment_id)) },
       maximumBudgetEur: this.compiledProposal.invariants.maximum_budget_eur,
       mandateSha256: this.activeMandate?.mandate_sha256 || undefined,
       providerClients: clients,
     });
 
     if (!prep.ok) {
+      this.preparedOps = prep.operations;
+      this.version += 1;
+      this.render(prep.reason);
       return { ok: false, field: "planId", reason: prep.reason };
     }
 
-    this.selectedPlanId = chosen.plan_id;
     this.preparedOps = prep.operations;
+    for (const id of requiresHuman) this.graph.updateNode(id, { visual_state: "NEEDS_USER" });
     this.holdsPlacedAtMs = this.preparedOps.some((o) => o.hold_id) ? Date.now() : null;
     this.version += 1;
-    this.render(`Selected ${chosen.label} (${this.preparedOps.length} prepared operations awaiting bound approval).`);
+    this.render(requiresHuman.size
+      ? `${this.preparedOps.length} changes ready for approval. ${requiresHuman.size} require provider confirmation using the checklist.`
+      : `Selected ${chosen.label} (${this.preparedOps.length} changes ready for approval).`);
     return {
       ok: true,
       version: this.version,
       selectedPlanId: this.selectedPlanId,
       preparedOperationsCount: this.preparedOps.length,
+      simulation: this.preparedInSimulation,
     };
   }
 
@@ -946,22 +1051,27 @@ export class ContinuityCoordinatorPage {
   }
 
   async runGuidedInteractiveDemo() {
-    if (this._peerProbePromise) {
-      await this._peerProbePromise;
-    }
-    await this.switchScenario("home_relocation");
-    await this.resetMission({ rippleFailureInjected: true });
-    await new Promise((r) => setTimeout(r, 380));
-    const text =
-      (typeof document !== "undefined" && document.querySelector("#mission-input")?.value)
-      || "Move my relocation from Tuesday to Friday under €700 without cancelling anything.";
-    const prep = await this.analyzeAndPrepareChange(text);
-    if (typeof document !== "undefined") {
-      document.querySelector(".workspace-two-col")?.scrollIntoView({ behavior: "smooth" });
-      await new Promise((r) => setTimeout(r, 750));
+    const prep = await this.#runMissionOperation(() => this.#prepareGuidedDemo());
+    if (prep.ok && typeof document !== "undefined") {
+      document.querySelector("#approve-commit-btn")?.scrollIntoView({ block: "center" });
       document.querySelector("#approve-commit-btn")?.click();
     }
     return prep;
+  }
+
+  async #prepareGuidedDemo() {
+    if (this._peerProbePromise) {
+      await this._peerProbePromise;
+    }
+    const switched = await this.#switchScenario("home_relocation");
+    if (!switched.ok) return switched;
+    const reset = await this.#resetMission({ rippleFailureInjected: true });
+    if (!reset.ok) return reset;
+    this.guidedDemoActive = true;
+    const text =
+      (typeof document !== "undefined" && document.querySelector("#mission-input")?.value)
+      || "Move my relocation from Tuesday to Friday under €700 without cancelling anything.";
+    return await this.#analyzeAndPrepareChange(text);
   }
 
   async loadSampleAdkConfig() {
@@ -1004,7 +1114,8 @@ export class ContinuityCoordinatorPage {
   }
 
   checkCommitPackage(args) {
-    if (!this.saga || !this.preparedOps.length) {
+    if (this.#missionOperationActive || !this.saga || !this.preparedOps.length
+      || !this.preparedOps.every((op) => op.state === "AWAITING_APPROVAL")) {
       return {
         ok: false,
         field: "planId",
@@ -1026,7 +1137,8 @@ export class ContinuityCoordinatorPage {
       };
     }
     const plan = this.getSelectedPlan();
-    if (Math.abs(Number(args.expectedTotalEur) - plan.metrics.totalMissionCostEur) > 0.01) {
+    const expectedTotal = Number(args.expectedTotalEur);
+    if (!Number.isFinite(expectedTotal) || Math.round(expectedTotal * 100) !== Math.round(plan.metrics.totalMissionCostEur * 100)) {
       return {
         ok: false,
         field: "expectedTotalEur",
@@ -1040,29 +1152,44 @@ export class ContinuityCoordinatorPage {
     };
   }
 
-  async releasePreparedHolds() {
-    if (!this.saga || !this.preparedOps.length) {
-      return { ok: false, reason: "No prepared holds are currently active." };
-    }
-    const { clients } = await this.ensureProviderClients();
-    const res = await this.saga.releasePreparedHolds({ providerClients: clients });
+  get canReleasePreparedHolds() {
+    return this.preparedOps.some((op) => ["AWAITING_APPROVAL", "PREPARED"].includes(op.state) || op.hold_release_unconfirmed);
+  }
+
+  async #discardPreparedPlan() {
+    if (!this.canReleasePreparedHolds || !this.saga) return { ok: true, releasedHoldIds: [], releasedOperationIds: [] };
+    const result = await this.saga.releasePreparedHolds({ providerClients: this.preparedProviderClients });
+    this.version += 1;
+    this.preparedOps = result.ok ? [] : result.operations || this.preparedOps;
+    this.holdsPlacedAtMs = null;
+    if (!result.ok) this.render(result.reason);
+    return result;
+  }
+
+  releasePreparedHolds() {
+    return this.#runMissionOperation(() => this.#releasePreparedHolds());
+  }
+
+  async #releasePreparedHolds() {
+    if (!this.canReleasePreparedHolds) return { ok: false, reason: "No active holds or prepared changes to release." };
+    const res = await this.#discardPreparedPlan();
+    this.lastHoldRelease = res;
     if (!res.ok) {
+      this.render(res.reason);
       return res;
     }
-    this.preparedOps = [];
+
     this.selectedPlanId = null;
     this.solverResult = null;
     this.compiledProposal = null;
     this.impactReport = null;
-    this.holdsPlacedAtMs = null;
-    this.version += 1;
-    this.render(
-      `Released ${res.releasedOperationIds.length} temporary slot hold(s) at €0.00 fee — all original reservations remain CONFIRMED on their baseline dates.`,
-    );
+    this.manualCommitmentIds = [];
+    this.render(`Released ${res.releasedHoldIds.length} temporary holds at no cost. Your original bookings remain in place.`);
     return {
       ok: true,
       feeChargedEur: 0,
-      releasedCount: res.releasedOperationIds.length,
+      releasedCount: res.releasedHoldIds.length,
+      simulation: this.preparedInSimulation,
       releasedOperationIds: res.releasedOperationIds,
       version: this.version,
     };
@@ -1073,50 +1200,52 @@ export class ContinuityCoordinatorPage {
     if (!check.ok) {
       return { ok: false, field: check.field, reason: check.reason };
     }
+    return this.#runMissionOperation(() => this.#commitPreparedPackage(check.plan));
+  }
 
-    const { clients } = await this.ensureProviderClients();
-
-    const approvals = await this.saga.approvePreparedOperations(
-      this.preparedOps.map((o) => o.operation_id),
-    );
-
-    const execResult = await this.saga.executeApprovedSaga({
-      approvedItems: approvals.map((a) => ({
-        operationId: a.operation_id,
-        approvalId: a.approval_id,
-      })),
-      providerClients: clients,
+  async #commitPreparedPackage(plan) {
+    if (this.guidedDemoActive && !this.preparedInSimulation) {
+      saveDemoCheckpoint({
+        peerOrigins: this.peerOrigins,
+        operations: this.preparedOps,
+        solverResult: this.solverResult,
+        selectedPlanId: this.selectedPlanId,
+        compiledProposal: this.compiledProposal,
+      });
+    }
+    const approvals = await this.saga.approvePreparedOperations(this.preparedOps.map((o) => o.operation_id));
+    let execResult = await this.saga.executeApprovedSaga({
+      approvedItems: approvals.map((a) => ({ operationId: a.operation_id, approvalId: a.approval_id })),
+      providerClients: this.preparedProviderClients,
     });
-
+    const verified = execResult.status === "ALL_COMMITTED_AND_VERIFIED";
+    if (verified && this.manualCommitmentIds.length) {
+      execResult = { ...execResult, status: "MANUAL_FOLLOWUP_REQUIRED" };
+    }
     this.lastSagaExecution = execResult;
     this.preparedOps = execResult.operations;
     this.holdsPlacedAtMs = null;
-    if (execResult.status === "ALL_COMMITTED_AND_VERIFIED") {
-      this.mission.anchor_date = this.compiledProposal.requested_change.new_value;
-      for (const op of execResult.operations) {
-        if (op.state === "COMMITTED") {
-          const cmt = this.mission.commitments.find((c) => c.id === op.commitment_id);
-          if (cmt) {
-            cmt.scheduled_date = op.proposed_date;
-            if (op.window) cmt.window = op.window;
-          }
-        }
-      }
-    }
+    this.applyConfirmedSchedule(execResult.operations);
     this.version += 1;
 
     this.render(
       execResult.status === "ALL_COMMITTED_AND_VERIFIED"
-        ? `Verified & Committed: ${execResult.committedOperationIds.length} operations reconciled with Ed25519 provider receipts; ${check.plan.metrics.unchangedCount} unaffected bookings preserved intact.`
-        : `Saga halted safely (${execResult.status}): ${execResult.partialFailureReason}`,
+        ? this.preparedInSimulation
+          ? `${execResult.committedOperationIds.length} demo bookings changed. ${plan.metrics.unchangedCount} kept their dates.`
+          : `Verified & Committed: ${execResult.committedOperationIds.length} operations reconciled with Ed25519 provider receipts; ${plan.metrics.unchangedCount} unaffected bookings preserved intact.`
+        : verified
+          ? `${execResult.committedOperationIds.length} changes verified. ${this.manualCommitmentIds.length} still need provider confirmation.`
+          : `Confirmation stopped: ${execResult.partialFailureReason}`,
     );
 
     return {
-      ok: execResult.status === "ALL_COMMITTED_AND_VERIFIED",
+      ok: verified,
+      manualFollowupCount: this.manualCommitmentIds.length,
       version: this.version,
       sagaStatus: execResult.status,
+      simulation: this.preparedInSimulation,
       committedCount: execResult.committedOperationIds.length,
-      preservedCount: check.plan.metrics.unchangedCount,
+      preservedCount: plan.metrics.unchangedCount,
       partnerLinks: this.getPeerLinks(),
       reason: execResult.partialFailureReason || undefined,
       receipts: execResult.operations
@@ -1128,6 +1257,60 @@ export class ContinuityCoordinatorPage {
           proof_level: o.proof_verification?.level || "VERIFIED",
         })),
     };
+  }
+
+  applyConfirmedSchedule(operations) {
+    const anchor = this.graph.nodes.get(this.mission.anchor_commitment_id);
+    this.mission.anchor_date = anchor.scheduled_date;
+    for (const op of operations) {
+      if (op.state !== "COMMITTED") continue;
+      const cmt = this.mission.commitments.find((c) => c.id === op.commitment_id);
+      if (cmt) cmt.scheduled_date = op.proposed_date;
+      if (cmt && op.window) cmt.window = op.window;
+    }
+  }
+
+  async recoverGuidedDemo() {
+    if (this.#missionOperationActive || !this.isRelocationScenario()) return;
+    const record = readDemoCheckpoint(this.peerOrigins);
+    if (!record) return;
+    return this.#runMissionOperation(() => this.#recoverGuidedDemo(record));
+  }
+
+  async #recoverGuidedDemo(record) {
+    this._recovering = true;
+    try {
+      const candidate = this.livePeersDetected || this.crossOriginBridgeConnected ? await this.ensureProviderClients() : null;
+      const harness = this.livePeersDetected || this.crossOriginBridgeConnected ? candidate : null;
+      const mission = createScenarioMission("home_relocation", { origins: this.peerOrigins });
+      const graph = MissionGraph.fromMission(mission);
+      const impact = analyzeMissionImpact(graph, record.compiledProposal);
+      const operations = await recoverDemoOperations(record, graph, harness);
+      if (!operations) return;
+      this.mission = mission;
+      this.graph = graph;
+      this.compiledProposal = record.compiledProposal;
+      this.impactReport = impact;
+      this.solverResult = record.solverResult;
+      this.selectedPlanId = record.selectedPlanId;
+      this.saga = new SagaCoordinator({ graph, receiptVerifier: harness?.verifier });
+      this.preparedInSimulation = false;
+      this.preparedOps = operations;
+      const committedOperationIds = operations.filter((op) => op.state === "COMMITTED").map((op) => op.operation_id);
+      const allVerified = committedOperationIds.length === operations.length;
+      this.lastSagaExecution = {
+        operations,
+        committedOperationIds,
+        status: allVerified ? "ALL_COMMITTED_AND_VERIFIED" : "RECOVERY_UNCONFIRMED",
+        partialFailureReason: allVerified ? null : `${committedOperationIds.length} of ${operations.length} changes verified. Check any unconfirmed provider before starting a new change.`,
+        recovered: true,
+      };
+      this.applyConfirmedSchedule(operations);
+      this.version += 1;
+      this.render(allVerified ? "Booking changes recovered and checked with the providers." : this.lastSagaExecution.partialFailureReason);
+    } finally {
+      this._recovering = false;
+    }
   }
 
   async executeChaosSuite() {
@@ -1181,8 +1364,15 @@ export class ContinuityCoordinatorPage {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  get canDownloadUpdatedCalendar() {
+    return this.lastSagaExecution?.status === "ALL_COMMITTED_AND_VERIFIED";
+  }
+
   downloadUpdatedIcsCalendar() {
-    const ics = exportMissionToIcs(this.mission, this.graph, this.preparedOps);
+    if (!this.canDownloadUpdatedCalendar) {
+      return { ok: false, reason: "The updated calendar is available after all changes are verified." };
+    }
+    const ics = exportMissionToIcs(this.mission, this.graph, this.lastSagaExecution.operations);
     this.triggerBrowserDownload(`${this.mission.mission_id}.ics`, "text/calendar;charset=utf-8", ics);
     return { ok: true, bytes: ics.length };
   }
@@ -1196,6 +1386,7 @@ export class ContinuityCoordinatorPage {
       mission: this.mission,
       plan,
       preparedOps: this.preparedOps,
+      manualCommitmentIds: this.activeScenarioId === "custom_intake" ? this.manualCommitmentIds : null,
     });
     return { ok: true, ...playbook };
   }
@@ -1405,14 +1596,16 @@ export class ContinuityCoordinatorPage {
 
     const badge = document.querySelector("#transport-badge");
     if (badge) {
-      badge.textContent = this._peerProbePromise
-        ? "Detecting peer origins…"
-        : this.livePeersDetected
-          ? "Live Independent Peer Origins (4 HTTP/MCP)"
-          : this.crossOriginBridgeConnected
-            ? "Live Cross-Origin Browser Mesh (4 Peers · Ed25519)"
-            : "Browser Deterministic Saga Engine";
-      badge.classList.toggle("live", this.livePeersDetected || this.crossOriginBridgeConnected);
+      badge.textContent = this.preparedInSimulation
+        ? "Simulation mode"
+        : this._peerProbePromise
+          ? "Detecting peer origins…"
+          : this.livePeersDetected
+            ? "Live Independent Peer Origins (4 HTTP/MCP)"
+            : this.crossOriginBridgeConnected
+              ? "Live Cross-Origin Browser Mesh (4 Peers · Ed25519)"
+              : "Simulation mode";
+      badge.classList.toggle("live", !this.preparedInSimulation && (this.livePeersDetected || this.crossOriginBridgeConnected));
     }
 
     const missionBadge = document.querySelector("#mission-id-badge");
@@ -1434,10 +1627,6 @@ export class ContinuityCoordinatorPage {
     for (const [pid, href] of Object.entries(peerLinks)) {
       const linkEl = document.querySelector(`#peer-link-${pid}`);
       if (linkEl) linkEl.setAttribute("href", href);
-      const syncEl = document.querySelector(`#peer-sync-${pid}`);
-      if (syncEl) {
-        syncEl.hidden = !href.includes("#continuity_receipt=");
-      }
     }
 
     const rippleBtn = document.querySelector("#inject-ripple-btn");
@@ -1450,7 +1639,7 @@ export class ContinuityCoordinatorPage {
 
     if (bannerMessage) {
       const sb = document.querySelector("#status-banner");
-      if (sb) sb.textContent = bannerMessage;
+      if (sb) sb.textContent = this.preparedInSimulation ? `${SIMULATION_NOTICE} ${bannerMessage}` : bannerMessage;
     }
 
     const plan = this.getSelectedPlan();
@@ -1464,12 +1653,16 @@ export class ContinuityCoordinatorPage {
     }
     const releaseBtn = document.querySelector("#release-holds-btn");
     if (releaseBtn) {
-      releaseBtn.disabled = !readyToApprove;
+      releaseBtn.disabled = !this.canReleasePreparedHolds;
     }
 
     const exportBar = document.querySelector("#export-actions-bar");
     if (exportBar) {
       exportBar.hidden = !this.compiledProposal;
+    }
+    const calendarButton = document.querySelector("#export-ics-btn");
+    if (calendarButton) {
+      calendarButton.hidden = !this.canDownloadUpdatedCalendar;
     }
 
     this.renderHoldCountdown();
@@ -1789,7 +1982,11 @@ export class ContinuityCoordinatorPage {
         expectedVersion: this.version,
         expectedTotalEur: plan.metrics.totalMissionCostEur,
       };
-      if (typeof window !== "undefined" && window.__continuityReviewHook) {
+      if (!window.__continuityReviewHook) {
+        this.render("Approval is still loading. Try again in a moment.");
+        return;
+      }
+      try {
         const ok = await window.__continuityReviewHook([
           {
             action: "commit_prepared_change_package",
@@ -1799,8 +1996,11 @@ export class ContinuityCoordinatorPage {
           },
         ]);
         if (!ok) return;
+        const result = await this.commitPreparedPackage(args);
+        if (!result.ok && !result.sagaStatus) this.render(result.reason);
+      } catch {
+        this.render("The change could not be confirmed. Check the provider status before trying again.");
       }
-      await this.commitPreparedPackage(args);
     });
 
     // Zoom controls
@@ -1852,9 +2052,26 @@ export class ContinuityCoordinatorPage {
       });
     });
 
-    document.querySelector("#guided-demo-btn")?.addEventListener("click", () => {
-      void this.runGuidedInteractiveDemo();
-    });
+    const demoButtons = document.querySelectorAll("#guided-demo-btn, #hero-demo-btn");
+    for (const button of demoButtons) {
+      button.addEventListener("click", async () => {
+        for (const trigger of demoButtons) {
+          trigger.disabled = true;
+          trigger.setAttribute("aria-busy", "true");
+        }
+        try {
+          const result = await this.runGuidedInteractiveDemo();
+          if (!result.ok) this.render(result.reason);
+        } catch {
+          this.render("A demo provider did not respond. Try the demo again.");
+        } finally {
+          for (const trigger of demoButtons) {
+            trigger.disabled = false;
+            trigger.removeAttribute("aria-busy");
+          }
+        }
+      });
+    }
 
     document.querySelector("#adk-load-sample-btn")?.addEventListener("click", async () => {
       const srcTa = document.querySelector("#adk-source-textarea");
@@ -1936,6 +2153,8 @@ export class ContinuityCoordinatorPage {
         await this.resetMission({ rippleFailureInjected: true });
       }
     }
+
+    await this.recoverGuidedDemo();
 
     this.render();
   }

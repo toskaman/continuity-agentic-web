@@ -95,7 +95,7 @@ export function renderMissionGraphSvg(page) {
     const curveLift = spansTwoCols ? (y2 < y1 ? -52 : 52) : 0;
     const cy1 = y1 + curveLift * 0.45;
     const cy2 = y2 + curveLift * 0.45;
-    const t = spansTwoCols ? 0.78 : 0.5;
+    const t = spansTwoCols ? 0.84 : 0.5;
     const mt = 1 - t;
     const bx = mt ** 3 * x1 + 3 * mt ** 2 * t * midX + 3 * mt * t ** 2 * midX + t ** 3 * x2;
     const by = mt ** 3 * y1 + 3 * mt ** 2 * t * cy1 + 3 * mt * t ** 2 * cy2 + t ** 3 * y2;

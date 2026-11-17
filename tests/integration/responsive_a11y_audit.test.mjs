@@ -162,6 +162,11 @@ test("Cycle 19 — Real Headless Chromium audits mobile (390x844), dark theme, k
       // Close approval dialog if open so we can inspect page layout & toggle dark mode
       const openDialog = document.querySelector("dialog[open]");
       const demoOpenedApprovalDialog = Boolean(openDialog);
+      const actionsVisible = [...(openDialog?.querySelectorAll(".review-actions button") || [])];
+      const decisionActionsFit = actionsVisible.length === 2 && actionsVisible.every((button) => {
+        const box = button.getBoundingClientRect();
+        return box.width > 0 && box.top >= 0 && box.bottom <= innerHeight;
+      });
       if (openDialog) {
         openDialog.querySelector(".assistant-decline")?.click();
       }
@@ -189,6 +194,7 @@ test("Cycle 19 — Real Headless Chromium audits mobile (390x844), dark theme, k
 
       return {
         demoOpenedApprovalDialog,
+        decisionActionsFit,
         defaultDarkThemeActive,
         toggledToLight,
         darkThemeActive,
@@ -199,6 +205,7 @@ test("Cycle 19 — Real Headless Chromium audits mobile (390x844), dark theme, k
     })()`);
 
     assert.equal(mobileAudit.demoOpenedApprovalDialog, true, "?demo=1 must automatically prepare plans and open the bound approval dialog");
+    assert.equal(mobileAudit.decisionActionsFit, true, "Both decisions must fit on the initial mobile review screen");
     assert.equal(mobileAudit.defaultDarkThemeActive, true, "Coordinator must boot in night/dark mode by default");
     assert.equal(mobileAudit.toggledToLight, true, "Theme toggle must switch to light mode");
     assert.equal(mobileAudit.darkThemeActive, true, "Theme toggle must switch back to dark mode");

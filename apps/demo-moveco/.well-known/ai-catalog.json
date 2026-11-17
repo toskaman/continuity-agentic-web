@@ -13,7 +13,7 @@
       "description": "Check MoveCo Express residential moving van availability, place a 15-minute slot hold, or confirm a crew reschedule.",
       "type": "application/a2a-agent-card+json",
       "url": "http://127.0.0.1:8081/agent-card.json",
-      "targetDigest": "sha256:0734f5408c99430ca4159a74d10cbc3c6cc513368979f24c3cd700abf9314775",
+      "targetDigest": "sha256:28c8efd12ed4074e66211ea68058f84e4c0b0980b27effd65b4dc73c95d652ba",
       "tags": [
         "open-agentic-web",
         "a2a",

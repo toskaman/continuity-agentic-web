@@ -784,16 +784,16 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
       const cardValidation = validateA2aAgentCard(agentCard);
       checks.push({
         id: "NANDA-A2A",
-        check: "Project NANDA / A2A v1.0 Agent Card",
+        check: "Project NANDA Agent Card metadata",
         status: cardValidation.valid ? "PASS" : "FAIL",
         detail: cardValidation.valid
-          ? `Valid A2A v${agentCard.version} card · ${agentCard.skills?.length || 0} skill(s) declared`
+          ? `Valid discovery metadata · ${agentCard.skills?.length || 0} skill(s) declared`
           : `Invalid Agent Card: ${cardValidation.errors.join("; ")}`,
       });
     } else {
       checks.push({
         id: "NANDA-A2A",
-        check: "Project NANDA / A2A v1.0 Agent Card",
+        check: "Project NANDA Agent Card metadata",
         status: "WARN",
         detail: `Optional /.well-known/agent-card.json: ${cardFetch.reason}`,
       });
@@ -801,7 +801,7 @@ export async function auditOpenAgenticSite(siteBaseUrl, fetchImpl = globalThis.f
   } catch (err) {
     checks.push({
       id: "NANDA-A2A",
-      check: "Project NANDA / A2A v1.0 Agent Card",
+      check: "Project NANDA Agent Card metadata",
       status: "WARN",
       detail: `Optional card not fetched: ${err.message}`,
     });

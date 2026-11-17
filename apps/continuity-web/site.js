@@ -1,9 +1,10 @@
-import { App } from "./script.js";
+import { App, SIMULATION_NOTICE } from "./script.js";
 import { registerActions } from "./site-actions.js";
 import { exposeActionsToWebMcp } from "./vendor/webmcp-adapter/index.js";
 import { ChromeBuiltInPromptLlm, probeLocalInferenceBackends } from "./vendor/local-browser-router/index.js";
 import { PeerTofuRegistry } from "./vendor/peer-firewall/index.js";
 import { LlmClient } from "./runtime/llm.js";
+import { formatDateWithWeekday } from "./vendor/mission-core/index.js";
 
 if (typeof navigator !== "undefined") {
   exposeActionsToWebMcp(registerActions, {
@@ -256,7 +257,7 @@ export class ContinuityScriptedReplayLlm {
         return emitText(`**[Scripted Replay]** ${rel.reason || "No prepared holds are active."}`);
       }
       return emitText(
-        `**[Scripted Replay]** Released **${rel.releasedCount}** temporary slot hold(s) for **€0.00** — all original reservations remain CONFIRMED on their baseline dates.`,
+        `**[Scripted Replay]** ${rel.simulation ? `${SIMULATION_NOTICE} ` : ""}Released **${rel.releasedCount}** temporary slot hold(s) for **€0.00** — all original reservations remain CONFIRMED on their baseline dates.`,
       );
     }
 
@@ -314,6 +315,11 @@ export class ContinuityScriptedReplayLlm {
       }
       const cRes = parseToolPayload("website_commit_prepared_change_package") || {};
       if (cRes.ok) {
+        if (cRes.simulation) {
+          return emitText(
+            `## Simulation complete *(Scripted Replay)*\n${SIMULATION_NOTICE}\n- **${cRes.committedCount}** demo bookings changed locally\n- **${cRes.preservedCount}** bookings kept their dates`,
+          );
+        }
         return emitText(
           `## Mission Re-Aligned & Verified *(Scripted Replay)*\n- **Saga Status:** \`${cRes.sagaStatus}\`\n- **Committed with Ed25519 Receipts:** **${cRes.committedCount}** operations\n- **Preserved Untouched:** **${cRes.preservedCount}** commitments`,
         );
@@ -357,7 +363,7 @@ export class ContinuityScriptedReplayLlm {
       }
       const topPlan = prep.plans?.[0];
       return emitText(
-        `## Minimal-Change Plan Prepared *(Scripted Replay)*\n- **Target Date:** \`${prep.targetDate}\`\n- **Recommended:** **${topPlan?.label}** (€${topPlan?.metrics?.totalMissionCostEur?.toFixed(2)} <= €${topPlan?.metrics?.maxBudgetEur?.toFixed(2)})\n- **Prepared Holds:** **${prep.preparedOperationsCount}** · **Preserved Untouched:** **${prep.unaffectedCommitmentsCount}**\n\nExisting reservations remain untouched until you confirm commit.`,
+        `## Minimal-Change Plan Prepared *(Scripted Replay)*\n${prep.simulation ? `${SIMULATION_NOTICE}\n\n` : ""}- **Target Date:** \`${prep.targetDate}\`\n- **Recommended:** **${topPlan?.label}** (€${topPlan?.metrics?.totalMissionCostEur?.toFixed(2)} <= €${topPlan?.metrics?.maxBudgetEur?.toFixed(2)})\n- **Prepared Holds:** **${prep.preparedOperationsCount}** · **Preserved Untouched:** **${prep.unaffectedCommitmentsCount}**\n\nExisting reservations remain untouched until you confirm commit.`,
       );
     }
 
@@ -378,10 +384,10 @@ export class AssistantMount {
 
   static DIALOGS = {
     commit_prepared_change_package: {
-      title: "Approve and commit this multi-provider change package?",
-      sentence: "Each prepared modification below will be cryptographically bound to your approval, dispatched with idempotency keys, and verified before finalizing.",
-      confirm: "Approve & commit change package",
-      decline: "Keep original reservations unchanged",
+      title: "Review your booking changes",
+      sentence: "Check the dates and total before sending these changes to the demo providers.",
+      confirm: "Confirm these changes",
+      decline: "Keep my bookings",
     },
   };
 
@@ -410,9 +416,6 @@ export class AssistantMount {
       booted.engine.onActionConfirm = AssistantMount.review;
       AssistantMount.defaultConsent = booted.engine.onConsent;
       booted.engine.onConsent = AssistantMount.consent;
-      if (typeof window !== "undefined") {
-        window.__continuityReviewHook = AssistantMount.review;
-      }
       const needsKey =
         !booted.engine.mockLLM && (!booted.engine.byokKey || booted.engine.byokKey === "demo");
       status.textContent = needsKey
@@ -489,6 +492,9 @@ export class AssistantMount {
       ...AssistantMount.DIALOGS[item.action],
       details,
       refusal: details.refusal,
+      onDecline: async () => {
+        if (item.arguments.expectedVersion === App.page.version) await App.page.releasePreparedHolds();
+      },
       exact: `${item.action} on ${item.origin} (${item.effect})\n${JSON.stringify(item.arguments, null, 2)}`,
     };
   }
@@ -498,22 +504,35 @@ export class AssistantMount {
       const check = App.page.checkCommitPackage(args);
       if (!check.ok) return { refusal: check.reason };
       const p = check.plan;
-      const pb = App.page.getTransitionPlaybook?.();
       const mandateShort = App.page.activeMandate?.mandate_sha256
         ? `sha256:${App.page.activeMandate.mandate_sha256.slice(0, 20)}…`
         : "bound-to-proposal";
       return {
-        "Selected Plan": p.label,
-        "Operations to Commit": check.operations
+        simulation: App.page.preparedInSimulation,
+        story: App.page.rippleFailureInjected && App.page.isRelocationScenario()
+          && check.operations.some((op) => op.is_replacement_provider)
+          ? "The Friday crew is full. A backup crew has a slot."
+          : null,
+        rows: check.operations.slice()
+          .sort((a, b) => Number(b.commitment_id === App.page.mission.anchor_commitment_id) - Number(a.commitment_id === App.page.mission.anchor_commitment_id))
           .map(
-            (o) =>
-              `${o.provider_name}: ${o.proposed_date} (${o.window}) · €${(Number(o.base_price_eur) + Number(o.change_fee_eur || 0) + Number(o.cancellation_penalty_eur || 0)).toFixed(2)}`,
-          )
-          .join(" | "),
-        "Preserved Untouched": `${p.preservedCommitments.map((c) => c.title).join(", ")}${pb?.avoidedPenaltiesTotalEur ? ` (€${pb.avoidedPenaltiesTotalEur.toFixed(2)} cancel fees avoided)` : ""}`,
+            (op) => ({
+              title: op.commitment_title,
+              before: formatDateWithWeekday(op.original_date),
+              after: formatDateWithWeekday(op.proposed_date),
+              provider: op.provider_name,
+              window: op.window,
+              price: `€${op.expected_total_eur.toFixed(2)}`,
+              hold: Boolean(op.hold_id),
+            }),
+          ),
+        preserved: p.preservedCommitments.map((c) => c.title),
+        manual: App.page.manualCommitmentIds.length,
         "Projected Total Cost": `€${p.metrics.totalMissionCostEur.toFixed(2)} (Hard ceiling €${p.metrics.maxBudgetEur.toFixed(2)} · ${p.metrics.netDeltaEur >= 0 ? "+" : ""}€${p.metrics.netDeltaEur.toFixed(2)} vs baseline)`,
         "Cryptographic Binding": `Mandate ${mandateShort} · Version v${args.expectedVersion} (€0.01 drift invalidates)`,
-        "Reversibility": "Moving & Fiber bookings become final Ed25519-signed reservations on confirm; PermitFlow draft remains reversible.",
+        total: `€${p.metrics.totalMissionCostEur.toFixed(2)}`,
+        delta: `${p.metrics.netDeltaEur < 0 ? "−" : "+"}€${Math.abs(p.metrics.netDeltaEur).toFixed(2)}`,
+        budget: `€${p.metrics.maxBudgetEur.toFixed(2)}`,
       };
     }
     return {};
@@ -521,52 +540,97 @@ export class AssistantMount {
 
   static openDialog(content, resolve) {
     const dialog = document.createElement("dialog");
-    dialog.className = "assistant-review";
+    dialog.className = "assistant-review continuity-review";
     dialog.setAttribute("aria-labelledby", "assistant-review-title");
+
     const heading = document.createElement("h2");
     heading.id = "assistant-review-title";
     heading.textContent = content.title;
     heading.tabIndex = -1;
     heading.autofocus = true;
-    const sentence = document.createElement("p");
-    sentence.textContent = content.sentence;
-    dialog.append(heading, sentence);
+    dialog.append(heading);
+
+    const body = document.createElement("div");
+    body.className = "review-scroll";
+    const { details } = content;
+    const narrative = document.createElement("p");
+    narrative.className = details.story ? "review-recovery" : "review-description";
+    narrative.textContent = details.simulation
+      ? [SIMULATION_NOTICE, details.story].filter(Boolean).join(" ")
+      : details.story || content.sentence;
+    body.append(narrative);
+
+    const costs = document.createElement("p");
+    costs.className = "review-total";
+    const total = document.createElement("strong");
+    total.textContent = details.total;
+    costs.append(total, ` ${details.manual ? "estimated · " : "total · "}${details.delta} from your current bookings · ${details.budget} limit`);
+    body.append(costs);
+
+    const bookings = document.createElement("ul");
+    bookings.className = "review-bookings";
+    bookings.setAttribute("aria-label", "Bookings to change");
+    for (const row of details.rows) {
+      const booking = document.createElement("li");
+      const name = document.createElement("strong");
+      name.textContent = row.title;
+      const dates = document.createElement("span");
+      dates.textContent = `${row.before} → ${row.after} · ${row.window}`;
+      const provider = document.createElement("small");
+      provider.textContent = `${row.provider} · ${row.price}${row.hold ? " · Temporarily held" : ""}`;
+      booking.append(name, dates, provider);
+      bookings.append(booking);
+    }
+    body.append(bookings);
+
+    const preserved = document.createElement("p");
+    preserved.className = "review-preserved";
+    const preservedTitle = document.createElement("strong");
+    preservedTitle.textContent = `${details.preserved.length} bookings keep their dates`;
+    preserved.append(preservedTitle, ` · ${details.preserved.join(", ")}`);
+    body.append(preserved);
+    if (details.manual) {
+      const manual = document.createElement("p");
+      manual.className = "review-recovery";
+      manual.textContent = `${details.manual} additional changes still need provider confirmation. Use the checklist to follow up.`;
+      body.append(manual);
+    }
+
     const exact = document.createElement("details");
     const exactLabel = document.createElement("summary");
     exactLabel.textContent = "Technical details";
     const exactText = document.createElement("pre");
-    exactText.textContent = content.exact;
+    exactText.textContent = `${details["Cryptographic Binding"]}\n\n${content.exact}`;
     exact.append(exactLabel, exactText);
-    const entries = Object.entries(content.details);
-    if (entries.length) {
-      const list = document.createElement("dl");
-      for (const [label, value] of entries) {
-        const term = document.createElement("dt");
-        term.textContent = label;
-        const description = document.createElement("dd");
-        description.textContent = String(value);
-        list.append(term, description);
-      }
-      dialog.append(list);
-    } else {
-      exact.open = true;
-    }
+    body.append(exact);
+
+    const actions = document.createElement("div");
+    actions.className = "review-actions";
     const confirmButton = document.createElement("button");
-    confirmButton.textContent = content.confirm;
-    // Resolve on click too: the "close" event can be delayed in background tabs.
+    confirmButton.type = "button";
+    confirmButton.textContent = details.simulation ? "Confirm simulated changes" : content.confirm;
+    const declineButton = document.createElement("button");
+    declineButton.type = "button";
+    declineButton.className = "assistant-decline";
+    declineButton.textContent = content.decline;
     confirmButton.addEventListener("click", () => {
       dialog.close("confirm");
       AssistantMount.finishDialog(dialog, resolve);
     });
-    const declineButton = document.createElement("button");
-    declineButton.className = "assistant-decline";
-    declineButton.textContent = content.decline;
-    declineButton.addEventListener("click", () => {
-      dialog.close("decline");
-      AssistantMount.finishDialog(dialog, resolve);
+    declineButton.addEventListener("click", async () => {
+      confirmButton.disabled = true;
+      declineButton.disabled = true;
+      declineButton.textContent = "Releasing temporary holds…";
+      try {
+        await content.onDecline();
+      } finally {
+        dialog.close("decline");
+        AssistantMount.finishDialog(dialog, resolve);
+      }
     });
     dialog.addEventListener("close", AssistantMount.finishDialog.bind(null, dialog, resolve));
-    dialog.append(exact, confirmButton, declineButton);
+    actions.append(confirmButton, declineButton);
+    dialog.append(body, actions);
     document.body.append(dialog);
     dialog.showModal();
   }
@@ -747,5 +811,6 @@ export class AssistantMount {
 }
 
 if (typeof window !== "undefined") {
+  window.__continuityReviewHook = AssistantMount.review;
   await AssistantMount.start();
 }

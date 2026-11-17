@@ -12,6 +12,38 @@ import { IndependentProviderHost } from "./provider_server.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
+const RELEASE_HOLD_TOOL = {
+  name: "release_hold",
+  description: "Release a temporary slot hold without changing the original reservation.",
+  inputSchema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["booking_ref", "hold_id"],
+    properties: {
+      booking_ref: { type: "string", minLength: 3, maxLength: 32 },
+      hold_id: { type: "string", minLength: 1, maxLength: 96 },
+    },
+  },
+};
+
+function releaseTemporaryHold(_state, args, { holds }) {
+  for (const [key, hold] of holds) {
+    if (hold.hold_id !== args.hold_id) continue;
+    if (hold.booking_ref !== args.booking_ref) return { ok: false, reason: "Hold belongs to a different booking." };
+    holds.delete(key);
+    break;
+  }
+  return { ok: true, released: true, hold_id: args.hold_id, fee_charged_eur: 0 };
+}
+
+function findActiveHoldKey(holds, args) {
+  for (const [key, hold] of holds) {
+    if (hold.hold_id === args.hold_id && hold.booking_ref === args.booking_ref && hold.offer_id === args.offer_id
+      && hold.proposed_date === args.new_date && Date.parse(hold.expires_at) > Date.now()) return key;
+  }
+  return null;
+}
+
 export function createMoveCoDefinition({ host = "127.0.0.1", port = 8081, openAs = "127.0.0.1" } = {}) {
   return {
     providerId: "moveco",
@@ -107,6 +139,7 @@ export function createMoveCoDefinition({ host = "127.0.0.1", port = 8081, openAs
           },
         },
       },
+      RELEASE_HOLD_TOOL,
       {
         name: "get_booking_status",
         description: "Reconcile booking and operation status by booking_ref and optional idempotency_key.",
@@ -122,6 +155,7 @@ export function createMoveCoDefinition({ host = "127.0.0.1", port = 8081, openAs
       },
     ],
     handlers: {
+      release_hold: releaseTemporaryHold,
       async get_moving_quote(state, args, helpers) {
         const booking = state.bookings[args.booking_ref];
         if (!booking) {
@@ -184,12 +218,12 @@ export function createMoveCoDefinition({ host = "127.0.0.1", port = 8081, openAs
 
         const hold = {
           ok: true,
-          hold_id: `hold_mc_${helpers.holds.size + 1}`,
+          hold_id: `hold_mc_${crypto.randomUUID()}`,
           booking_ref: args.booking_ref,
           offer_id: args.offer_id,
           proposed_date: args.proposed_date,
           original_booking_preserved: true,
-          expires_at: "2026-12-31T23:59:59Z",
+          expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
         };
         helpers.holds.set(args.idempotency_key, hold);
         return hold;
@@ -197,6 +231,10 @@ export function createMoveCoDefinition({ host = "127.0.0.1", port = 8081, openAs
       async reschedule_van_booking(state, args, helpers) {
         if (helpers.idempotencyStore.has(args.idempotency_key)) {
           return helpers.idempotencyStore.get(args.idempotency_key);
+        }
+        const holdKey = args.hold_id ? findActiveHoldKey(helpers.holds, args) : null;
+        if (args.hold_id && holdKey === null) {
+          return { execution_state: "REJECTED_NO_SIDE_EFFECT", reason: "The exact moving hold is no longer active." };
         }
         const booking = state.bookings[args.booking_ref];
         if (!booking) {
@@ -233,6 +271,7 @@ export function createMoveCoDefinition({ host = "127.0.0.1", port = 8081, openAs
           receipt_envelope: envelope,
         };
         helpers.idempotencyStore.set(args.idempotency_key, out);
+        if (holdKey !== null) helpers.holds.delete(holdKey);
         return out;
       },
       async get_booking_status(state, args, helpers) {
@@ -479,6 +518,7 @@ export function createHomeConnectDefinition({ host = "127.0.0.1", port = 8083, o
           },
         },
       },
+      RELEASE_HOLD_TOOL,
       {
         name: "get_appointment_status",
         description: "Reconcile fiber appointment state by booking_ref and optional idempotency_key.",
@@ -494,6 +534,7 @@ export function createHomeConnectDefinition({ host = "127.0.0.1", port = 8083, o
       },
     ],
     handlers: {
+      release_hold: releaseTemporaryHold,
       async list_technician_windows(state, args, helpers) {
         const appt = state.appointments[args.booking_ref];
         if (!appt) return { ok: false, reason: `Appointment ${args.booking_ref} not found.` };
@@ -532,12 +573,12 @@ export function createHomeConnectDefinition({ host = "127.0.0.1", port = 8083, o
         if (helpers.holds.has(args.idempotency_key)) return helpers.holds.get(args.idempotency_key);
         const hold = {
           ok: true,
-          hold_id: `hold_hc_${helpers.holds.size + 1}`,
+          hold_id: `hold_hc_${crypto.randomUUID()}`,
           booking_ref: args.booking_ref,
           offer_id: args.offer_id,
           proposed_date: args.proposed_date,
           original_booking_preserved: true,
-          expires_at: "2026-12-31T23:59:59Z",
+          expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
         };
         helpers.holds.set(args.idempotency_key, hold);
         return hold;
@@ -545,6 +586,10 @@ export function createHomeConnectDefinition({ host = "127.0.0.1", port = 8083, o
       async change_fiber_appointment(state, args, helpers) {
         if (helpers.idempotencyStore.has(args.idempotency_key)) {
           return helpers.idempotencyStore.get(args.idempotency_key);
+        }
+        const holdKey = args.hold_id ? findActiveHoldKey(helpers.holds, args) : null;
+        if (args.hold_id && holdKey === null) {
+          return { execution_state: "REJECTED_NO_SIDE_EFFECT", reason: "The exact technician hold is no longer active." };
         }
         const appt = state.appointments[args.booking_ref];
         const win = state.windows.find((w) => w.offer_id === args.offer_id && w.date === args.new_date);
@@ -574,6 +619,7 @@ export function createHomeConnectDefinition({ host = "127.0.0.1", port = 8083, o
           receipt_envelope: envelope,
         };
         helpers.idempotencyStore.set(args.idempotency_key, out);
+        if (holdKey !== null) helpers.holds.delete(holdKey);
         return out;
       },
       async get_appointment_status(state, args, helpers) {

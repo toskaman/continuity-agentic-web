@@ -475,7 +475,7 @@ body > dialog button { margin-right: 8px; }
 }
 
 /* ---------- Shared Night / Dark Theme Foundation ---------- */
-[data-theme="dark"] {
+html[data-theme="dark"] {
   --paper: #0A0F1C;
   --surface: #111827;
   --surface-2: #172033;

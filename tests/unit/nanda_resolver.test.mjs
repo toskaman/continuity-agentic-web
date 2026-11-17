@@ -8,7 +8,7 @@ import { AuthorityBoundResolver, validateA2aAgentCard } from "../../packages/nan
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
-test("N1 All 5 Open Agentic Websites publish valid NANDA-compliant A2A v1.0 Agent Cards", async () => {
+test("N1 All five sites publish discovery cards pointing to their actual browser network", async () => {
   const dirs = [
     "apps/continuity-web",
     "apps/demo-moveco",
@@ -21,6 +21,9 @@ test("N1 All 5 Open Agentic Websites publish valid NANDA-compliant A2A v1.0 Agen
     const card = JSON.parse(raw);
     const res = validateA2aAgentCard(card);
     assert.equal(res.valid, true, `${dir} agent-card failed: ${res.errors.join("; ")}`);
+    assert.equal(card.supportedInterfaces, undefined);
+    assert.equal(card.url, card.extensions["org.worldwideagenticweb"].networkUrl);
+    await readFile(path.join(ROOT, dir, path.basename(new URL(card.url).pathname)), "utf8");
   }
 });
 

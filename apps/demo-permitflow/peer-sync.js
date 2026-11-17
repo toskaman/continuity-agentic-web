@@ -1,6 +1,6 @@
 import { App } from "./script.js";
 import { registerActions } from "./site-actions.js";
-import { getOrCreateOriginKeyPair, verifySignedReceiptHandoff } from "./vendor/cross-origin-bridge/index.js";
+import { getOrCreateOriginKeyPair, reportProviderPageReceipt, verifyProviderPageHandoff, verifySignedReceiptHandoff } from "./vendor/cross-origin-bridge/index.js";
 import { exposeActionsToWebMcp } from "./vendor/webmcp-adapter/index.js";
 
 function fmtWeekday(iso) {
@@ -43,9 +43,13 @@ function applyVerifiedPermitFlowReceipt(check, sourceLabel) {
 async function syncFromReceiptHash() {
   const m = (location.hash || "").match(/continuity_receipt=([A-Za-z0-9_-]+)/);
   if (!m) return;
-  const check = await verifySignedReceiptHandoff("permitflow", m[1]);
-  if (!check.valid) return;
+  const check = await verifyProviderPageHandoff("permitflow", m[1]);
+  if (!check.valid) {
+    if (window.parent === window) App.page.render("This receipt was issued in another session or could not be verified here. For this demo, check the provider card inside CONTINUITY.");
+    return;
+  }
   applyVerifiedPermitFlowReceipt(check, "Cross-Origin Ed25519 Receipt");
+  reportProviderPageReceipt("permitflow", check);
 }
 
 syncFromReceiptHash();

@@ -222,6 +222,7 @@ test("Wave 2 (#083-#106) — OutcomeReconciliation blocks missing envelope, wron
         prepareHold: async () => ({ ok: true, hold_id: "hold_mc_temp_1" }),
         releaseHold: async ({ holdId }) => {
           releasedHolds.push(holdId);
+          return { ok: true, released: true, hold_id: holdId, fee_charged_eur: 0 };
         },
       },
       homeconnect: {

@@ -196,19 +196,27 @@ export async function createSimulatedProviderHarness() {
   const clients = {};
   for (const pid of ["moveco", "permitflow", "homeconnect", "powerflow"]) {
     const committedByIdem = new Map();
+    const activeHolds = new Map();
     let holdCounter = 0;
     clients[pid] = {
       committedByIdem,
       signer: keys[pid],
       async prepareHold({ bookingRef, proposedDate }) {
         holdCounter += 1;
-        return {
+        const hold = {
           ok: true,
           hold_id: `hold_${pid}_${holdCounter}`,
           booking_ref: bookingRef,
           proposed_date: proposedDate,
           expires_at: "2026-11-20T23:59:59Z",
         };
+        activeHolds.set(hold.hold_id, bookingRef);
+        return hold;
+      },
+      async releaseHold({ holdId, bookingRef }) {
+        if (activeHolds.has(holdId) && activeHolds.get(holdId) !== bookingRef) return { ok: false };
+        activeHolds.delete(holdId);
+        return { ok: true, released: true, hold_id: holdId, fee_charged_eur: 0 };
       },
       async executeCommit({ idempotencyKey, arguments: args }) {
         if (committedByIdem.has(idempotencyKey)) {
@@ -1762,7 +1770,10 @@ export const CHAOS_SCENARIOS = [
         providerClients: {
           moveco: {
             prepareHold: async () => ({ ok: true, hold_id: "hold_mc_orphan_guard" }),
-            releaseHold: async ({ holdId }) => released.push(holdId),
+            releaseHold: async ({ holdId }) => {
+              released.push(holdId);
+              return { ok: true, released: true, hold_id: holdId, fee_charged_eur: 0 };
+            },
           },
           homeconnect: {
             prepareHold: async () => ({ ok: false, reason: "Technician unavailable" }),

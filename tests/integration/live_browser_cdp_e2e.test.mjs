@@ -194,27 +194,42 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
         nowFeasible: Boolean(App.page.solverResult?.feasible),
         preparedCount: App.page.preparedOps.length,
         releaseBtnEnabled: !document.querySelector("#release-holds-btn")?.disabled,
+        calendarHidden: document.querySelector("#export-ics-btn")?.hidden,
+        pendingCalendarBlocked: App.page.downloadUpdatedIcsCalendar().ok === false,
       };
     })()`);
     assert.equal(rxOutcome.hadRxButton, true, "Counterfactual relaxation button must render when budget is infeasible");
     assert.equal(rxOutcome.nowFeasible, true, "Applying counterfactual relaxation must unlock valid plans");
     assert.equal(rxOutcome.preparedCount, 3);
     assert.equal(rxOutcome.releaseBtnEnabled, true);
+    assert.equal(rxOutcome.calendarHidden, true);
+    assert.equal(rxOutcome.pendingCalendarBlocked, true);
 
     // 2. Test Pre-Commit Zero-Fee Hold Release via UI button
     const releaseOutcome = await cdp.evalJson(`(async () => {
       const { App } = await import("./script.js");
+      const peerHolds = async () => Promise.all(["moveco", "homeconnect"].map(async (id) => {
+        const provider = await (await fetch(App.page.peerOrigins[id] + "/api/state")).json();
+        return provider.active_holds.length;
+      }));
+      const before = await peerHolds();
       const res = await App.page.releasePreparedHolds();
       return {
         ok: res.ok,
         fee: res.feeChargedEur,
         remainingOps: App.page.preparedOps.length,
+        before,
+        after: await peerHolds(),
+        releasedCount: res.releasedCount,
         movecoDate: App.page.graph.nodes.get("cmt_moveco_van").scheduled_date,
       };
     })()`);
     assert.equal(releaseOutcome.ok, true);
     assert.equal(releaseOutcome.fee, 0);
     assert.equal(releaseOutcome.remainingOps, 0);
+    assert.deepEqual(releaseOutcome.before, [1, 1]);
+    assert.deepEqual(releaseOutcome.after, [0, 0]);
+    assert.equal(releaseOutcome.releasedCount, 2);
     assert.equal(releaseOutcome.movecoDate, "2026-11-17");
 
     // 3. Test Ripple Recovery + Commit + Bundle Verifier + €0.01 Tamper Alarm + 20 Chaos + 9-Point Auditor
@@ -228,6 +243,14 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
         expectedVersion: st.version,
         expectedTotalEur: st.selectedPlanSummary.metrics.totalMissionCostEur,
       });
+      let calendar;
+      const download = App.page.triggerBrowserDownload;
+      try {
+        App.page.triggerBrowserDownload = (filename, mimeType, content) => { calendar = { filename, mimeType, content }; };
+        document.querySelector('[data-outcome="ics"]').click();
+      } finally {
+        App.page.triggerBrowserDownload = download;
+      }
       const verifyOk = await App.page.verifyCurrentAuditBundle();
       const tamperDetected = await App.page.simulateBundleTamperAttack();
       const chaos = await App.page.executeChaosSuite();
@@ -236,6 +259,7 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
         prepOk: prep.ok,
         commitOk: commit.ok,
         committedCount: commit.committedCount,
+        calendar,
         bundleValid: verifyOk.valid,
         tamperCaught: tamperDetected.valid === false && tamperDetected.errors.length >= 2,
         chaosPassed: chaos.passed,
@@ -248,6 +272,12 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
     assert.equal(fullOutcome.prepOk, true);
     assert.equal(fullOutcome.commitOk, true);
     assert.equal(fullOutcome.committedCount, 3);
+    assert.match(fullOutcome.calendar.filename, /\.ics$/);
+    assert.equal(fullOutcome.calendar.mimeType, "text/calendar;charset=utf-8");
+    const calendarEvents = fullOutcome.calendar.content.split("BEGIN:VEVENT").slice(1);
+    assert.equal(calendarEvents.length, 6);
+    assert.equal(calendarEvents.filter((event) => event.includes("Verified demo receipt payload SHA-256")).length, 3);
+    assert.match(calendarEvents.find((event) => event.includes("PFW-9921")), /DTSTART:20261117T080000/);
     assert.equal(fullOutcome.bundleValid, true);
     assert.equal(fullOutcome.tamperCaught, true);
     assert.equal(fullOutcome.chaosPassed, 42);

@@ -31,7 +31,7 @@
 .summary-grid h3 { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
 .summary-grid ul { margin: 0; padding-left: 18px; font-size: var(--fs-sm); color: var(--ink-2); display: grid; gap: 4px; }
 @media (max-width: 600px) { .summary-grid { grid-template-columns: 1fr; } .check-item { grid-template-columns: 28px 1fr; } .check-item .badge { grid-column: 2; justify-self: start; } }
-[data-theme="dark"] {
+html[data-theme="dark"] {
   --paper: #09101B;
   --surface: #101929;
   --surface-2: #172338;

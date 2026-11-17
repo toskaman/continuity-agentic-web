@@ -13,7 +13,7 @@
       "description": "Check public curbside loading-bay eligibility rules and update prepared demonstration permit dossiers on PermitFlow.",
       "type": "application/a2a-agent-card+json",
       "url": "http://localhost:8082/agent-card.json",
-      "targetDigest": "sha256:5d049b45ee197df18b73811dd3f67b26bc754bbb30507e3c01bf259e44a7e09b",
+      "targetDigest": "sha256:51daa5a291d9fcaca193d2bf4441a96da42a3fd90061353ba458c6071cfef181",
       "tags": [
         "open-agentic-web",
         "a2a",

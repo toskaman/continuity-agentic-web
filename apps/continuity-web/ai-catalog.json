@@ -13,7 +13,7 @@
       "description": "Coordinate multi-provider schedule changes across independent Open Agentic Websites while preserving unaffected commitments and enforcing budget invariants.",
       "type": "application/a2a-agent-card+json",
       "url": "http://127.0.0.1:8080/agent-card.json",
-      "targetDigest": "sha256:659b219f3398f8fa4e57ed5bf5a0dc92b77469f4c6eaf6894bfc1d9de84e9f42",
+      "targetDigest": "sha256:3697e08da57e151df4855815806e2747e981a3c2e223a6ff92688e333cb5ec3b",
       "tags": [
         "open-agentic-web",
         "a2a",
@@ -35,7 +35,7 @@
           "manifestUrl": "http://127.0.0.1:8080/agent-manifest.json",
           "networkUrl": "http://127.0.0.1:8080/continuity_coordinator.network.json",
           "factsManifestUrl": "http://127.0.0.1:8080/facts/agent-manifest.json",
-          "factsNetworkDigest": "sha256:cf49424770c06109dbf23f13a528c3d1f058608233e3038aebee95f537feb7fd"
+          "factsNetworkDigest": "sha256:b1319e8b6367a7a2429413082a6954f48dc9061ff5778586c101becc11b0e3ee"
         }
       }
     }

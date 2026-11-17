@@ -79,7 +79,6 @@ export class SagaCoordinator {
     const now = nowIso || new Date().toISOString();
     const defaultExpiry = new Date(Date.parse(now) + 15 * 60 * 1000).toISOString();
     const preparedOperations = [];
-    const placedHoldRefs = [];
 
     for (const item of plan.operations) {
       signal?.throwIfAborted?.();
@@ -151,56 +150,42 @@ export class SagaCoordinator {
 
       if (offer.supports_hold && client && typeof client.prepareHold === "function") {
         const tHold0 = performance.now();
-        const holdRes = await client.prepareHold({
-          commitmentId: item.commitment_id,
-          bookingRef: item.original_booking_ref,
-          offerId: offer.offer_id,
-          proposedDate: offer.proposed_date,
-          window: offer.window,
-          idempotencyKey,
-        });
+        let holdRes;
+        try {
+          holdRes = await client.prepareHold({
+            commitmentId: item.commitment_id,
+            bookingRef: item.original_booking_ref,
+            offerId: offer.offer_id,
+            proposedDate: offer.proposed_date,
+            window: offer.window,
+            idempotencyKey,
+          });
+        } catch {
+          holdRes = { ok: false, reason: "The provider did not confirm the hold." };
+        }
         const holdElapsedMs = Number((performance.now() - tHold0).toFixed(2));
-        if (!holdRes.ok) {
-          this.ledger.transition(opId, OP_STATES.FAILED, `Hold preparation refused: ${holdRes.reason}`, {
+        if (!holdRes?.ok || !holdRes.hold_id) {
+          const failureReason = holdRes?.reason || "No confirmed hold reference was returned.";
+          this.ledger.transition(opId, OP_STATES.FAILED, `Hold preparation failed: ${failureReason}`, {
             updated_at: now,
           });
           this.graph.updateNode(item.commitment_id, { visual_state: "FAILED" });
-          // Clean up any temporary holds placed in earlier steps of this same preparePlan call!
-          const rolledBackHoldIds = [];
-          for (const prev of placedHoldRefs) {
-            try {
-              const prevClient = providerClients[prev.providerId];
-              if (typeof prevClient?.releaseHold === "function") {
-                await prevClient.releaseHold({ holdId: prev.holdId, bookingRef: prev.bookingRef });
-              }
-              this.ledger.transition(prev.opId, OP_STATES.COMPENSATION_PENDING, "Rolling back partial pre-commit hold", {
-                updated_at: now,
-              });
-              this.ledger.transition(prev.opId, OP_STATES.COMPENSATED, "Released partial hold after downstream refusal", {
-                updated_at: now,
-              });
-              this.graph.updateNode(prev.commitmentId, { visual_state: "UNCHANGED" });
-              rolledBackHoldIds.push(prev.holdId);
-            } catch {}
-          }
+          const cleanup = await this.releasePreparedHolds({
+            providerClients,
+            nowIso: now,
+            reason: "Plan preparation stopped and the provider confirmed release.",
+          });
           return {
             ok: false,
             failedOperationId: opId,
-            rolledBackHoldIds,
-            reason: `Preparation failed at ${offer.provider_name}: ${holdRes.reason}. Original reservations remain completely untouched.`,
+            rolledBackHoldIds: cleanup.releasedHoldIds || [],
+            reason: `Preparation failed at ${offer.provider_name}: ${failureReason} ${cleanup.reason || ""}`.trim(),
             operations: this.ledger.getAllOperations(),
           };
         }
         holdInfo = holdRes;
         opSpec.expires_at = holdRes.expires_at || opSpec.expires_at;
         opSpec.arguments.hold_id = holdRes.hold_id;
-        placedHoldRefs.push({
-          opId,
-          commitmentId: item.commitment_id,
-          providerId: offer.provider_id,
-          holdId: holdRes.hold_id,
-          bookingRef: item.original_booking_ref,
-        });
         this.ledger.transition(
           opId,
           OP_STATES.PREPARED,
@@ -245,61 +230,63 @@ export class SagaCoordinator {
     const reason = params.reason || "Visitor explicitly released pre-commit holds; original bookings kept untouched.";
     const allOps = this.ledger.getAllOperations();
 
-    if (allOps.some((op) => op.state === OP_STATES.COMMITTED || op.state === OP_STATES.UNKNOWN)) {
+    if (
+      this._releasing || this._executing
+      || allOps.some((op) => [OP_STATES.APPROVED, OP_STATES.DISPATCHED, OP_STATES.COMMITTED, OP_STATES.UNKNOWN, OP_STATES.RECONCILING].includes(op.state))
+    ) {
       return {
         ok: false,
-        reason: "Cannot bulk-release pre-commit holds after commit dispatch has begun.",
+        reason: "Hold release is unavailable while a change is being approved, released or confirmed.",
         releasedOperationIds: [],
       };
     }
 
-    const releasedIds = [];
-    for (const op of allOps) {
-      if (op.state !== OP_STATES.AWAITING_APPROVAL && op.state !== OP_STATES.PREPARED) {
-        continue;
-      }
-      this.ledger.transition(
-        op.operation_id,
-        OP_STATES.COMPENSATION_PENDING,
-        "Releasing temporary pre-commit hold at visitor request",
-        { updated_at: now },
-      );
+    const releasedOperationIds = [];
+    const releasedHoldIds = [];
+    const unconfirmedHoldIds = [];
+    this._releasing = true;
+    try {
+      for (const op of allOps) {
+        const prepared = [OP_STATES.AWAITING_APPROVAL, OP_STATES.PREPARED].includes(op.state);
+        if (!prepared && !(op.state === OP_STATES.NEEDS_USER && op.hold_release_unconfirmed)) continue;
+        this.ledger.transition(op.operation_id, OP_STATES.COMPENSATION_PENDING, "Closing the prepared option", { updated_at: now });
 
-      const client = providerClients[op.provider_id];
-      if (op.hold_id && client && typeof client.releaseHold === "function") {
-        try {
-          await client.releaseHold({
-            holdId: op.hold_id,
-            bookingRef: op.original_booking_ref,
-          });
-        } catch (err) {
-          this.ledger.transition(
-            op.operation_id,
-            OP_STATES.NEEDS_USER,
-            `Hold release transport error (${err.message}); original booking ${op.original_booking_ref} remains uncommitted.`,
-            { updated_at: now },
-          );
-          continue;
+        if (op.hold_id) {
+          try {
+            const client = providerClients[op.provider_id];
+            const result = await client?.releaseHold?.({ holdId: op.hold_id, bookingRef: op.original_booking_ref });
+            if (result?.ok !== true || result.released !== true || result.hold_id !== op.hold_id || result.fee_charged_eur !== 0) {
+              throw new Error("The provider did not confirm a free release for this hold.");
+            }
+            releasedHoldIds.push(op.hold_id);
+          } catch {
+            this.ledger.transition(op.operation_id, OP_STATES.NEEDS_USER, "The provider has not confirmed release. Check the hold or retry release.", {
+              hold_release_unconfirmed: true,
+              updated_at: now,
+            });
+            this.graph.updateNode(op.commitment_id, { visual_state: "NEEDS_USER" });
+            unconfirmedHoldIds.push(op.hold_id);
+            continue;
+          }
         }
-      }
 
-      this.ledger.transition(
-        op.operation_id,
-        OP_STATES.COMPENSATED,
-        reason,
-        {
-          evidence_summary: `${op.original_booking_ref} preserved untouched on ${op.original_date} (€0.00 fee)`,
+        this.ledger.transition(op.operation_id, OP_STATES.COMPENSATED, reason, {
+          hold_release_unconfirmed: false,
           updated_at: now,
-        },
-      );
-      this.graph.updateNode(op.commitment_id, { visual_state: "UNCHANGED" });
-      releasedIds.push(op.operation_id);
+        });
+        this.graph.updateNode(op.commitment_id, { visual_state: "UNCHANGED" });
+        releasedOperationIds.push(op.operation_id);
+      }
+    } finally {
+      this._releasing = false;
     }
 
     return {
-      ok: true,
-      feeChargedEur: 0,
-      releasedOperationIds: releasedIds,
+      ok: unconfirmedHoldIds.length === 0,
+      ...(unconfirmedHoldIds.length ? { reason: "Some holds still need release confirmation. Retry release or check with the provider." } : { feeChargedEur: 0 }),
+      releasedOperationIds,
+      releasedHoldIds,
+      unconfirmedHoldIds,
       operations: this.ledger.getAllOperations(),
       history: this.ledger.getHistory(),
     };
@@ -316,8 +303,8 @@ export class SagaCoordinator {
 
     for (const opId of operationIds) {
       const op = this.ledger.getOperation(opId);
-      if (!op) {
-        throw new Error(`Cannot approve unknown operation "${opId}".`);
+      if (this._releasing || op?.state !== OP_STATES.AWAITING_APPROVAL) {
+        throw new Error(`Operation "${opId}" is no longer awaiting approval.`);
       }
       const bound = await this.approvalEngine.createBoundApproval(op, {
         nowIso: now,

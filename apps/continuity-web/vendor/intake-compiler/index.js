@@ -855,7 +855,7 @@ export async function buildScenarioPeerHarness(mission, options = {}) {
         if (holds.has(idempotencyKey)) return holds.get(idempotencyKey);
         const h = {
           ok: true,
-          hold_id: `hold_${providerId.slice(0, 6)}_${holds.size + 1}`,
+          hold_id: `hold_${providerId.slice(0, 6)}_${crypto.randomUUID()}`,
           booking_ref: bookingRef,
           offer_id: offerId,
           proposed_date: proposedDate,
@@ -864,6 +864,15 @@ export async function buildScenarioPeerHarness(mission, options = {}) {
         };
         holds.set(idempotencyKey, h);
         return h;
+      },
+      releaseHold: async ({ holdId, bookingRef }) => {
+        for (const [key, hold] of holds) {
+          if (hold.hold_id !== holdId) continue;
+          if (hold.booking_ref !== bookingRef) return { ok: false, reason: "Hold belongs to a different booking." };
+          holds.delete(key);
+          break;
+        }
+        return { ok: true, released: true, hold_id: holdId, fee_charged_eur: 0 };
       },
       executeCommit: async ({ idempotencyKey, arguments: a }) => {
         if (idemStore.has(idempotencyKey)) return idemStore.get(idempotencyKey);
@@ -1016,8 +1025,8 @@ export async function buildScenarioPeerHarness(mission, options = {}) {
 }
 
 /**
- * Generate a standard RFC 5545 `.ics` calendar string containing all reconciled & preserved
- * commitments, booking references, and verified Ed25519 receipt signatures.
+ * Export the recorded schedule as an RFC 5545 calendar. Only committed operations can
+ * replace a booking's date and time. Receipt digests describe evidence held by the coordinator.
  *
  * @param {Record<string, any>} mission
  * @param {import("../mission-graph/index.js").MissionGraph} graph
@@ -1026,7 +1035,13 @@ export async function buildScenarioPeerHarness(mission, options = {}) {
  */
 export function exportMissionToIcs(mission, graph, operations = []) {
   const opByNode = new Map(operations.map((o) => [o.commitment_id, o]));
-  const dtStamp = "20261114T120000Z";
+  const bookingRefs = new Map((mission.commitments || []).map((c) => [c.id, c.booking_ref]));
+  const dtStamp = new Date().toISOString().replace(/[-:]|\.\d{3}/g, "");
+  const escIcs = (value) => String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r\n|\r|\n/g, "\\n");
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -1037,16 +1052,20 @@ export function exportMissionToIcs(mission, graph, operations = []) {
 
   for (const node of graph.nodes.values()) {
     const op = opByNode.get(node.id);
-    const activeDate =
-      op && (op.state === "COMMITTED" || op.state === "AWAITING_APPROVAL")
-        ? op.proposed_date
-        : node.scheduled_date;
-    const activeWindow = op?.window || node.window || "09:00–12:00";
+    const committed = op?.state === "COMMITTED" ? op : null;
+    const outcomeUncertain = ["DISPATCHED", "UNKNOWN", "RECONCILING", "NEEDS_USER"].includes(op?.state);
+    const proof = committed?.proof_verification;
+    const digest = proof?.valid && proof.trusted ? proof.payload_sha256 : null;
+    const providerName = committed?.provider_name || node.provider_name;
+    const bookingRef = (digest && committed.receipt_envelope?.receipt_body?.booking_ref) || node.booking_ref;
+    const baselineRef = committed?.original_booking_ref || bookingRefs.get(node.id) || node.booking_ref;
+    const activeDate = committed?.proposed_date || node.scheduled_date;
+    const activeWindow = committed?.window || node.window;
     const ymd = String(activeDate).replace(/-/g, "");
     const timeMatch = String(activeWindow).match(/(\d{2}):(\d{2})\s*[–-]\s*(\d{2}):(\d{2})/);
 
     lines.push("BEGIN:VEVENT");
-    lines.push(`UID:${node.booking_ref}-${mission.mission_id}@continuity.agentic.web`);
+    lines.push(`UID:${escIcs(`${baselineRef}-${mission.mission_id}@continuity.agentic.web`)}`);
     lines.push(`DTSTAMP:${dtStamp}`);
     if (timeMatch) {
       lines.push(`DTSTART:${ymd}T${timeMatch[1]}${timeMatch[2]}00`);
@@ -1056,16 +1075,17 @@ export function exportMissionToIcs(mission, graph, operations = []) {
       const endIso = node.valid_until || addDaysIso(activeDate, 1);
       lines.push(`DTEND;VALUE=DATE:${String(endIso).replace(/-/g, "")}`);
     }
-    const escIcs = (s) => String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
-    const statusTag = op?.state === "COMMITTED" ? "RE-ALIGNED & VERIFIED" : "PRESERVED UNTOUCHED";
-    lines.push(`SUMMARY:${escIcs(`[${statusTag}] ${node.title} (${node.booking_ref})`)}`);
-    lines.push(`LOCATION:${escIcs(node.provider_name)}`);
-    const proofDigest = op?.receipt_envelope?.proof?.payload_sha256
-      ? `Ed25519 Payload SHA-256: ${op.receipt_envelope.proof.payload_sha256}`
-      : "Original Confirmed Commitment Preserved";
-    lines.push(
-      `DESCRIPTION:Provider: ${escIcs(node.provider_name)}\\nRef: ${escIcs(node.booking_ref)}\\nState: ${escIcs(node.visual_state)}\\n${proofDigest}`,
-    );
+    const statusTag = digest ? "UPDATED IN DEMO"
+      : committed ? "UPDATED · RECEIPT UNVERIFIED"
+      : outcomeUncertain ? "CHECK WITH PROVIDER"
+      : "ORIGINAL SCHEDULE";
+    lines.push(`SUMMARY:${escIcs(`[${statusTag}] ${node.title} (${bookingRef})`)}`);
+    lines.push(`LOCATION:${escIcs(providerName)}`);
+    if (outcomeUncertain) lines.push("STATUS:TENTATIVE");
+    const description = [`Provider: ${providerName}`, `Ref: ${bookingRef}`];
+    if (digest) description.push(`Verified demo receipt payload SHA-256: ${digest}`);
+    if (outcomeUncertain) description.push("Last recorded booking time. Confirm the current schedule with the provider.");
+    lines.push(`DESCRIPTION:${escIcs(description.join("\n"))}`);
     lines.push("END:VEVENT");
   }
 

@@ -56,16 +56,16 @@
             <span class="spec-pill">Open Agentic Web · MVP 0.2</span>
             <span id="webmcp-badge" class="spec-pill" title="Site actions are exposed to Neuro SAN website_* tools and to navigator.modelContext (WebMCP)">WebMCP · 8 tools</span>
           </div>
-          <h1 id="hero-heading">One change.<br><span>Every commitment re-aligned.</span></h1>
-          <p class="hero-sub">Your services work together. Your life stays in sync.</p>
-          <p class="hero-lead" data-agent-facts="mission_coordination">Tell CONTINUITY what changed. It finds every booking affected, asks each independent provider what is possible, holds replacements before releasing anything, and waits for your approval.</p>
+          <h1 id="hero-heading">Moving day changed.<br><span>Keep the rest on track.</span></h1>
+          <p class="hero-sub">Your Friday moving crew is full. What happens to the van, parking and fiber?</p>
+          <p class="hero-lead" data-agent-facts="mission_coordination">CONTINUITY checks the affected bookings, finds replacements and shows you the price before you decide.</p>
           <div class="btn-row hero-ctas">
-            <a href="#workspace" class="btn btn-primary btn-lg" id="launch-workspace-link">Launch your workspace <span class="arrow" aria-hidden="true">→</span></a>
-            <a href="#network" class="btn btn-lg btn-on-dark">Explore the network</a>
+            <button type="button" class="btn btn-primary btn-lg" id="hero-demo-btn">See how the move is saved <span class="arrow" aria-hidden="true">→</span></button>
+            <a href="#workspace" class="btn btn-lg btn-on-dark" id="launch-workspace-link">Open the workspace</a>
           </div>
           <div class="hero-status">
             <span id="transport-badge" class="mode-pill">Detecting peer origins…</span>
-            <span class="hero-hint">No API key needed · the live demo takes about ten seconds</span>
+            <span class="hero-hint">Simulated move · no account or API key needed</span>
           </div>
         </div>
 
@@ -300,7 +300,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
                 <h3 id="package-heading">What will change — and what won't</h3>
               </div>
               <div id="export-actions-bar" class="export-actions" hidden>
-                <button id="export-ics-btn" type="button" class="mini-btn" title="Download the updated RFC 5545 calendar">↓ .ics</button>
+                <button id="export-ics-btn" type="button" class="mini-btn" hidden>Download demo calendar</button>
                 <button id="export-playbook-btn" type="button" class="mini-btn" title="Download the dependency-ordered Hold-First execution playbook &amp; legacy vendor reschedule drafts">↓ Playbook .md</button>
                 <button id="export-audit-btn" type="button" class="mini-btn" title="Download the signed SHA-256 and Ed25519 audit bundle">↓ Audit JSON</button>
               </div>
@@ -384,7 +384,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           <div>
             <span class="eyebrow">Agent network</span>
             <h2 id="network-heading">Four independent providers. One coordinator.</h2>
-            <p>Each provider runs its own website and agent on its own origin. CONTINUITY asks for your consent before contacting any of them, and shares only what each one needs.</p>
+            <p>Each demo provider publishes a booking site and agent. CONTINUITY sends each provider only the booking information it needs.</p>
           </div>
           <a href="./agent-manifest.json" target="_blank" rel="noopener" class="artifact-chip">agent-manifest.json</a>
         </div>
@@ -392,7 +392,7 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           <div class="live-head">
             <div>
               <h3>Watch the providers react</h3>
-              <p>These are the providers' real pages, loaded from their own origin. When you approve a plan, each one receives its signed receipt, checks the signature itself and only then updates its booking.</p>
+              <p>These are the live pages of the demo providers. Each affected page checks its signed receipt before showing the updated booking.</p>
             </div>
             <button type="button" class="btn btn-on-dark btn-sm" id="live-wall-load">Load live provider pages</button>
           </div>

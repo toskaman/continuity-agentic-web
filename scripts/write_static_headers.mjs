@@ -1,5 +1,5 @@
 /**
- * Generates NANDA-Index-validated A2A v1.0 Agent Cards (`/.well-known/agent-card.json`),
+ * Generates Agent Cards for NANDA discovery (`/.well-known/agent-card.json`),
  * Project NANDA AI Catalogs (`/.well-known/ai-catalog.json`), single-turn Public Facts Networks
  * (`facts/<network>_facts`), and static CORS `_headers` for all 5 Open Agentic Websites.
  */
@@ -152,19 +152,12 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
     await writeFile(factsNetPath, `${JSON.stringify(factsBundle.networkJson, null, 2)}\n`, "utf8");
     await writeFile(path.join(factsDir, "links.json"), `${JSON.stringify(factsBundle.linksJson, null, 2)}\n`, "utf8");
 
-    // 2. Build & validate A2A v1.0 Agent Card
+    // Static sites advertise the published browser network as discovery metadata.
     const agentCard = {
       name: manifest.brand,
       description: manifest.networks[0].description,
       version: "1.0.0",
-      url: `${baseUrl}/${s.network}`,
-      supportedInterfaces: [
-        {
-          url: `${baseUrl}/${s.network}`,
-          protocolBinding: "HTTP+JSON",
-          protocolVersion: "1.0",
-        },
-      ],
+      url: `${baseUrl}/${s.network}.network.json`,
       capabilities: {
         streaming: false,
         pushNotifications: false,
@@ -178,7 +171,7 @@ export async function writeAgentCardsAndHeaders(origins = {}) {
           mvpProfile: "0.2",
           manifestUrl: `${baseUrl}/agent-manifest.json`,
           networkUrl: `${baseUrl}/${s.network}.network.json`,
-          factsNetworkUrl: `${baseUrl}/facts/${s.network}_facts`,
+          factsNetworkUrl: `${baseUrl}/facts/${s.network}_facts.network.json`,
           browserExecuted: true,
         },
         "org.projectnanda": {

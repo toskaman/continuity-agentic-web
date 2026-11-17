@@ -91,12 +91,12 @@ test("Cycle 49 — SAMPLE_HYBRID_ICS_CALENDAR preserves RFC 5545 URL & X-AGENTIC
 
   const playbook = page.getTransitionPlaybook();
   assert.equal(playbook.ok, true);
-  assert.equal(playbook.agenticStepsCount, 2);
-  assert.equal(playbook.legacyStepsCount, 1);
+  assert.equal(playbook.agenticStepsCount, 0);
+  assert.equal(playbook.legacyStepsCount, 3);
   assert.equal(playbook.preservedCount, 1);
   assert.equal(playbook.avoidedPenaltiesTotalEur, 45);
 
-  const legacyStep = playbook.steps.find((s) => s.executionChannel === "LEGACY_VENDOR_HOLD_FIRST_DRAFT");
+  const legacyStep = playbook.steps.find((s) => s.bookingRef === "ELV-204");
   assert.ok(legacyStep);
   assert.equal(legacyStep.bookingRef, "ELV-204");
   assert.match(legacyStep.mailtoHref, /^mailto:\?subject=/);

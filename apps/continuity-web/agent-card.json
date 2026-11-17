@@ -2,14 +2,7 @@
   "name": "CONTINUITY Change Coordinator",
   "description": "Coordinate multi-provider schedule changes across independent Open Agentic Websites while preserving unaffected commitments and enforcing budget invariants.",
   "version": "1.0.0",
-  "url": "http://127.0.0.1:8080/continuity_coordinator",
-  "supportedInterfaces": [
-    {
-      "url": "http://127.0.0.1:8080/continuity_coordinator",
-      "protocolBinding": "HTTP+JSON",
-      "protocolVersion": "1.0"
-    }
-  ],
+  "url": "http://127.0.0.1:8080/continuity_coordinator.network.json",
   "capabilities": {
     "streaming": false,
     "pushNotifications": false,
@@ -41,7 +34,7 @@
       "mvpProfile": "0.2",
       "manifestUrl": "http://127.0.0.1:8080/agent-manifest.json",
       "networkUrl": "http://127.0.0.1:8080/continuity_coordinator.network.json",
-      "factsNetworkUrl": "http://127.0.0.1:8080/facts/continuity_coordinator_facts",
+      "factsNetworkUrl": "http://127.0.0.1:8080/facts/continuity_coordinator_facts.network.json",
       "browserExecuted": true
     },
     "org.projectnanda": {

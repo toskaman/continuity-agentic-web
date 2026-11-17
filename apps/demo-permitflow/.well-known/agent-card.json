@@ -2,14 +2,7 @@
   "name": "PermitFlow Civic Prep Assistant",
   "description": "Check public curbside loading-bay eligibility rules and update prepared demonstration permit dossiers on PermitFlow.",
   "version": "1.0.0",
-  "url": "http://localhost:8082/permitflow_advisor",
-  "supportedInterfaces": [
-    {
-      "url": "http://localhost:8082/permitflow_advisor",
-      "protocolBinding": "HTTP+JSON",
-      "protocolVersion": "1.0"
-    }
-  ],
+  "url": "http://localhost:8082/permitflow_advisor.network.json",
   "capabilities": {
     "streaming": false,
     "pushNotifications": false,
@@ -41,7 +34,7 @@
       "mvpProfile": "0.2",
       "manifestUrl": "http://localhost:8082/agent-manifest.json",
       "networkUrl": "http://localhost:8082/permitflow_advisor.network.json",
-      "factsNetworkUrl": "http://localhost:8082/facts/permitflow_advisor_facts",
+      "factsNetworkUrl": "http://localhost:8082/facts/permitflow_advisor_facts.network.json",
       "browserExecuted": true
     },
     "org.projectnanda": {

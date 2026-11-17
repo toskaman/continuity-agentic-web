@@ -2,14 +2,7 @@
   "name": "HomeConnect Fiber Assistant",
   "description": "Check HomeConnect 2 Gbps fiber installation technician windows, hold a slot, or reschedule appointment HC-5510.",
   "version": "1.0.0",
-  "url": "http://127.0.0.1:8083/homeconnect_scheduler",
-  "supportedInterfaces": [
-    {
-      "url": "http://127.0.0.1:8083/homeconnect_scheduler",
-      "protocolBinding": "HTTP+JSON",
-      "protocolVersion": "1.0"
-    }
-  ],
+  "url": "http://127.0.0.1:8083/homeconnect_scheduler.network.json",
   "capabilities": {
     "streaming": false,
     "pushNotifications": false,
@@ -41,7 +34,7 @@
       "mvpProfile": "0.2",
       "manifestUrl": "http://127.0.0.1:8083/agent-manifest.json",
       "networkUrl": "http://127.0.0.1:8083/homeconnect_scheduler.network.json",
-      "factsNetworkUrl": "http://127.0.0.1:8083/facts/homeconnect_scheduler_facts",
+      "factsNetworkUrl": "http://127.0.0.1:8083/facts/homeconnect_scheduler_facts.network.json",
       "browserExecuted": true
     },
     "org.projectnanda": {

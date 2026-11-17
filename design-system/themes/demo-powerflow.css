@@ -24,7 +24,7 @@
 .no-data span { font-size: var(--fs-xs); color: var(--muted); }
 .choice-card:has(input:checked) { box-shadow: 0 0 0 4px rgba(14, 107, 77, .12); }
 @media (max-width: 600px) { .meter-grid { grid-template-columns: 1fr 1fr; } }
-[data-theme="dark"] {
+html[data-theme="dark"] {
   --paper: #071214;
   --surface: #0E1D21;
   --surface-2: #15292E;

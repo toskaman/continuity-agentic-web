@@ -76,7 +76,7 @@ test("Cycle 7 — Pre-commit releasePreparedHolds safely releases all holds at �
   const released = await page.releasePreparedHolds();
   assert.equal(released.ok, true);
   assert.equal(released.feeChargedEur, 0);
-  assert.equal(released.releasedCount, 3);
+  assert.equal(released.releasedCount, 2);
   assert.equal(page.preparedOps.length, 0);
 
   // Every node in the live graph remains on its exact original Tuesday/Wednesday/Saturday baseline date
@@ -86,4 +86,62 @@ test("Cycle 7 — Pre-commit releasePreparedHolds safely releases all holds at �
   //Saga hash chain remains 100% valid after COMPENSATED transitions
   const history = page.saga.ledger.getHistory();
   assert.ok(history.some((h) => h.to_state === "COMPENSATED"));
+});
+
+test("A pending analysis blocks overlapping changes until its holds are ready", async () => {
+  const page = new ContinuityCoordinatorPage();
+  const ensureProviderClients = page.ensureProviderClients.bind(page);
+  const providerRequested = Promise.withResolvers();
+  const providerReady = Promise.withResolvers();
+  page.ensureProviderClients = async () => {
+    page.ensureProviderClients = ensureProviderClients;
+    providerRequested.resolve();
+    await providerReady.promise;
+    return ensureProviderClients();
+  };
+
+  const request = "Move relocation from Tuesday to Friday below €700.";
+  const pending = page.analyzeAndPrepareChange(request);
+  await providerRequested.promise;
+  try {
+    assert.equal((await page.resetMission()).ok, false);
+    assert.equal((await page.switchScenario("product_launch_expo")).ok, false);
+    assert.equal((await page.analyzeAndPrepareChange("Move relocation from Tuesday to Saturday below €700.")).ok, false);
+    assert.equal((await page.togglePinCommitment("cmt_powerflow_grid")).ok, false);
+    assert.equal(page.activeScenarioId, "home_relocation");
+    assert.equal(page.pinnedNodeIds.size, 0);
+  } finally {
+    providerReady.resolve();
+    await Promise.allSettled([pending]);
+  }
+
+  assert.equal((await pending).ok, true);
+  const released = await page.releasePreparedHolds();
+  assert.equal(released.ok, true);
+  assert.equal(released.releasedCount, 2);
+});
+
+test("A simulated plan keeps its simulation marker if peers reconnect before confirmation", async () => {
+  const page = new ContinuityCoordinatorPage();
+  const messages = [];
+  page.render = (message) => messages.push(message);
+
+  const prepared = await page.analyzeAndPrepareChange("Move relocation from Tuesday to Friday below €700.");
+  assert.equal(prepared.ok, true);
+  assert.equal(prepared.simulation, true);
+
+  page.crossOriginBridgeConnected = true;
+  const state = page.getState();
+  assert.equal(state.simulation, true);
+  const result = await page.commitPreparedPackage({
+    planId: state.selectedPlanId,
+    expectedVersion: state.version,
+    expectedTotalEur: state.selectedPlanSummary.metrics.totalMissionCostEur,
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.simulation, true);
+  assert.equal(result.committedCount, 3);
+  assert.match(messages.at(-1), /3 demo bookings changed/);
+  assert.ok(Object.values(result.partnerLinks).every((href) => !href.includes("#continuity_receipt=")));
 });

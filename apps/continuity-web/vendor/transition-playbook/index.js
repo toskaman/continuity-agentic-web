@@ -48,7 +48,7 @@ function buildMailtoHref(subject, body) {
  * @param {Record<string, any>} params.plan - Selected plan from `solveMinimalChangePlans`
  * @param {Array<Record<string, any>>} [params.preparedOps=[]] - Prepared or committed Saga operations
  */
-export function buildHybridTransitionPlaybook({ mission, plan, preparedOps = [] }) {
+export function buildHybridTransitionPlaybook({ mission, plan, preparedOps = [], manualCommitmentIds = null }) {
   if (!mission || !plan) {
     throw new Error("buildHybridTransitionPlaybook requires a mission and selected plan.");
   }
@@ -84,7 +84,7 @@ export function buildHybridTransitionPlaybook({ mission, plan, preparedOps = [] 
   const steps = orderedPlanOps.map((planOp, idx) => {
     const cmt = commitmentsById.get(planOp.commitment_id) || {};
     const liveOp = opsByCommitmentId.get(planOp.commitment_id) || null;
-    const agentic = isLiveAgenticCommitment(cmt);
+    const agentic = manualCommitmentIds ? !manualCommitmentIds.includes(planOp.commitment_id) : isLiveAgenticCommitment(cmt);
     const oldDateFmt = formatDateWithWeekday(planOp.original_date);
     const newDateFmt = formatDateWithWeekday(planOp.offer.proposed_date);
     const windowStr = planOp.offer.window || cmt.window || "standard window";
@@ -124,7 +124,7 @@ export function buildHybridTransitionPlaybook({ mission, plan, preparedOps = [] 
       window: windowStr,
       expectedTotalEur: expectedCost,
       changeFeeEur: Number(planOp.offer.change_fee_eur || 0),
-      currentState: liveOp?.state || "PLANNED",
+      currentState: agentic ? liveOp?.state || "PLANNED" : "AWAITING_PROVIDER_CONFIRMATION",
       holdId: liveOp?.hold_id || null,
       receiptVerified: Boolean(liveOp?.proof_verification?.trusted),
       safetyInstruction:

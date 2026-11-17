@@ -32,7 +32,7 @@
 .signal strong { font-size: var(--fs-sm); display: block; }
 .signal span { font-size: var(--fs-xs); color: var(--muted); }
 .choice-card:has(input:checked) .date-tile { background: var(--accent-strong); }
-[data-theme="dark"] {
+html[data-theme="dark"] {
   --paper: #06101D;
   --surface: #0D1B2E;
   --surface-2: #132640;

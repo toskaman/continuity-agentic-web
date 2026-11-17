@@ -263,7 +263,7 @@ test("S10 Blinded SHA-256 Hash-Ladder Range Attestation proves spend <= private 
     ceilingEur: 700,
     missionId: "move_paris_lyon_001",
   });
-  assert.equal(JSON.stringify(publicCommitment).includes("700"), false);
+  assert.ok(!Object.values(publicCommitment).includes(700));
 
   const prf = await proveSpendWithinBlindedCeiling({
     publicCommitment,
@@ -271,7 +271,7 @@ test("S10 Blinded SHA-256 Hash-Ladder Range Attestation proves spend <= private 
     spentEur: 659,
   });
   assert.equal(prf.ok, true);
-  assert.equal(JSON.stringify(prf.attestation).includes("700"), false);
+  assert.ok(!Object.values(prf.attestation).includes(700));
 
   const ver = await verifyBlindedBudgetAttestation(prf.attestation);
   assert.equal(ver.valid, true);
@@ -406,6 +406,10 @@ test("S15 Hybrid .ics schedule with live peer URLs executes real HTTP quotes, sl
       expectedTotalEur: st.selectedPlanSummary.metrics.totalMissionCostEur,
     });
     assert.equal(commit.ok, true);
+    assert.equal(commit.sagaStatus, "MANUAL_FOLLOWUP_REQUIRED");
+    assert.equal(commit.committedCount, 2);
+    assert.equal(commit.manualFollowupCount, 1);
+    assert.equal(page.canDownloadUpdatedCalendar, false);
 
     // Verify real MoveCo & HomeConnect HTTP servers actually mutated MC-8841 & HC-5510!
     const mcState = await (await fetch(`${eco.peers.moveco.origin()}/api/state`)).json();

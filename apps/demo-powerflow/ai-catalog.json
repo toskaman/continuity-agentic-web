@@ -13,7 +13,7 @@
       "description": "Check PowerFlow remote smart-meter grid energization schedules, rules, or confirm a date modification.",
       "type": "application/a2a-agent-card+json",
       "url": "http://localhost:8084/agent-card.json",
-      "targetDigest": "sha256:1c5a4ea45c279c5267ef72ebe469ec2681e1ce6fbe088e532db1abc379a06a14",
+      "targetDigest": "sha256:d897d882c22013df64a21dbb23ba3ce3fb103c16a0e4db5cf03d7eb55708b207",
       "tags": [
         "open-agentic-web",
         "a2a",
