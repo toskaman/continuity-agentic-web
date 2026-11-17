@@ -470,14 +470,14 @@ Do not cancel anything or approve additional fees without my confirmation.</text
         <div class="panel-card trust-panel reveal">
           <div class="tabs-bar">
             <div role="tablist" aria-label="Trust center panels" class="tablist">
-              <button role="tab" id="tab-btn-commitments" aria-selected="true" aria-controls="tab-panel-commitments" class="tab-btn active">Commitments</button>
+              <button role="tab" id="tab-btn-commitments" aria-selected="true" aria-controls="tab-panel-commitments" class="tab-btn active">Your bookings</button>
               <button role="tab" id="tab-btn-privacy" aria-selected="false" aria-controls="tab-panel-privacy" class="tab-btn">Privacy</button>
-              <button role="tab" id="tab-btn-timeline" aria-selected="false" aria-controls="tab-panel-timeline" class="tab-btn">Saga log</button>
-              <button role="tab" id="tab-btn-passport" aria-selected="false" aria-controls="tab-panel-passport" class="tab-btn">Merkle passport</button>
-              <button role="tab" id="tab-btn-mandate" aria-selected="false" aria-controls="tab-panel-mandate" class="tab-btn">Mandate &amp; arbiter</button>
-              <button role="tab" id="tab-btn-chaos" aria-selected="false" aria-controls="tab-panel-chaos" class="tab-btn">Chaos Lab</button>
-              <button role="tab" id="tab-btn-auditor" aria-selected="false" aria-controls="tab-panel-auditor" class="tab-btn">Spec auditor</button>
-              <button role="tab" id="tab-btn-converter" aria-selected="false" aria-controls="tab-panel-converter" class="tab-btn">ADK → HOCON</button>
+              <button role="tab" id="tab-btn-timeline" aria-selected="false" aria-controls="tab-panel-timeline" class="tab-btn">Activity log</button>
+              <button role="tab" id="tab-btn-passport" aria-selected="false" aria-controls="tab-panel-passport" class="tab-btn">Share a proof</button>
+              <button role="tab" id="tab-btn-mandate" aria-selected="false" aria-controls="tab-panel-mandate" class="tab-btn">Budget guard</button>
+              <button role="tab" id="tab-btn-chaos" aria-selected="false" aria-controls="tab-panel-chaos" class="tab-btn">Failure tests</button>
+              <button role="tab" id="tab-btn-auditor" aria-selected="false" aria-controls="tab-panel-auditor" class="tab-btn">Standards check</button>
+              <button role="tab" id="tab-btn-converter" aria-selected="false" aria-controls="tab-panel-converter" class="tab-btn">Import agents</button>
             </div>
           </div>
 
@@ -507,7 +507,8 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           <div id="tab-panel-timeline" role="tabpanel" aria-labelledby="tab-btn-timeline" class="tab-panel" hidden>
             <div class="chaos-header">
               <div>
-                <strong>Tamper-evident Saga ledger &amp; zero-trust receipt verifier</strong>
+                <strong>Activity log — every step, chained so nothing can be quietly edited</strong>
+                <p class="panel-plain">Each step is linked to the previous one with a fingerprint, so changing anything afterwards breaks the chain. Try the €0.01 tampering test to see it caught.</p>
                 <p class="panel-sub">Every state transition is linked by SHA-256 from genesis, and every commit carries an Ed25519 signature. Verify the live audit bundle or simulate a €0.01 tampering attack in memory.</p>
               </div>
               <div class="auditor-controls">
@@ -525,7 +526,8 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           <div id="tab-panel-passport" role="tabpanel" aria-labelledby="tab-btn-passport" class="tab-panel" hidden>
             <div class="chaos-header">
               <div>
-                <strong>RFC 6962 Selective-Disclosure Merkle Mission Passport</strong>
+                <strong>Share a proof — show one booking, keep the rest private</strong>
+                <p class="panel-plain">Prove that one booking was really moved (to a landlord, an employer, a clinic) without revealing your other bookings or your budget.</p>
                 <p class="panel-sub">Prove ONE re-aligned booking (with its Ed25519 provider receipt and zero-ceiling-leak budget proof) to a landlord, employer, clinic, or customs agent against a domain-separated SHA-256 Merkle root — while keeping all other commitments 100% cryptographically blinded via 128-bit salts.</p>
               </div>
               <div class="auditor-controls">
@@ -545,7 +547,8 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           <div id="tab-panel-mandate" role="tabpanel" aria-labelledby="tab-btn-mandate" class="tab-panel" hidden>
             <div class="chaos-header">
               <div>
-                <strong>Policy-bound mandate &amp; sealed-bid overflow arbiter</strong>
+                <strong>Budget guard — your spending limit is locked before anyone is asked</strong>
+                <p class="panel-plain">Your ceiling is fixed before any provider is contacted and is never shown to them. Try the 4 bypass attempts: every one is refused.</p>
                 <p class="panel-sub">A frozen SHA-256 mandate is issued before any provider is contacted. Your budget ceiling is never revealed; overflow bids are settled by integer-cent Nash bargaining (<code>floor((U + S) / 2)</code>; see the Myerson–Satterthwaite 1983 caveat).</p>
               </div>
               <button id="run-bypass-audit-btn" type="button" class="cta-btn">Try 4 bypass attacks</button>
@@ -564,7 +567,8 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           <div id="tab-panel-chaos" role="tabpanel" aria-labelledby="tab-btn-chaos" class="tab-panel" hidden>
             <div class="chaos-header">
               <div>
-                <strong>Chaos Lab — isolated simulation sandbox</strong>
+                <strong>Failure tests — 42 things that go wrong, replayed safely</strong>
+                <p class="panel-plain">Each scenario breaks something on purpose (a site goes down, a price changes, a fake receipt arrives) in a sandbox. Your real bookings are never touched.</p>
                 <p class="panel-sub">Forty-two distributed failures, injected on purpose: timeouts after commit, price drift after approval, forged and cross-origin spoofed receipts, BroadcastChannel sub-origin forgeries, SSRF &amp; cross-origin manifest escapes, Luhn card &amp; Mod-97 IBAN outbound DLP leaks, post-peer confused-deputy write escalations, RFC 6962 Merkle second-preimage &amp; selective-disclosure proofs, Unicode Tag &amp; Markdown beacon exfiltrations, TOFU rug-pulls, NANDA Reach 410 card migrations, hash-ladder overspend &amp; cross-mission replays, Ed25519 key revocations, partial hold rollbacks, and post-export bundle tampering. Your live mission is never touched.</p>
               </div>
               <button id="run-chaos-suite-btn" type="button" class="cta-btn">Run all 42 scenarios</button>
@@ -583,7 +587,8 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           <div id="tab-panel-auditor" role="tabpanel" aria-labelledby="tab-btn-auditor" class="tab-panel" hidden>
             <div class="chaos-header">
               <div>
-                <strong>Open Agentic Web MVP 0.2, Facts &amp; Project NANDA conformance auditor</strong>
+                <strong>Standards check — do all 5 sites follow the open spec?</strong>
+                <p class="panel-plain">Reads each site's public description files live and checks them against the Open Agentic Web standard.</p>
                 <p class="panel-sub">Fetches each site's live <code>agent-manifest.json</code>, resolved <code>.network.json</code>, router isolation, <code>peer_policy</code>, action bridges, <code>/.well-known/agent-card.json</code>, <code>/.well-known/ai-catalog.json</code>, and <code>facts/</code> single-turn network, with SHA-256 digests.</p>
               </div>
               <div class="auditor-controls">
@@ -608,7 +613,8 @@ Do not cancel anything or approve additional fees without my confirmation.</text
           <div id="tab-panel-converter" role="tabpanel" aria-labelledby="tab-btn-converter" class="tab-panel" hidden>
             <div class="chaos-header">
               <div>
-                <strong>Google ADK / OpenAI Agents → portable Neuro SAN HOCON</strong>
+                <strong>Import agents — bring agents built elsewhere into this network</strong>
+                <p class="panel-plain">Paste an agent setup from Google ADK or the OpenAI Agents SDK and get files any Open Agentic Website can use. Leaked keys are removed.</p>
                 <p class="panel-sub">Converts <code>LlmAgent</code> / <code>sub_agents</code> or OpenAI Agents SDK graphs into an Open Agentic Web <code>.network.json</code> + <code>agent-manifest.json</code>, scrubs leaked credentials, rejects cycles and checks semantic equivalence.</p>
               </div>
               <div class="auditor-controls">

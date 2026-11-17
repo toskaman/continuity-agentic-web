@@ -766,6 +766,13 @@ body > dialog button { margin-right: 8px; }
 /* Phone header: the coordinator link stays on one line. */
 .coord-link { white-space: nowrap; }
 @media (max-width: 480px) { .header-meta { gap: 6px; } .header-meta [data-theme-toggle] { font-size: 0; gap: 0; padding-inline: 10px; } .header-meta [data-theme-toggle] span { font-size: 14px; } .brand-name { font-size: .95rem; } }
+/* Below 1240px the page nav becomes a scrollable second row instead of disappearing. */
+@media (max-width: 1240px) {
+  .site-header .header-bar { flex-wrap: wrap; row-gap: 0; }
+  .site-header .site-nav { display: flex; order: 3; width: 100%; margin: 0 0 8px; overflow-x: auto; scrollbar-width: none; }
+  .site-header .site-nav::-webkit-scrollbar { display: none; }
+  .site-header .site-nav a { padding: 6px 10px; }
+}
 
 /* HomeConnect Fiber — premium telecom, technical but warm. Cyan + navy + turquoise. */
 :root {

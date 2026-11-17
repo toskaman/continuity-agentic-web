@@ -22,8 +22,8 @@
   3. `08_pareto_frontier_and_hold_countdown.png` — Plan comparison (A/C/Alternative) + what-if budget frontier
   4. `03_bound_approval_modal.png` — SHA-256-bound human approval dialog
   5. `04_committed_verified_ed25519.png` — Committed & verified with Ed25519 receipts
-  6. `05_chaos_lab_42_passed.png` — Chaos Lab: 42 failure scenarios passing in the browser
-  7. `09_mandate_arbiter_and_bypasses_denied.png` — Mandate & arbiter: 4 bypass attempts denied
+  6. `05_chaos_lab_42_passed.png` — Failure tests (Chaos Lab): 42 failure scenarios passing in the browser
+  7. `09_mandate_arbiter_and_bypasses_denied.png` — Budget guard (mandate & arbiter): 4 bypass attempts denied
   8. `06_open_agentic_web_runtime_otari_byok.png` — Open Agentic Web runtime, consent cards, Otari BYOK
   9. `07`, `10`, `11`, `12` — The four independent provider sites (MoveCo, PermitFlow, HomeConnect, PowerFlow)
   10. `15_same_engine_surgery.png`, `16_same_engine_freight.png` — Same engine, other lives: an outpatient surgery moved (3 of 5 bookings, €510 ≤ €560 cap) and a delayed expo freight shipment (3 of 6, €1,865 ≤ €1,980)

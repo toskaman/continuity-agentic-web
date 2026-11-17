@@ -1070,3 +1070,10 @@ a.badge { text-decoration: none; }
   .site-header .site-nav::-webkit-scrollbar { display: none; }
   .site-header .site-nav a { padding: 6px 10px; }
 }
+/* Technical details stay one click away instead of in the way. */
+.tech-details { margin-top: 6px; font-size: var(--fs-xs); color: var(--muted); }
+.tech-details > summary { cursor: pointer; width: fit-content; min-height: 24px; display: inline-flex; align-items: center; color: #9FB0D6; }
+.tech-details > summary:hover { color: var(--ink); }
+.tech-details > div { margin-top: 4px; overflow-wrap: anywhere; }
+.panel-plain { margin: 6px 0 4px; color: var(--ink-2); font-size: var(--fs-sm); max-width: 70ch; }
+.panel-plain + .panel-sub { font-size: var(--fs-xs); color: var(--muted); }

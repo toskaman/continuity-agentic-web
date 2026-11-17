@@ -244,7 +244,7 @@ export function renderChangePackageView(page, plan) {
                <pre class="receipt-pre">${page.escapeXml(`Subject: ${stepInfo.subject}\n\n${stepInfo.messageDraft}`)}</pre>
                <div class="draft-actions-row">
                  <a class="mini-btn" href="${page.escapeXml(stepInfo.mailtoHref)}">✉ Open in Mail</a>
-                 <button type="button" class="mini-btn" data-copy-draft="${page.escapeXml(op.commitment_id)}">Copy Hold-First Request</button>
+                 <button type="button" class="mini-btn" data-copy-draft="${page.escapeXml(op.commitment_id)}">Copy the request</button>
                </div>
              </details>`
           : "";
@@ -255,12 +255,15 @@ export function renderChangePackageView(page, plan) {
         <div class="op-card">
           <div class="op-card-head">
             <span>${page.escapeXml(op.commitment_title)} → ${page.escapeXml(formatDateWithWeekday(op.proposed_date))}</span>
-            <span class="state-tag">${page.escapeXml(op.state)}</span>
+            <span class="state-tag" title="${page.escapeXml(op.state)}">${page.escapeXml(plainOpState(op.state))}</span>
           </div>
-          <div>Provider: <strong>${page.escapeXml(op.provider_name)}</strong> (${page.escapeXml(op.provider_origin)}) · Capability: <code>${page.escapeXml(op.capability)}</code></div>
-          ${channelLine}
-          <div>Window: ${page.escapeXml(op.window)} · Total: <strong>€${totalOp.toFixed(2)}</strong> (Fee €${Number(op.change_fee_eur || 0).toFixed(2)}) · Reversible: ${op.reversible ? "Yes (Draft)" : "No (Irreversible Booking)"}</div>
-          <div>Idempotency Key: <code>${page.escapeXml(op.idempotency_key)}</code>${op.hold_id ? ` · Hold: <code>${page.escapeXml(op.hold_id)}</code>` : ""}</div>
+          <div>With <strong>${page.escapeXml(op.provider_name)}</strong> · ${page.escapeXml(op.window)} · <strong>€${totalOp.toFixed(2)}</strong> (incl. €${Number(op.change_fee_eur || 0).toFixed(2)} change fee)</div>
+          <div>${op.reversible ? "Can be undone: it stays a draft until you submit it." : "Final once confirmed: this booking is changed for real."}</div>
+          <details class="tech-details"><summary>Technical details</summary>
+            <div>Website: ${page.escapeXml(op.provider_origin)} · Action: <code>${page.escapeXml(op.capability)}</code></div>
+            ${channelLine}
+            <div>Duplicate-safe key: <code>${page.escapeXml(op.idempotency_key)}</code>${op.hold_id ? ` · Hold: <code>${page.escapeXml(op.hold_id)}</code>` : ""}</div>
+          </details>
           ${proofBadge}
           ${receiptDrawer}
           ${legacyDraftDrawer}
@@ -278,9 +281,23 @@ export function renderChangePackageView(page, plan) {
         await navigator.clipboard.writeText(`Subject: ${s.subject}\n\n${s.messageDraft}`);
         btn.textContent = "✓ Copied";
         setTimeout(() => {
-          btn.textContent = "Copy Hold-First Request";
+          btn.textContent = "Copy the request";
         }, 1600);
       } catch {}
     });
   });
+}
+
+const PLAIN_OP_STATES = {
+  DRAFT: "Draft",
+  PROPOSED: "Proposed",
+  PREPARED: "Held for you",
+  AWAITING_APPROVAL: "Waiting for your approval",
+  APPROVED: "Approved",
+  COMMITTED: "Done · verified",
+  FAILED: "Failed · nothing changed",
+  COMPENSATED: "Undone",
+};
+function plainOpState(state) {
+  return PLAIN_OP_STATES[state] || String(state || "").toLowerCase().replace(/_/g, " ");
 }

@@ -41,9 +41,9 @@ export function renderScheduleGanttView(page) {
       if (item.unaffected) {
         slackBadge = '<span class="slack-pill slack-safe">🛡 Untouched</span>';
       } else if (item.isCriticalPath) {
-        slackBadge = '<span class="slack-pill slack-crit">⚡ Critical · 0d slack</span>';
+        slackBadge = '<span class="slack-pill slack-crit" title="Critical path: no slack">⚡ Tied to the move date</span>';
       } else {
-        slackBadge = `<span class="slack-pill slack-float">+${item.slackDays}d float</span>`;
+        slackBadge = `<span class="slack-pill slack-float" title="${item.slackDays} days of float">${item.slackDays} day${item.slackDays === 1 ? "" : "s"} of leeway</span>`;
       }
 
       const isSel = page.selectedNodeId === item.nodeId;
@@ -66,8 +66,8 @@ export function renderScheduleGanttView(page) {
 
   container.innerHTML = `
     <div class="gantt-head">
-      <strong>Critical-path &amp; before → after alignment</strong>
-      <span class="mono-ref">${cpm.criticalPathNodeIds.length} critical-path · ${cpm.scheduleSpanDays}d span</span>
+      <strong>Timeline · before → after</strong>
+      <span class="mono-ref">${cpm.criticalPathNodeIds.length} tied to the move date</span>
     </div>
     <div class="gantt-list">${rowsHtml}</div>
   `;

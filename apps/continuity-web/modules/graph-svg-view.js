@@ -220,16 +220,16 @@ export function renderMissionNodeInspector(page, nodeId) {
   const matchingOp = page.preparedOps.find((o) => o.commitment_id === node.id);
   const receiptDetails = matchingOp?.receipt_envelope
     ? `<div class="draft-actions-row">
-         <button type="button" class="mini-btn" data-verify-receipt="${page.escapeXml(node.id)}">✓ Re-verify Ed25519 signature live</button>
+         <button type="button" class="mini-btn" data-verify-receipt="${page.escapeXml(node.id)}">✓ Check the provider's signature again</button>
          <span data-receipt-live-status="1" class="mono-ref" role="status"></span>
        </div>
-       <details class="receipt-drawer"><summary>Inspect Signed Ed25519 Receipt JSON</summary><pre class="receipt-pre">${page.escapeXml(JSON.stringify(matchingOp.receipt_envelope, null, 2))}</pre></details>`
+       <details class="receipt-drawer"><summary>Show the signed receipt (JSON)</summary><pre class="receipt-pre">${page.escapeXml(JSON.stringify(matchingOp.receipt_envelope, null, 2))}</pre></details>`
     : "";
 
   const isAnchor = node.id === page.mission.anchor_commitment_id && !page.lastSagaExecution;
   const quickShiftHtml = isAnchor
-    ? `<div class="draft-actions-row" role="group" aria-label="Direct anchor quick-shift">
-         <span class="strip-label" style="font-size:0.74rem">Quick-shift anchor:</span>
+    ? `<div class="draft-actions-row" role="group" aria-label="Try another date">
+         <span class="strip-label" style="font-size:0.74rem">Try another date:</span>
          ${[1, 2, 3, 4]
            .map((d) => {
              const dt = addDaysIso(page.mission.anchor_date, d);
@@ -245,13 +245,16 @@ export function renderMissionNodeInspector(page, nodeId) {
       <div><strong>${page.escapeXml(node.title)}</strong> <span class="badge inspector-state">${page.escapeXml(`${meta.icon} ${meta.label}`)}</span></div>
       ${
         canPin
-          ? `<button id="inspector-pin-btn" type="button" class="mini-btn">${isPinned ? "📌 Pinned Untouched (Click to Unlock)" : "📌 Pin Date Untouched"}</button>`
+          ? `<button id="inspector-pin-btn" type="button" class="mini-btn">${isPinned ? "📌 Kept as is (click to release)" : "📌 Keep this booking as is"}</button>`
           : ""
       }
     </div>
-    <div>Provider: <code>${page.escapeXml(node.provider_name)}</code> (${page.escapeXml(node.provider_origin)}) · Ref: <code>${page.escapeXml(node.booking_ref)}</code></div>
-    <div>Scheduled: <strong>${page.escapeXml(formatDateWithWeekday(node.scheduled_date))}</strong> (${page.escapeXml(node.window)}) · Price: <strong>€${Number(node.price_eur).toFixed(2)}</strong> · Cancel Penalty: €${Number(node.cancellation_fee_eur).toFixed(2)}</div>
-    <div>Evidence Trust: <code>${page.escapeXml(node.observed?.evidence_trust || "DEMO_FIXTURE_INITIAL")}</code>${impactInfo ? ` · Impact Rationale: ${page.escapeXml(impactInfo.reasons.join(" "))}` : ""}</div>
+    <div>With <strong>${page.escapeXml(node.provider_name)}</strong> · booking <code>${page.escapeXml(node.booking_ref)}</code></div>
+    <div><strong>${page.escapeXml(formatDateWithWeekday(node.scheduled_date))}</strong>, ${page.escapeXml(node.window)} · €${Number(node.price_eur).toFixed(2)} · cancelling would cost €${Number(node.cancellation_fee_eur).toFixed(2)}</div>
+    ${impactInfo ? `<div>Why: ${page.escapeXml(impactInfo.reasons.join(" "))}</div>` : ""}
+    <details class="tech-details"><summary>Technical details</summary>
+      <div>Website: ${page.escapeXml(node.provider_origin)} · Proof source: <code>${page.escapeXml(node.observed?.evidence_trust || "DEMO_FIXTURE_INITIAL")}</code></div>
+    </details>
     ${quickShiftHtml}
     ${receiptDetails}
   `;
