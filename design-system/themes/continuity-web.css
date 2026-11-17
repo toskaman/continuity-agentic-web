@@ -453,3 +453,10 @@ a.badge { text-decoration: none; }
 .agent-links a { display: inline-flex; align-items: center; min-height: 28px; }
 /* Scrollable tab bars show that they scroll. */
 @media (max-width: 1100px) { .tablist { mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); } }
+/* Below 1240px the section nav becomes a scrollable second row instead of disappearing. */
+@media (max-width: 1240px) {
+  .site-header .header-bar { flex-wrap: wrap; row-gap: 0; }
+  .site-header .site-nav { display: flex; order: 3; width: 100%; margin: 0 0 8px; overflow-x: auto; scrollbar-width: none; mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+  .site-header .site-nav::-webkit-scrollbar { display: none; }
+  .site-header .site-nav a { padding: 6px 10px; }
+}

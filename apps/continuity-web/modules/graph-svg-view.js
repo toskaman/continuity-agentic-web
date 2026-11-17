@@ -242,7 +242,7 @@ export function renderMissionNodeInspector(page, nodeId) {
 
   box.innerHTML = `
     <div class="inspector-head-row">
-      <div><strong>${page.escapeXml(node.title)}</strong> — <span>[${page.escapeXml(`${meta.icon} ${meta.label}`)}]</span></div>
+      <div><strong>${page.escapeXml(node.title)}</strong> <span class="badge inspector-state">${page.escapeXml(`${meta.icon} ${meta.label}`)}</span></div>
       ${
         canPin
           ? `<button id="inspector-pin-btn" type="button" class="mini-btn">${isPinned ? "📌 Pinned Untouched (Click to Unlock)" : "📌 Pin Date Untouched"}</button>`
