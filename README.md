@@ -12,10 +12,10 @@ Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agentic
 
 ## Try it in 60 seconds (no API key needed)
 
-1. Open **https://toskaman.github.io/continuity-agentic-web/?demo=1** — the demo starts by itself (or open the site and click **Run the live demo**).
+1. Open **https://toskaman.github.io/continuity-agentic-web/?demo=1** — the demo starts by itself (or open the site and click **See how the move is saved** or **Run the live demo**).
 2. CONTINUITY injects a real provider failure (MoveCo's Friday crew is full), recovers through an overflow partner, compares plans and holds replacements — your original bookings stay untouched.
-3. The approval dialog lists every operation, price and provider. Click **Approve & commit**: three providers commit, three bookings stay untouched (two are never even contacted), and each commit returns an Ed25519-signed receipt.
-4. The page scrolls to **Watch the providers react**: the four providers' real pages, loaded cross-origin from their own deployments, each verify their signed receipt and show the new date (PowerFlow is correctly left unchanged).
+3. The approval dialog lists every operation, price and provider. Click **Confirm these changes**: three providers commit, three bookings stay untouched (two are never even contacted), and each commit returns an Ed25519-signed receipt.
+4. The page scrolls to **Watch the providers react**. The three affected demo providers verify their signed receipts on their own pages. PowerFlow stays on its original date. Choose **Download demo calendar**, or reload the same tab to check the demo providers for the completed changes again. If you choose **Keep my bookings** in the review instead, the coordinator asks the providers to release the temporary holds and reports any release it cannot confirm.
 5. Optional: **Try without a key** in *Ask CONTINUITY* runs the real agent networks, `website_*` tools and consent cards with a scripted model.
 
 **Lighthouse 13.6 (desktop), all 5 live sites:** 100 Performance · 100 Accessibility · 100 Best Practices · 100 SEO · 100 Agentic Browsing — [details](docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md).
@@ -30,7 +30,7 @@ Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agentic
   - Public Network JSON: `https://toskaman.github.io/continuity-agentic-web/continuity_coordinator.network.json`
   - Public Single-Turn Facts Network: `https://toskaman.github.io/continuity-agentic-web/facts/continuity_coordinator_facts.network.json`
   - Public NANDA AI Catalog: `https://toskaman.github.io/continuity-agentic-web/.well-known/ai-catalog.json`
-  - Public A2A v1.0 Agent Card: `https://toskaman.github.io/continuity-agentic-web/.well-known/agent-card.json`
+  - Public Agent Card for discovery: `https://toskaman.github.io/continuity-agentic-web/.well-known/agent-card.json`
 - **4 Independent Peer Websites (Distinct Origin `https://gpaschercher-sudo.github.io`):**
   - **Peer A — MoveCo Express:** `https://gpaschercher-sudo.github.io/moveco-agentic-peer/` (`moveco_dispatch`)
   - **Peer B — PermitFlow Civic Prep:** `https://gpaschercher-sudo.github.io/permitflow-agentic-peer/` (`permitflow_advisor`)
@@ -80,7 +80,7 @@ This single command executes:
 2. Official Cognizant `check_partner.mjs` across all **9 bidirectional cross-origin directions** (`CONTINUITY -> 4 Peers`, `All 4 Peers -> CONTINUITY`, and external open callability — **CORS, manifests, networks, and `bridge/action-bridge.html` verified**).
 3. All **117 automated tests in 32 suites** (unit, runtime multi-provider SSE parallel tool calls & EU/US Otari + Gemini `AQ.` routing, 1-click OpenRouter OAuth PKCE S256 & URL `?code=` scrubbing, pre-execution peer instruction firewall & TOFU SHA-256 rug-pull pinning, least-privilege sub-agent toolbox scoper, zero-ceiling-leak SHA-256 hash-ladder budget range proof, zero-key on-device `LanguageModel` & loopback Ollama router, visible `data-agent-facts` anti-injection & `facts/` partner checks, Project NANDA `urn:air` + AI Catalog + Poppy `nandaindex.org/reach` v1 + `POST /resolve` `draft-raskar-02` + SPA fallback detection, NSGA-II Pareto + counterfactual relaxation + 6-day horizon sweep, multilingual EN/FR & relative NL + hybrid `.ics` intake, hybrid Open Agentic Web + legacy Hold-First transition playbook, zero-trust audit bundle verifier & `€0.01` tamper detection, `€0` pre-commit hold release, Google ADK → HOCON converter, mandate & Nash bargaining bypasses, SHA-256 hash-chained ledger, cross-origin browser bridge, peer zero-key replay, W3C `document.modelContext` + `navigator.modelContext` WebMCP guardrails, bidirectional `Engine` composition `I1–I3`, live 9-point MVP 0.2 + NANDA conformance auditor & SARIF CLI, production `--dry-run` bundle staging, docs-vs-code truth contract, provider MCP contracts, adversarial security boundaries `S1–S20`, **real Headless Chromium CDP Desktop + `390x844` Mobile + `?demo=1` + `?ask_continuity=1` + Builder Kit E2E**, and all **42 Chaos Lab scenarios**).
 
-### 3. Reproduce Before/After & Multi-Domain Benchmarks (`N = 90` Measured Sagas)
+### 3. Reproduce Before/After & Multi-Domain Benchmarks (`N = 180` Measured Sagas)
 
 ```bash
 node scripts/run_benchmarks.mjs
@@ -154,7 +154,7 @@ When deploying any `apps/*` bundle to a public HTTPS host (Netlify, Cloudflare P
 - [Initial Reconnaissance & Spec Analysis](docs/architecture/INITIAL_RECONNAISSANCE.md)
 - [Competitive Landscape Analysis](docs/research/COMPETITIVE_ANALYSIS.md)
 - [Threat Model, Security & Privacy](docs/security/THREAT_MODEL.md)
-- [Chaos Lab Catalog (20 Scenarios)](docs/CHAOS_TEST_CATALOG.md)
+- [Chaos Lab Catalog (42 Scenarios)](docs/CHAOS_TEST_CATALOG.md)
 - [Measured Before/After Benchmarks](docs/benchmarks/BEFORE_AFTER.md)
 - [Live-Model Check (real Otari model, nothing mocked)](docs/benchmarks/LIVE_MODEL_CHECK.md)
 - [Chromium Performance Trace & V8 Heap Audit](docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md)

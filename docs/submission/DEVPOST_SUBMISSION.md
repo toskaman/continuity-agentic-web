@@ -1,6 +1,6 @@
 # Devpost Submission Draft — CONTINUITY
 
-> **Status (Nov 17, 2026):** Public URLs live and verified end to end (night theme by default). **Still required from the entrant:** (1) record your own voice over `CONTINUITY_v2_voice_ready.mp4` with `docs/video-production/v2/TELEPROMPTER_voice_ready.md` (Rules: the entrant must explain the project — never submit a TTS-narrated cut); (2) your Otari account email (form only); (3) the public YouTube link; (4) optional but strong: results of the 5-person timed user test (`docs/impact/USER_TEST_PROTOCOL.md`).
+> **Status (Nov 18, 2026):** Public URLs live and verified end to end (night theme by default; 17 fresh public screenshots captured; `N = 180` benchmarks & Lighthouse 100s re-verified). **Still required from the entrant:** (1) record your own voice over `CONTINUITY_v3_voice_ready.mp4` (`Z:\continuity-titan-omega\v3\deliverables\`) with `TELEPROMPTER_voice_ready.md` (or re-film plates via `scripts/capture_video_v2.mjs` if desired — Rules: the entrant must explain the project, never submit a TTS-narrated cut); (2) your Otari account email (form only); (3) the public YouTube link; (4) optional: real iPhone/Mac Safari re-checks & 5-person timed user test (`docs/impact/USER_TEST_PROTOCOL.md`).
 
 ---
 
@@ -15,8 +15,8 @@
   - `https://gpaschercher-sudo.github.io/permitflow-agentic-peer/` (`permitflow_advisor`)
   - `https://gpaschercher-sudo.github.io/homeconnect-agentic-peer/` (`homeconnect_scheduler`)
   - `https://gpaschercher-sudo.github.io/powerflow-agentic-peer/` (`powerflow_grid`)
-- **Screenshots to upload (`docs/submission/screenshots/`, captured on the public deployment, Nov 17):**
-  0. **`13_live_provider_wall.png` — use this as the cover image.** Four real provider pages, loaded cross-origin from their own deployments, each showing *Receipt Verified* after one approval (captured on the public deployment)
+- **Screenshots to upload (`docs/submission/screenshots/`, captured on the public deployment, Nov 18):**
+  0. **`13_live_provider_wall.png` — use this as the cover image.** Four real provider pages loaded cross-origin from `gpaschercher-sudo.github.io`: MoveCo, PermitFlow, and HomeConnect show `Signed receipt verified by this page` with updated dates (`FRI 20 NOV` / `SAT 21 NOV`), while PowerFlow stays on `Tuesday, November 17` (captured on the public deployment)
   1. `01_continuity_mission_baseline.png` — Landing: one change, every commitment re-aligned + live network map
   2. `02_ripple_recovery_prepared_plan.png` — Mission map + Approval Center after a provider failure is recovered
   3. `08_pareto_frontier_and_hold_countdown.png` — Plan comparison (A/C/Alternative) + what-if budget frontier
@@ -39,7 +39,7 @@
 You change one date; CONTINUITY asks every affected company's own agentic website what is possible, holds the replacements, and lets you approve one plan — nothing is cancelled without you.
 
 ### Try it in 60 seconds — no API key
-Open https://toskaman.github.io/continuity-agentic-web/?demo=1. The demo starts by itself: a provider failure is injected and recovered, plans are compared, replacements are held and the approval dialog opens. Approve, then scroll to **Watch the providers react**: the four providers' own pages, loaded cross-origin, each verify their signed receipt and update the booking in front of you.
+Open https://toskaman.github.io/continuity-agentic-web/?demo=1. The review shows the backup crew, every date change and the €35 increase. After approval, three provider pages check their signed updates and PowerFlow keeps its date. To try the other outcome, run the demo again and choose **Keep my bookings** to release the temporary holds.
 
 ### The problem
 Agent demos usually book something new. Real life breaks *after* things are booked. Moving house from Tuesday to Friday touches a moving crew, a parking permit, a fiber installation, an electricity switch-on, storage and a furniture delivery — six bookings, six websites (~18 manual steps by our task model), and a real risk of cancelling a working booking before its replacement exists.
@@ -50,15 +50,15 @@ Agent demos usually book something new. Real life breaks *after* things are book
 3. **Asks each provider's own agentic website** — after a consent card, and sending only the booking reference and the new date.
 4. **Compares plans** — fewest changes, lowest cost, fastest; with a what-if budget slider.
 5. **Holds first, commits last** — one approval, cryptographically bound to the exact operations and prices (a €0.01 drift invalidates it).
-6. **Verifies** — every commit returns a signed receipt that the provider's page checks itself; you get the updated calendar and an audit file.
+6. **Verifies** — the three affected demo providers check their signed receipts on their own pages. You can download the updated demo calendar or reload the same tab to check the signed results again. Imported bookings requiring a manual response stay marked as pending.
 
 ### Three proofs that it works
 1. **Independent websites really cooperate.** CONTINUITY (`toskaman.github.io`) and four separately deployed provider sites (`gpaschercher-sudo.github.io/...`) each publish their own `agent-manifest.json`, agent network and action bridge. On approval, each provider page verifies an Ed25519 receipt *in its own browsing context* before it moves the booking — visible live on the provider wall.
-2. **Nothing is ever cancelled by accident.** 180 end-to-end runs across 5 scenarios (relocation, provider failure, outpatient surgery, expo freight, calendar import): 100 % verified completion, **0 cancel calls**, 3/3 signed receipts per run (`docs/benchmarks/BEFORE_AFTER.md`).
+2. **The coordinator preserves existing bookings while preparing the change.** Across 180 benchmark runs, there were **zero cancellation calls**. The relocation paths verified three receipts per run. The hybrid import verified two automated changes and left the third as an email request. See `docs/benchmarks/BEFORE_AFTER.md` for the measured and simulated paths.
 3. **Safety is code, not a prompt.** The language model explains and drafts; it cannot raise the budget, cancel or commit. **42 failure scenarios** (forged receipts, price drift after approval, timeouts, data leaks, manifest tampering…) run in your browser in the Chaos Lab; 117 automated tests in 32 suites pass; Lighthouse 100 in every category including *Agentic Browsing*.
 
 ### How it uses the Open Agentic Web (Profile 0.2)
-Every site ships its UI, `agent-manifest.json`, resolved `.network.json`, a single-turn `facts/` network, the browser `runtime/`, an action bridge, a NANDA `ai-catalog.json` and an A2A agent card. The mesh is bidirectional: CONTINUITY consults the providers and each provider's assistant can consult CONTINUITY. Provider networks run in the visitor's browser on the visitor's own model router (default **Mozilla Otari**, or zero-key on-device models), so no provider ever sees the visitor's API key. Site actions are also exposed through WebMCP.
+Every site ships its UI, `agent-manifest.json`, resolved `.network.json`, a single-turn `facts/` network, the browser `runtime/`, an action bridge, a NANDA `ai-catalog.json` and a discovery card that points to its browser network. The mesh is bidirectional: CONTINUITY consults the providers and each provider's assistant can consult CONTINUITY. Provider networks run in the visitor's browser on the visitor's own model router (default **Mozilla Otari**, or zero-key on-device models), so no provider ever sees the visitor's API key. Site actions are also exposed through WebMCP.
 
 ### Shared with the community (Apache-2.0)
 - **Builder Kit** (`community-kit.html`, zero backend): validate any site against the 9-point MVP 0.2 checklist, generate NANDA / A2A cards, convert Google ADK or OpenAI Agents configs to Neuro SAN, scan peer instructions before executing them, verify audit bundles offline.

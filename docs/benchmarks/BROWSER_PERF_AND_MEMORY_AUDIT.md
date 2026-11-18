@@ -1,8 +1,8 @@
 # Chromium Renderer Performance Trace, V8 Heap Memory & Lighthouse Audit
 
 **Targets Audited:** All **6 pages across 5 independent Open Agentic Websites** (`continuity-web/index.html`, `continuity-web/community-kit.html`, `demo-moveco`, `demo-permitflow`, `demo-homeconnect`, `demo-powerflow`)  
-**Measurement Tools:** Headless Chromium CDP (`scripts/audit_browser_perf.mjs`), Chromium Renderer Trace (`browser.trace.*`), V8 Heap Snapshot Comparator (`browser.heap.*`), and Lighthouse 13.6 (`browser.lighthouse`)  
-**Date Measured:** November 16, 2026  
+**Measurement Tools:** Headless Chromium CDP (`scripts/audit_browser_perf.mjs`), Chromium Renderer Trace (`browser.trace.*`), V8 Heap Snapshot Comparator (`browser.heap.*`), and Lighthouse (`browser.lighthouse`)  
+**Date Measured:** November 18, 2026 (live 6-page Lighthouse & 5-cycle retention re-verified on deployed `3ca08147` build)  
 
 ---
 
@@ -16,11 +16,10 @@ node scripts/audit_browser_perf.mjs
 
 | Metric | Measured Value | Target / Threshold | Status |
 |---|---:|---:|---|
-| **5-Origin Boot + Cross-Origin Handshake** | **`360.5 ms`** | `< 1,000 ms` | **PASS** |
-| **DOM Nodes (Before 5 Sagas → After 5 Sagas + Reset)** | **`2,779` → `2,788` (`+9` nodes)** | `< +50` nodes | **PASS** |
-| **JS Event Listeners (`JSEventListeners` Delta Across 5 Sagas)** | **`110` → `110` (`0` delta)** | `0` leaked listeners | **PASS** |
-| **Post-GC V8 Used Heap (`JSHeapUsedSize`)** | **`2.53 MB` → `2.89 MB`** | `< 10 MB` | **PASS** |
-| **Cumulative Layout Shift (`CLS`) on Initial Load** | **`0.000`** | `< 0.05` | **PASS** |
+| **5-Origin Boot + Cross-Origin Handshake** | **`471.2 ms`** | `< 1,000 ms` | **PASS** |
+| **Coordinator DOM Elements (`document.querySelectorAll('*')`, Before → After 5 Sagas + Reset)** | **`1,078` → `1,078` (`0` delta)** | `<= +50` nodes | **PASS** |
+| **Post-GC V8 Used Heap (`JSHeapUsedSize`)** | **`2.61 MB` → `3.34 MB` (`+0.73 MB`)** | `< +5 MB` | **PASS** |
+| **Long Tasks Observed During Loop** | **`0`** | `0` | **PASS** |
 
 *Synchronous boot guarantee:* `ContinuityCoordinatorPage.bindDom()` attaches all DOM listeners synchronously at `t = 0 ms` while `probeLivePeerOrigins()` runs asynchronously behind `_peerProbePromise` + `_probeGen` abort guards, and `CrossOriginBridgeClient.destroy()` explicitly rejects unsettled RPC promises so rapid re-probes never leak iframes or listeners.
 
@@ -52,7 +51,7 @@ node scripts/audit_browser_perf.mjs
 
 ## 3. Lighthouse Accessibility, Best Practices & SEO Audit (All 6 Pages — Zero Diagnostic Failures)
 
-Re-verified **November 16, 2026** after adding the 6-day horizon sweep, semantic `⚡ RIPPLE` / `🛡 PROTECTED` SVG graph, 1-click OpenRouter PKCE (`#ns-openrouter-pkce`), `#peer-local-ai-btn` across all 4 peer sites, and the 6-tool / 24-module `community-kit.html`:
+Re-verified **November 18, 2026** live across all **6 deployed public GitHub Pages URLs** (`toskaman.github.io/continuity-agentic-web/`, `/community-kit.html`, and all 4 `gpaschercher-sudo.github.io/*-agentic-peer/` sites) after the final plain-language UI, session recovery, and simulation-mode updates (`0` failures, `0` console errors):
 
 | Page Audited | Accessibility | Best Practices | SEO | Diagnostic Audit Failures (`lh.failures`) | Console Errors |
 |---|---:|---:|---:|---:|---:|

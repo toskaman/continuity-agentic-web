@@ -5,10 +5,23 @@
  */
 
 import { spawn } from "node:child_process";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import net from "node:net";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { startAllEcosystemServers } from "./serve_ecosystem.mjs";
+
+function getFreeTcpPort() {
+  return new Promise((resolve, reject) => {
+    const srv = net.createServer();
+    srv.listen(0, "127.0.0.1", () => {
+      const p = srv.address().port;
+      srv.close(() => resolve(p));
+    });
+    srv.on("error", reject);
+  });
+}
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const OUT_DIR = path.join(ROOT, "docs", "submission", "screenshots");
@@ -50,7 +63,7 @@ const archSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 820" 
 
   <!-- Deterministic Safety Kernel Box -->
   <rect x="70" y="390" width="770" height="350" rx="12" fill="#0f172a" stroke="#10b981" stroke-width="1.8"/>
-  <text x="95" y="424" fill="#34d399" font-size="16" font-weight="700" font-family="Inter, Segoe UI, sans-serif">2. Deterministic Safety &amp; Reconciliation Kernel (24 Open-Source @continuity/* Modules)</text>
+  <text x="95" y="424" fill="#34d399" font-size="16" font-weight="700" font-family="Inter, Segoe UI, sans-serif">2. Deterministic Safety &amp; Reconciliation Kernel (26 Open-Source @continuity/* Modules)</text>
 
   <rect x="95" y="445" width="350" height="82" rx="8" fill="#131c2e" stroke="#334155"/>
   <text x="112" y="472" fill="#f8fafc" font-size="14" font-weight="700" font-family="Inter, Segoe UI, sans-serif">@continuity/intake-compiler &amp; mission-graph</text>
@@ -116,20 +129,23 @@ const archSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 820" 
 
 await writeFile(path.join(OUT_DIR, "00_architecture_diagram.svg"), archSvg, "utf8");
 
-// 2. Boot live 5-origin ecosystem + headless Chrome CDP to capture real PNG screenshots
+// 2. Boot live 5-origin ecosystem (when local) + headless Chrome CDP to capture real PNG screenshots
 // --public: shoot the live GitHub Pages deployment instead of the local servers (no 127.0.0.1 in any frame).
 const PUBLIC = process.argv.includes("--public");
 const COORD = PUBLIC ? "https://toskaman.github.io/continuity-agentic-web/" : "http://127.0.0.1:8080/";
 const PEER = (repo, port, host = "127.0.0.1") => (PUBLIC ? `https://gpaschercher-sudo.github.io/${repo}/` : `http://${host}:${port}/`);
-const eco = await startAllEcosystemServers({
-  continuity: 8080,
-  moveco: 8081,
-  permitflow: 8082,
-  homeconnect: 8083,
-  powerflow: 8084,
-});
+const eco = PUBLIC
+  ? null
+  : await startAllEcosystemServers({
+      continuity: 8080,
+      moveco: 8081,
+      permitflow: 8082,
+      homeconnect: 8083,
+      powerflow: 8084,
+    });
 
-const cdpPort = 9333;
+const cdpPort = await getFreeTcpPort();
+const profileDir = await mkdtemp(path.join(os.tmpdir(), "continuity-ss-profile-"));
 const chromeProc = spawn(
   CHROME_PATH,
   [
@@ -139,7 +155,7 @@ const chromeProc = spawn(
     "--hide-scrollbars",
     "--no-first-run",
     "--no-default-browser-check",
-    `--user-data-dir=C:\\Users\\TheBox\\AppData\\Local\\Temp\\opencode\\chrome-ss-profile`,
+    `--user-data-dir=${profileDir}`,
     "about:blank",
   ],
   { stdio: "ignore" },
@@ -223,7 +239,18 @@ try {
 
   // Screenshot 1: Baseline 6-Commitment Mission & SVG Dependency Graph
   await cdp.send("Page.navigate", { url: COORD });
-  await new Promise((r) => setTimeout(r, PUBLIC ? 4000 : 900));
+  await cdp.send("Runtime.evaluate", {
+    expression: `(async () => {
+      for (let i = 0; i < 150; i++) {
+        const badge = document.querySelector("#transport-badge")?.textContent || "";
+        const styled = document.styleSheets.length > 0 && getComputedStyle(document.body).backgroundColor !== "rgba(0, 0, 0, 0)";
+        if (document.readyState === "complete" && styled && badge && !/Detecting/i.test(badge)) break;
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      await new Promise((r) => setTimeout(r, 600));
+    })()`,
+    awaitPromise: true,
+  });
   await snapPng("01_continuity_mission_baseline.png");
 
   // Screenshot 2: Ripple Failure Armed + Minimal-Change Plan Prepared (3 affected, 3 preserved)
@@ -252,30 +279,45 @@ try {
 
   // Screenshot 3: Bound Cryptographic Approval Confirmation Modal
   await cdp.send("Runtime.evaluate", {
-    expression: `document.querySelector("#approve-commit-btn").click(); "opened"`,
+    expression: `(async () => {
+      document.querySelector("#approve-commit-btn").click();
+      for (let i = 0; i < 40 && !document.querySelector("dialog[open]"); i++) {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+    })()`,
+    awaitPromise: true,
   });
-  await new Promise((r) => setTimeout(r, 300));
+  await new Promise((r) => setTimeout(r, 250));
   await snapPng("03_bound_approval_modal.png");
 
   // Screenshot 4: Verified Commit & Ed25519 Provider Receipts
   await cdp.send("Runtime.evaluate", {
     expression: `(async () => {
-      document.querySelector("dialog.assistant-review button")?.click();
-      await new Promise(r => setTimeout(r, 400));
+      const { App } = await import(new URL("script.js", location.href).href);
+      const dlg = document.querySelector("dialog[open]");
+      const btn = dlg?.querySelector(".review-actions button:not(.assistant-decline)") || dlg?.querySelector("button");
+      btn?.click();
+      for (let i = 0; i < 80 && App.page.lastSagaExecution?.status !== "ALL_COMMITTED_AND_VERIFIED"; i++) {
+        await new Promise((r) => setTimeout(r, 150));
+      }
       document.querySelector(".workspace-two-col")?.scrollIntoView({ behavior: "instant" });
     })()`,
     awaitPromise: true,
   });
-  await new Promise((r) => setTimeout(r, 250));
+  await new Promise((r) => setTimeout(r, 300));
   await snapPng("04_committed_verified_ed25519.png");
 
   // Screenshot 5: Chaos Lab (42/42 scenarios passed)
   await cdp.send("Runtime.evaluate", {
     expression: `(async () => {
       document.querySelector("#tab-btn-chaos").click();
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 400));
       document.querySelector("#run-chaos-suite-btn")?.click();
-      await new Promise(r => setTimeout(r, 6000));
+      for (let i = 0; i < 80; i++) {
+        const txt = document.querySelector("#chaos-summary")?.textContent || "";
+        if (/42\\/42 scenarios passed/.test(txt)) break;
+        await new Promise((r) => setTimeout(r, 200));
+      }
       document.querySelector(".tabs-section")?.scrollIntoView({ behavior: "instant" });
     })()`,
     awaitPromise: true,
@@ -323,32 +365,65 @@ try {
   await new Promise((r) => setTimeout(r, PUBLIC ? 3000 : 800));
   await snapPng("14_community_builder_kit.png");
 
-  // Screenshot 13: live provider wall on the PUBLIC deployment (only when --capture-public-wall is passed).
-  if (PUBLIC || process.argv.includes("--capture-public-wall")) {
+  // Screenshot 13: live provider wall (on PUBLIC deployment, or local 5-origin servers with --local-wall).
+  if (PUBLIC || process.argv.includes("--capture-public-wall") || process.argv.includes("--local-wall")) {
+    const wallUrl = process.argv.includes("--local-wall")
+      ? `${COORD}?demo=1`
+      : "https://toskaman.github.io/continuity-agentic-web/?demo=1";
     try {
-      await cdp.send("Page.navigate", { url: "https://toskaman.github.io/continuity-agentic-web/?demo=1" });
+      await cdp.send("Page.navigate", { url: wallUrl });
       await cdp.send("Runtime.evaluate", {
         expression: `(async () => {
           let d = null;
-          for (let i = 0; i < 100 && !d; i++) { await new Promise((r) => setTimeout(r, 300)); d = document.querySelector("dialog[open]"); }
+          for (let i = 0; i < 120 && !d; i++) { await new Promise((r) => setTimeout(r, 250)); d = document.querySelector("dialog[open]"); }
           if (!d) throw new Error("approval dialog did not open");
-          if (d) [...d.querySelectorAll("button")].find((b) => /Approve/.test(b.textContent))?.click();
-          await new Promise((r) => setTimeout(r, 7000));
+          const btn = d.querySelector(".review-actions button:not(.assistant-decline)")
+            || [...d.querySelectorAll("button")].find((b) => /Confirm|Approve/.test(b.textContent));
+          btn?.click();
+          for (let i = 0; i < 120; i++) {
+            const committed = document.querySelectorAll('[data-live-state][data-state="committed"]').length;
+            if (committed >= 3) break;
+            await new Promise((r) => setTimeout(r, 250));
+          }
+          await new Promise((r) => setTimeout(r, 1200));
           document.querySelector("#outcome-panel")?.remove();
           const w = document.querySelector("#live-wall");
-          window.scrollTo({ top: w.getBoundingClientRect().top + scrollY - 110, behavior: "instant" });
+          window.scrollTo({ top: w.getBoundingClientRect().top + scrollY - 96, behavior: "instant" });
         })()`,
         awaitPromise: true,
       });
       const verified = await cdp.send("Runtime.evaluate", {
-        expression: `[...document.querySelectorAll(".live-site")].filter((f) => f.dataset.state === "committed").length`,
+        expression: `document.querySelectorAll('[data-live-state][data-state="committed"]').length`,
       });
-      if ((verified.result?.value || 0) < 3) throw new Error("providers not committed on the public site");
-      await new Promise((r) => setTimeout(r, 2500));
+      if ((verified.result?.value || 0) < 3) throw new Error("providers not committed");
+      await new Promise((r) => setTimeout(r, 1500));
       await snapPng("13_live_provider_wall.png");
     } catch (err) {
       console.log("Skipped 13_live_provider_wall.png:", err.message);
     }
+  }
+
+  // Screenshots 15 & 16: same engine applied to Outpatient Surgery & Expo Freight
+  for (const [scenarioId, filename] of [
+    ["outpatient_surgery", "15_same_engine_surgery.png"],
+    ["product_launch_expo", "16_same_engine_freight.png"],
+  ]) {
+    await cdp.send("Page.navigate", { url: COORD });
+    await cdp.send("Runtime.evaluate", {
+      expression: `(async () => {
+        const { App } = await import(new URL("script.js", location.href).href);
+        for (let i = 0; i < 60 && /Detecting/i.test(document.querySelector("#transport-badge")?.textContent || ""); i++) {
+          await new Promise((r) => setTimeout(r, 150));
+        }
+        await App.page.switchScenario("${scenarioId}");
+        await App.page.resetMission({ rippleFailureInjected: true });
+        await App.page.analyzeAndPrepareChange(document.querySelector("#mission-input").value);
+        document.querySelector("#mission")?.scrollIntoView({ behavior: "instant" });
+      })()`,
+      awaitPromise: true,
+    });
+    await new Promise((r) => setTimeout(r, 400));
+    await snapPng(filename);
   }
 
   // Screenshot 7: Architecture SVG rendered cleanly to PNG
@@ -366,5 +441,7 @@ try {
   cdp.close();
 } finally {
   chromeProc.kill();
-  await eco.stopAll();
+  await new Promise((r) => setTimeout(r, 250));
+  if (eco) await eco.stopAll();
+  await rm(profileDir, { recursive: true, force: true }).catch(() => {});
 }

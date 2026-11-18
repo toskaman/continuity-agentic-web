@@ -427,16 +427,13 @@ async function runHybridColdStartIcsTrial() {
 
   const saga = new SagaCoordinator({ graph, receiptVerifier: harness.verifier });
   const chosenPlan = solved.plans[0];
+  const playbook = buildHybridTransitionPlaybook({ mission, plan: chosenPlan });
+  const automatedIds = new Set(playbook.steps.filter((step) => step.executionChannel === "OPEN_AGENTIC_WEB_AUTONOMOUS").map((step) => step.commitmentId));
   const prep = await saga.preparePlan({
     missionId: mission.mission_id,
-    plan: chosenPlan,
+    plan: { ...chosenPlan, operations: chosenPlan.operations.filter((op) => automatedIds.has(op.commitment_id)) },
     maximumBudgetEur: proposal.invariants.maximum_budget_eur,
     providerClients: harness.clients,
-  });
-  const playbook = buildHybridTransitionPlaybook({
-    mission,
-    plan: chosenPlan,
-    preparedOps: prep.operations,
   });
   const approvals = await saga.approvePreparedOperations(prep.operations.map((o) => o.operation_id));
   const exec = await saga.executeApprovedSaga({
@@ -453,7 +450,7 @@ async function runHybridColdStartIcsTrial() {
     quoteLatencyMs,
     solveMs,
     totalEndToEndMs,
-    httpRequests: playbook.agenticStepsCount * 3,
+    httpRequests: 0,
     providersContacted: impact.metrics.providersContactedCount,
     unnecessaryProvidersAvoided: impact.metrics.unnecessaryOperationsAvoided,
     changedCommitments: chosenPlan.metrics.changedCount,
@@ -596,7 +593,7 @@ Every number in sections 1, 2, and 3 is computed by the script in this run, exce
 | Metric | BEFORE — uncoordinated manual rebooking | AFTER — CONTINUITY, normal shift | AFTER — CONTINUITY, ripple recovery | Evidence |
 | --- | --- | --- | --- | --- |
 | User actions | **~18** (3 per provider × 6 sites; **${uncoordinatedProbe.peerHtmlControlsCount}** form controls verified across the 4 live peer HTML pages) | **2 decisions** (1 request + 1 approval; 3 clicks incl. confirmation dialog) | **2 decisions** | Before count: **Estimate** (task model) + measured DOM control count. After: structural count |
-| Ripple failure outcome (MoveCo primary Friday van full) | **Split-brain schedule (${uncoordinatedProbe.prematurelyMutatedProvidersCount} providers mutated to Friday while MoveCo stays on Tuesday)** | — | **0 premature mutations** (holds placed on overflow fleet first; all 3 commit together) | Measured live against peer \`/api/call\` & \`/api/state\` |
+| Ripple failure outcome (MoveCo primary Friday van full) | **Split-brain schedule (${uncoordinatedProbe.prematurelyMutatedProvidersCount} providers mutated to Friday while MoveCo stays on Tuesday)** | — | **0 premature mutations** (holds placed on overflow fleet first; 3 verified changes after approval) | Measured live against peer \`/api/call\` & \`/api/state\` |
 | Providers contacted | up to 6 | **${n.providersContacted}** (${n.unnecessaryProvidersAvoided} out-of-scope bookings never contacted) | **${r.providersContacted}** (${r.unnecessaryProvidersAvoided} never contacted) | Measured |
 | Commitments changed / kept | not optimized | **${n.changedCommitments} changed · ${n.preservedCommitments} kept** | **${r.changedCommitments} changed · ${r.preservedCommitments} kept** | Measured |
 | Mission total (cap €700.00) | no global budget check | **€${n.totalCostEur.toFixed(2)}** (${fmtDelta(n.totalCostEur - n.baselineTotalEur)} vs €${n.baselineTotalEur.toFixed(2)} baseline) | **€${r.totalCostEur.toFixed(2)}** (${fmtDelta(r.totalCostEur - r.baselineTotalEur)} vs baseline) | Measured |
@@ -625,11 +622,11 @@ ${[
 
 ## 3. Multi-domain & Cold-Start Hybrid \`.ics\` generality (\`N = 30..40\` sagas per domain)
 
-| Scenario | Commitments | Changed / Preserved | Baseline → Committed Total | Verified Ed25519 Receipts | Median Full Saga (ms) | Completion |
+| Scenario | Commitments | Changed / Preserved | Baseline → Committed Total | Verified Ed25519 Receipts | Median Full Saga (ms) | Automated portion completed |
 | --- | --- | --- | --- | --- | --- | --- |
 | **Outpatient Surgery & Care** (\`outpatient_surgery\`) | 5 | **${sg.changedCommitments} changed · ${sg.preservedCommitments} kept** | €${sg.baselineTotalEur.toFixed(2)} → **€${sg.totalCostEur.toFixed(2)}** | **${sg.verifiedReceiptsPerRun} / ${sg.committedPerRun}** | ${sg.totalEndToEndMs.median} ms | **${sg.allSucceededRatePct}%** |
 | **International Expo Freight** (\`product_launch_expo\`) | 6 | **${ex.changedCommitments} changed · ${ex.preservedCommitments} kept** | €${ex.baselineTotalEur.toFixed(2)} → **€${ex.totalCostEur.toFixed(2)}** | **${ex.verifiedReceiptsPerRun} / ${ex.committedPerRun}** | ${ex.totalEndToEndMs.median} ms | **${ex.allSucceededRatePct}%** |
-| **Hybrid Cold-Start \`.ics\` (2 Agentic + 1 Legacy + 1 Storage)** | 4 | **${hy.changedCommitments} changed · ${hy.preservedCommitments} kept** | €${hy.baselineTotalEur.toFixed(2)} → **€${hy.totalCostEur.toFixed(2)}** | **${hy.verifiedReceiptsPerRun} / ${hy.committedPerRun}** (+ 1 Hold-First \`mailto:\` draft) | ${hy.totalEndToEndMs.median} ms | **${hy.allSucceededRatePct}%** |
+| **Hybrid Cold-Start \`.ics\` (2 Agentic + 1 Legacy + 1 Storage)** | 4 | **${hy.committedPerRun} automated · ${hy.changedCommitments - hy.committedPerRun} pending · ${hy.preservedCommitments} kept** | €${hy.baselineTotalEur.toFixed(2)} → **€${hy.totalCostEur.toFixed(2)} projected** | **${hy.verifiedReceiptsPerRun} / ${hy.committedPerRun}** (+ 1 pending Hold-First \`mailto:\` draft) | ${hy.totalEndToEndMs.median} ms | **${hy.allSucceededRatePct}%** |
 
 ---
 
