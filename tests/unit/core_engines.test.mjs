@@ -27,8 +27,8 @@ test("U2 compileMissionChange parses the signature user prompt and enforces hard
   ].join("\n");
 
   const { proposal } = compileMissionChange(prompt, mission);
-  assert.equal(proposal.requested_change.previous_value, "2026-11-17");
-  assert.equal(proposal.requested_change.new_value, "2026-11-20");
+  assert.equal(proposal.requested_change.previous_value, "2027-11-16");
+  assert.equal(proposal.requested_change.new_value, "2027-11-19");
   assert.equal(proposal.invariants.maximum_budget_eur, 700);
   assert.equal(proposal.invariants.preserve_existing_commitments, true);
   assert.equal(proposal.invariants.unauthorized_cancellation, false);
@@ -42,7 +42,7 @@ test("U3 Impact Engine identifies affected Tuesday nodes and preserves Storage &
   const { proposal } = compileMissionChange("Move from Tuesday to Friday under €700", mission);
   const impact = analyzeMissionImpact(graph, proposal);
 
-  // Storage (Nov 15-29) and Furniture Delivery (Saturday Nov 21 >= Friday Nov 20) MUST remain unaffected
+  // Storage (Nov 15-29) and Furniture Delivery (Saturday Nov 20 >= Friday Nov 19) MUST remain unaffected
   assert.ok(impact.unaffectedIds.includes("cmt_storage_pod"));
   assert.ok(impact.unaffectedIds.includes("cmt_furniture_drop"));
 
@@ -116,19 +116,19 @@ test("U7 ApprovalEngine invalidates approval if date or price changes by €0.01
     provider_origin: "http://127.0.0.1:8081",
     provider_id: "moveco",
     capability: "reschedule_van_booking",
-    arguments: { booking_ref: "MC-8841", new_date: "2026-11-20" },
-    proposed_date: "2026-11-20",
+    arguments: { booking_ref: "MC-8841", new_date: "2027-11-19" },
+    proposed_date: "2027-11-19",
     base_price_eur: 390,
     change_fee_eur: 25,
     cancellation_penalty_eur: 0,
     maximum_budget_eur: 700,
-    expires_at: "2026-11-20T23:59:59Z",
+    expires_at: "2027-11-19T23:59:59Z",
   };
-  const appr = await engine.createBoundApproval(spec, { nowIso: "2026-11-13T10:00:00Z" });
+  const appr = await engine.createBoundApproval(spec, { nowIso: "2027-11-12T10:00:00Z" });
   const drifted = await engine.verifyApprovalBinding(
     appr.approval_id,
     { ...spec, change_fee_eur: 25.01 },
-    { nowIso: "2026-11-13T10:01:00Z" },
+    { nowIso: "2027-11-12T10:01:00Z" },
   );
   assert.equal(drifted.valid, false);
   assert.match(drifted.reason, /change_fee_eur/);

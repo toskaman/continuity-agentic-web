@@ -681,7 +681,7 @@ export class ContinuityCoordinatorPage {
       if (useLivePeerClient) {
         const quoteResp = await clients[contact.providerId].quote(node.booking_ref, targetDate);
         if (quoteResp.primary_refused && quoteResp.refusal_reason) {
-          this.providerAlerts.push(`MoveCo Alert: ${quoteResp.refusal_reason}`);
+          this.providerAlerts.push(`MoveCo: ${quoteResp.refusal_reason}`);
         }
         const liveRawOffers = Array.isArray(quoteResp.offers) ? quoteResp.offers : [];
         if (liveRawOffers.length > 0) {
@@ -1021,7 +1021,7 @@ export class ContinuityCoordinatorPage {
       window: "09:30–14:30",
       askCents: 43000,   // €430.00 catalogue ask
       floorCents: 38000, // €380.00 private floor -> Nash midpoint floor((43000+38000)/2) = €405.00!
-      nonce: "mc_ovf_20261120",
+      nonce: "mc_ovf_20271119",
     });
     await arbiter.commitSealedBid({
       providerId: "alpine_heavy_freight",
@@ -1029,7 +1029,7 @@ export class ContinuityCoordinatorPage {
       window: "10:00–15:00",
       askCents: 54000,   // €540.00 catalogue ask
       floorCents: 49500, // €495.00 private floor (> €466 slice allowance -> NO_AGREEMENT without leaking floor!)
-      nonce: "alp_fr_20261120",
+      nonce: "alp_fr_20271119",
     });
 
     this._lastArbiterInstance = arbiter;
@@ -1493,13 +1493,13 @@ export class ContinuityCoordinatorPage {
       await this.generateSelectivePassportProof();
     }
     const tampered = JSON.parse(JSON.stringify(this.lastSelectiveProof));
-    tampered.disclosed_commitment.final_date = "2026-12-31";
+    tampered.disclosed_commitment.final_date = "2027-12-30";
     const check = await verifySelectiveDisclosureProof(tampered);
     if (typeof document !== "undefined") {
       const statusEl = document.querySelector("#passport-status-banner");
       if (statusEl) {
         statusEl.textContent = !check.valid
-          ? `✓ Tamper Attack Caught by RFC 6962 Verifier: Forged date "2026-12-31" broke leaf 0x00 digest & presentation JCS SHA-256 (${check.errors[0]}).`
+          ? `✓ Tamper Attack Caught by RFC 6962 Verifier: Forged date "2027-12-30" broke leaf 0x00 digest & presentation JCS SHA-256 (${check.errors[0]}).`
           : "Unexpected: tamper not caught.";
       }
     }
@@ -1599,11 +1599,11 @@ export class ContinuityCoordinatorPage {
       badge.textContent = this.preparedInSimulation
         ? "Simulation mode"
         : this._peerProbePromise
-          ? "Detecting peer origins…"
+          ? "Connecting to the provider sites…"
           : this.livePeersDetected
-            ? "Live Independent Peer Origins (4 HTTP/MCP)"
+            ? "Live · 4 provider sites connected"
             : this.crossOriginBridgeConnected
-              ? "Live Cross-Origin Browser Mesh (4 Peers · Ed25519)"
+              ? "Live · 4 provider sites connected · signed receipts"
               : "Simulation mode";
       badge.classList.toggle("live", !this.preparedInSimulation && (this.livePeersDetected || this.crossOriginBridgeConnected));
     }

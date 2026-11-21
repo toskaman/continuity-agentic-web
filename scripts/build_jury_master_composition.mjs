@@ -326,12 +326,12 @@ const html = `<!doctype html>
         <div class="exp-title">One Relocation Date Shift: Tuesday → Friday</div>
         <div class="exp-sub">Six independent commitments across autonomous websites suddenly collide:</div>
         <div class="cards-6-grid">
-          <div id="s1-c1" class="svc-card risk"><div class="svc-name">MoveCo Van</div><div class="svc-meta">Tue Nov 17 · €390</div></div>
-          <div id="s1-c2" class="svc-card risk"><div class="svc-name">PermitFlow Bay</div><div class="svc-meta">Tue Nov 17 · €35</div></div>
-          <div id="s1-c3" class="svc-card risk"><div class="svc-name">HomeConnect Fiber</div><div class="svc-meta">Tue Nov 17 · €49</div></div>
-          <div id="s1-c4" class="svc-card safe"><div class="svc-name">PowerFlow Grid</div><div class="svc-meta">Tue Nov 17 · €30</div></div>
+          <div id="s1-c1" class="svc-card risk"><div class="svc-name">MoveCo Van</div><div class="svc-meta">Tue Nov 16 · €390</div></div>
+          <div id="s1-c2" class="svc-card risk"><div class="svc-name">PermitFlow Bay</div><div class="svc-meta">Tue Nov 16 · €35</div></div>
+          <div id="s1-c3" class="svc-card risk"><div class="svc-name">HomeConnect Fiber</div><div class="svc-meta">Tue Nov 16 · €49</div></div>
+          <div id="s1-c4" class="svc-card safe"><div class="svc-name">PowerFlow Grid</div><div class="svc-meta">Tue Nov 16 · €30</div></div>
           <div id="s1-c5" class="svc-card safe"><div class="svc-name">CityVault Pod</div><div class="svc-meta">Nov 15–29 · €75</div></div>
-          <div id="s1-c6" class="svc-card safe"><div class="svc-name">NordicLoom Sofa</div><div class="svc-meta">Sat Nov 21 · €45</div></div>
+          <div id="s1-c6" class="svc-card safe"><div class="svc-name">NordicLoom Sofa</div><div class="svc-meta">Sat Nov 20 · €45</div></div>
         </div>
       </div>
       <div class="caption-bar">${S.s1.caption}</div>

@@ -27,7 +27,7 @@ const WEEKDAY_NAMES = [
 ];
 
 /**
- * Format YYYY-MM-DD with explicit weekday (e.g. "Fri, Nov 20, 2026").
+ * Format YYYY-MM-DD with explicit weekday (e.g. "Fri, Nov 19, 2027").
  * @param {string} isoDate
  * @returns {string}
  */
@@ -91,13 +91,13 @@ export function resolveWeekdayFromAnchor(referenceIsoDate, weekdayName) {
  * Create the canonical initial 6-commitment relocation mission ("The Ripple Effect Demo").
  * Explicitly labels all providers as independent demonstration services.
  * @param {object} [options]
- * @param {string} [options.baseTuesday="2026-11-17"]
+ * @param {string} [options.baseTuesday="2027-11-16"]
  * @param {Record<string, string>} [options.origins]
  */
 export function createSignatureMoveMission(options = {}) {
-  const baseTuesday = options.baseTuesday || "2026-11-17";
-  const wednesday = addDaysIso(baseTuesday, 1); // 2026-11-18
-  const saturday = addDaysIso(baseTuesday, 4);  // 2026-11-21
+  const baseTuesday = options.baseTuesday || "2027-11-16";
+  const wednesday = addDaysIso(baseTuesday, 1); // 2027-11-17
+  const saturday = addDaysIso(baseTuesday, 4);  // 2027-11-20
   const origins = {
     moveco: "http://127.0.0.1:8081",
     permitflow: "http://localhost:8082",
@@ -111,7 +111,7 @@ export function createSignatureMoveMission(options = {}) {
     title: "Home Relocation — Rue de Rivoli to Bellecour",
     mission_type: "home_relocation",
     simulation_disclosure: "Independent demonstration provider services for the Open Agentic Web Challenge.",
-    created_at: "2026-11-13T09:00:00Z",
+    created_at: "2027-11-12T09:00:00Z",
     anchor_date: baseTuesday,
     anchor_commitment_id: "cmt_moveco_van",
     primary_change_field: "move_date",
@@ -211,9 +211,9 @@ export function createSignatureMoveMission(options = {}) {
         peer_network_url: null,
         booking_ref: "CV-3104",
         status: "CONFIRMED",
-        scheduled_date: "2026-11-15",
+        scheduled_date: "2027-11-14",
         window: "All-day access Nov 15 – Nov 29",
-        valid_until: "2026-11-29",
+        valid_until: "2027-11-28",
         price_eur: 75,
         cancellation_fee_eur: 40,
         reschedule_fee_eur: 20,
@@ -238,7 +238,7 @@ export function createSignatureMoveMission(options = {}) {
         reschedule_fee_eur: 25,
         supports_hold: false,
         reversible_reschedule: false,
-        notes: "Scheduled for Saturday Nov 21 — remains valid if move completes on or before Friday Nov 20.",
+        notes: "Scheduled for Saturday Nov 20 — remains valid if move completes on or before Friday Nov 19.",
       },
     ],
   };
@@ -492,7 +492,7 @@ export function compileMissionChange(input, mission) {
 
   if (!newDate || !isValidIsoDate(newDate)) {
     throw new Error(
-      "Could not determine a valid target date from the request. Specify a weekday (e.g. Friday) or ISO date (e.g. 2026-11-20).",
+      "Could not determine a valid target date from the request. Specify a weekday (e.g. Friday) or ISO date (e.g. 2027-11-19).",
     );
   }
 

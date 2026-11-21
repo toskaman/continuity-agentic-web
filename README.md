@@ -22,6 +22,12 @@ Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agentic
 
 > Demo data: the four providers are independent demonstration services built for this challenge. No real bookings, payments or permits are touched.
 
+## In plain words
+
+You are moving house on Tuesday, and the moving company, the parking permit, the internet technician and the electricity meter are all booked around that date. Then the date moves to Friday.
+
+Normally you would call or email each company, one by one, and hope nothing gets cancelled by mistake. CONTINUITY does it for you: it asks each company's own website what is still possible, reserves replacements **without cancelling anything**, shows you one clear plan with the total price, and only changes your bookings once you say yes. Each company then confirms with a signed receipt you can check.
+
 ## Live Public HTTPS Deployments (Verified Cross-Origin Ecosystem)
 
 - **Primary Coordinator (`CONTINUITY`):** `https://toskaman.github.io/continuity-agentic-web/`

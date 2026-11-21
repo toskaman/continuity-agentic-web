@@ -533,7 +533,7 @@ function initKit() {
         receipt_id: "rcpt_kit_mc_8841",
         provider_id: "moveco",
         booking_ref: "MC-8841",
-        scheduled_date: "2026-11-20",
+        scheduled_date: "2027-11-19",
         window: "09:30–14:30",
         total_charged_eur: 420,
       },
@@ -568,7 +568,7 @@ function initKit() {
           provider_id: "moveco",
           provider_name: "MoveCo Express (Demo)",
           state: "COMMITTED",
-          proposed_date: "2026-11-20",
+          proposed_date: "2027-11-19",
           window: "09:30–14:30",
           receipt_envelope: receiptEnv,
         },
@@ -685,7 +685,7 @@ function initKit() {
     outboundRequest: {
       booking_ref: "MC-8841",
       meter_point: "PRM-7510299481",
-      target_date: "2026-11-20",
+      target_date: "2027-11-19",
     },
     peerReply: "Friday morning Luton van slot available for €390 + €25 reschedule fee.",
     proposedHostActionEffect: "write",
@@ -768,7 +768,7 @@ function initKit() {
         receipt_id: "rcpt_merkle_mc_8841",
         provider_id: "moveco",
         booking_ref: "MC-8841",
-        scheduled_date: "2026-11-20",
+        scheduled_date: "2027-11-19",
         window: "08:00–13:00",
         total_charged_eur: 415,
       },
@@ -783,7 +783,7 @@ function initKit() {
           provider_id: "moveco",
           provider_name: "MoveCo Express",
           state: "COMMITTED",
-          proposed_date: "2026-11-20",
+          proposed_date: "2027-11-19",
           receipt_envelope: receiptEnv,
         },
       ],
@@ -823,7 +823,7 @@ function initKit() {
   document.querySelector("#kit-merkle-tamper-btn")?.addEventListener("click", async () => {
     sampleSelectiveProof = sampleSelectiveProof || (await buildSampleSelectiveProof());
     const tampered = JSON.parse(JSON.stringify(sampleSelectiveProof));
-    tampered.disclosed_commitment.final_date = "2026-12-25";
+    tampered.disclosed_commitment.final_date = "2027-12-24";
     if (merkleTa) {
       merkleTa.value = JSON.stringify(tampered, null, 2);
       await runVerifyMerkle(merkleTa.value);

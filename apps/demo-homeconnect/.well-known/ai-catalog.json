@@ -35,7 +35,7 @@
           "manifestUrl": "http://127.0.0.1:8083/agent-manifest.json",
           "networkUrl": "http://127.0.0.1:8083/homeconnect_scheduler.network.json",
           "factsManifestUrl": "http://127.0.0.1:8083/facts/agent-manifest.json",
-          "factsNetworkDigest": "sha256:05b1e7757bd8ceef11fb5704eedf580e2cec33b33c286a8ec51ab4a7724e5e9e"
+          "factsNetworkDigest": "sha256:30d6ab848a8df7661d89a0c5117b2c22fa5dedb59f8785f05a2502a90d01cfdf"
         }
       }
     }

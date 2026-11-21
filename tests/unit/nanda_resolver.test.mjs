@@ -40,8 +40,8 @@ test("N2 AuthorityBoundResolver enforces sequence anti-rollback, targetDigest in
     targetUrl: "https://toskaman.github.io/continuity-moveco-peer/.well-known/agent-card.json",
     targetDigest: digest,
     sequence: 5,
-    issuedAt: "2026-11-14T08:00:00Z",
-    expiresAt: "2026-11-15T08:00:00Z",
+    issuedAt: "2027-11-13T08:00:00Z",
+    expiresAt: "2027-11-14T08:00:00Z",
     authority: {
       type: "domain-control",
       issuer: "https://nandaindex.org",
@@ -51,7 +51,7 @@ test("N2 AuthorityBoundResolver enforces sequence anti-rollback, targetDigest in
 
   const ok = await resolver.verifyResolutionTarget(validBinding, {
     expectedSubject: validBinding.subject,
-    nowIso: "2026-11-14T10:00:00Z",
+    nowIso: "2027-11-13T10:00:00Z",
     fetchedArtifact: artifact,
   });
   assert.equal(ok.ok, true);
@@ -59,7 +59,7 @@ test("N2 AuthorityBoundResolver enforces sequence anti-rollback, targetDigest in
   // Older sequence replay must be rejected (anti-rollback §5.5)
   const rollback = await resolver.verifyResolutionTarget(
     { ...validBinding, sequence: 4 },
-    { nowIso: "2026-11-14T10:01:00Z" },
+    { nowIso: "2027-11-13T10:01:00Z" },
   );
   assert.equal(rollback.ok, false);
   assert.equal(rollback.code, "stale");
@@ -68,7 +68,7 @@ test("N2 AuthorityBoundResolver enforces sequence anti-rollback, targetDigest in
   const tampered = await resolver.verifyResolutionTarget(
     { ...validBinding, sequence: 6 },
     {
-      nowIso: "2026-11-14T10:02:00Z",
+      nowIso: "2027-11-13T10:02:00Z",
       fetchedArtifact: { ...artifact, name: "Attacker Substituted Card" },
     },
   );
@@ -84,7 +84,7 @@ test("N2 AuthorityBoundResolver enforces sequence anti-rollback, targetDigest in
       sequence: 1,
       authority: { type: "dns-zone-only", issuer: "https://evil-registry.example" },
     },
-    { nowIso: "2026-11-14T10:02:00Z" },
+    { nowIso: "2027-11-13T10:02:00Z" },
   );
   assert.equal(emailAttack.ok, false);
   assert.equal(emailAttack.code, "unverifiable");

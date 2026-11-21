@@ -206,7 +206,7 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
         booking_ref: "MC-8841",
         commitment_id: "cmt_moveco_van",
         status: "CONFIRMED",
-        scheduled_date: "2026-11-17",
+        scheduled_date: "2027-11-16",
         window: "08:00–13:00",
         base_price_eur: 390,
         change_fee_eur: 25,
@@ -218,7 +218,7 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
         booking_ref: "PF-2049",
         commitment_id: "cmt_permitflow_bay",
         status: "PREPARED_DOSSIER",
-        scheduled_date: "2026-11-17",
+        scheduled_date: "2027-11-16",
         window: "07:30–14:00",
         base_price_eur: 35,
         change_fee_eur: 10,
@@ -230,7 +230,7 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
         booking_ref: "HC-5510",
         commitment_id: "cmt_homeconnect_fiber",
         status: "CONFIRMED",
-        scheduled_date: "2026-11-17",
+        scheduled_date: "2027-11-16",
         window: "14:00–17:00",
         base_price_eur: 49,
         change_fee_eur: 0,
@@ -242,7 +242,7 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
         booking_ref: "PFW-9921",
         commitment_id: "cmt_powerflow_grid",
         status: "CONFIRMED",
-        scheduled_date: "2026-11-17",
+        scheduled_date: "2027-11-16",
         window: "08:00–12:00",
         base_price_eur: 30,
         change_fee_eur: 0,
@@ -333,7 +333,7 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
                 supports_idempotency: true,
                 supports_status_reconciliation: true,
                 is_replacement_provider: true,
-                expires_at: "2027-01-20T23:59:59Z",
+                expires_at: "2028-01-19T23:59:59Z",
                 disclosure_note:
                   "Cross-Origin Bridge: Primary 08:00 crew full; MoveCo Partner Overflow Fleet offered while MC-8841 stays held.",
               },
@@ -360,14 +360,14 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
                 supports_idempotency: true,
                 supports_status_reconciliation: true,
                 is_replacement_provider: false,
-                expires_at: "2027-01-20T23:59:59Z",
+                expires_at: "2028-01-19T23:59:59Z",
               },
             ];
         return {
           ok: true,
           primary_refused: ripple,
           refusal_reason: ripple
-            ? `Primary MoveCo 08:00 crew is at 100% capacity on ${targetDate}; partner overflow slot returned over cross-origin bridge.`
+            ? `the usual 08:00 crew is fully booked on ${targetDate}, so a partner crew was found instead.`
             : null,
           offers,
         };
@@ -398,7 +398,7 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
               supports_idempotency: true,
               supports_status_reconciliation: true,
               is_replacement_provider: false,
-              expires_at: "2027-01-20T23:59:59Z",
+              expires_at: "2028-01-19T23:59:59Z",
             },
           ],
         };
@@ -432,7 +432,7 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
               supports_idempotency: true,
               supports_status_reconciliation: true,
               is_replacement_provider: false,
-              expires_at: "2027-01-20T23:59:59Z",
+              expires_at: "2028-01-19T23:59:59Z",
             },
             {
               offer_id: "off_homeconnect_sat_am",
@@ -455,7 +455,7 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
               supports_idempotency: true,
               supports_status_reconciliation: true,
               is_replacement_provider: false,
-              expires_at: "2027-01-20T23:59:59Z",
+              expires_at: "2028-01-19T23:59:59Z",
             },
           ],
         };
@@ -486,7 +486,7 @@ export function createPeerBrowserDomainEngine(providerId, options = {}) {
               supports_idempotency: true,
               supports_status_reconciliation: true,
               is_replacement_provider: false,
-              expires_at: "2027-01-20T23:59:59Z",
+              expires_at: "2028-01-19T23:59:59Z",
             },
           ],
         };

@@ -61,7 +61,7 @@ export function createMoveCoDefinition({ host = "127.0.0.1", port = 8081, openAs
           customer_zone: "Zone B — Bellecour",
           crew_tier: "20m3 Luton Van + 3 Movers",
           status: "CONFIRMED",
-          scheduled_date: "2026-11-17",
+          scheduled_date: "2027-11-16",
           window: "08:00–13:00",
           base_price_eur: 390,
           reschedule_fee_eur: 25,
@@ -71,7 +71,7 @@ export function createMoveCoDefinition({ host = "127.0.0.1", port = 8081, openAs
       slots: [
         {
           offer_id: "off_moveco_fri_am",
-          date: "2026-11-20",
+          date: "2027-11-19",
           window: "08:00–13:00",
           crew_label: "MoveCo Express Primary Crew",
           base_price_eur: 390,
@@ -82,7 +82,7 @@ export function createMoveCoDefinition({ host = "127.0.0.1", port = 8081, openAs
         },
         {
           offer_id: "off_moveco_partner_overflow_fri",
-          date: "2026-11-20",
+          date: "2027-11-19",
           window: "09:30–14:30",
           crew_label: "MoveCo Partner Overflow Fleet (Backup)",
           base_price_eur: 405,
@@ -189,7 +189,7 @@ export function createMoveCoDefinition({ host = "127.0.0.1", port = 8081, openAs
             supports_idempotency: true,
             supports_status_reconciliation: true,
             is_replacement_provider: s.is_replacement_provider,
-            expires_at: "2026-12-31T23:59:59Z",
+            expires_at: "2027-12-30T23:59:59Z",
             disclosure_note: s.is_replacement_provider
               ? "Primary MoveCo Friday crew full (injected ripple failure); verified partner overflow crew offered while MC-8841 stays held."
               : "Direct reschedule keeps MC-8841 active until commit.",
@@ -202,7 +202,7 @@ export function createMoveCoDefinition({ host = "127.0.0.1", port = 8081, openAs
           primary_refused: state.injected_scenario === "primary_fri_full",
           refusal_reason:
             state.injected_scenario === "primary_fri_full"
-              ? "Primary MoveCo 08:00 crew is at 100% capacity on 2026-11-20; partner overflow slot returned."
+              ? "the usual 08:00 crew is fully booked on 2027-11-19, so a partner crew was found instead."
               : null,
           offers,
         };
@@ -307,7 +307,7 @@ export function createPermitFlowDefinition({ host = "127.0.0.1", port = 8082, op
           booking_ref: "PF-2049",
           zone: "Zone B Curbside Bay (15m)",
           status: "PREPARED_DOSSIER",
-          scheduled_date: "2026-11-17",
+          scheduled_date: "2027-11-16",
           window: "07:30–14:00",
           prep_fee_eur: 35,
           amendment_fee_eur: 10,
@@ -390,7 +390,7 @@ export function createPermitFlowDefinition({ host = "127.0.0.1", port = 8082, op
               supports_idempotency: true,
               supports_status_reconciliation: true,
               is_replacement_provider: false,
-              expires_at: "2026-12-31T23:59:59Z",
+              expires_at: "2027-12-30T23:59:59Z",
               disclosure_note: "Updates demonstration permit application draft only; citizen files final municipal PDF.",
             },
           ],
@@ -460,7 +460,7 @@ export function createHomeConnectDefinition({ host = "127.0.0.1", port = 8083, o
           booking_ref: "HC-5510",
           plan: "2 Gbps Symmetric Fiber + ONT Splice",
           status: "CONFIRMED",
-          scheduled_date: "2026-11-17",
+          scheduled_date: "2027-11-16",
           window: "14:00–17:00",
           install_fee_eur: 49,
           reschedule_fee_eur: 0,
@@ -468,8 +468,8 @@ export function createHomeConnectDefinition({ host = "127.0.0.1", port = 8083, o
         },
       },
       windows: [
-        { offer_id: "off_homeconnect_fri_pm", date: "2026-11-20", window: "14:00–17:00", price_eur: 49 },
-        { offer_id: "off_homeconnect_sat_am", date: "2026-11-21", window: "09:00–12:00", price_eur: 39 },
+        { offer_id: "off_homeconnect_fri_pm", date: "2027-11-19", window: "14:00–17:00", price_eur: 49 },
+        { offer_id: "off_homeconnect_sat_am", date: "2027-11-20", window: "09:00–12:00", price_eur: 39 },
       ],
     }),
     mcpTools: [
@@ -561,7 +561,7 @@ export function createHomeConnectDefinition({ host = "127.0.0.1", port = 8083, o
             supports_idempotency: true,
             supports_status_reconciliation: true,
             is_replacement_provider: false,
-            expires_at: "2026-12-31T23:59:59Z",
+            expires_at: "2027-12-30T23:59:59Z",
             disclosure_note:
               w.price_eur < 49
                 ? "Off-peak Saturday window saves €10 installation fee."
@@ -653,7 +653,7 @@ export function createPowerFlowDefinition({ host = "127.0.0.1", port = 8084, ope
           booking_ref: "PFW-9921",
           meter_point: "PRM-7510299481",
           status: "CONFIRMED",
-          scheduled_date: "2026-11-17",
+          scheduled_date: "2027-11-16",
           window: "08:00–12:00",
           activation_fee_eur: 30,
           reschedule_fee_eur: 0,
@@ -737,7 +737,7 @@ export function createPowerFlowDefinition({ host = "127.0.0.1", port = 8084, ope
               supports_idempotency: true,
               supports_status_reconciliation: true,
               is_replacement_provider: false,
-              expires_at: "2026-12-31T23:59:59Z",
+              expires_at: "2027-12-30T23:59:59Z",
               disclosure_note:
                 "Optional zero-fee shift to Friday, OR keep existing Tuesday activation untouched (Minimal-Change Solver prefers keeping Tuesday).",
             },

@@ -36,7 +36,7 @@ test("CONTINUITY site-actions register cleanly and run full analyze -> select ->
     "Move my relocation from Tuesday to Friday under €700 without cancelling anything.",
   );
   assert.equal(prep.ok, true);
-  assert.equal(prep.targetDate, "2026-11-20");
+  assert.equal(prep.targetDate, "2027-11-19");
   assert.equal(prep.unaffectedCommitmentsCount, 3);
   assert.ok(prep.paretoFrontierCount >= 1);
 
@@ -90,7 +90,7 @@ test("ContinuityScriptedReplayLlm drives deterministic zero-key tool calls and C
         content: JSON.stringify({
           result: {
             ok: true,
-            targetDate: "2026-11-20",
+            targetDate: "2027-11-19",
             recommendedPlanId: "PLAN_A_MINIMAL_CHANGE",
             preparedOperationsCount: 3,
             unaffectedCommitmentsCount: 3,

@@ -68,7 +68,7 @@ export class MissionGraph {
       visual_state: "UNCHANGED",
       observed: {
         verified: true,
-        last_verified_at: "2026-11-13T09:00:00Z",
+        last_verified_at: "2027-11-12T09:00:00Z",
         evidence_trust: "DEMO_FIXTURE_INITIAL",
         receipt_id: clean.booking_ref || null,
       },
@@ -379,7 +379,7 @@ export class MissionGraph {
       to: "cmt_storage_pod",
       type: EDGE_TYPES.WITHIN_COVERAGE_SPAN,
       rationale: "Buffer storage pod is already reserved from Nov 15 through Nov 29.",
-      rule: { coverageStart: "2026-11-15", coverageEnd: "2026-11-29" },
+      rule: { coverageStart: "2027-11-14", coverageEnd: "2027-11-28" },
     });
 
     graph.addEdge({

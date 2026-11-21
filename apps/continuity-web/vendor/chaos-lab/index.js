@@ -75,7 +75,7 @@ import {
 import { encodeSignedReceiptHandoff, verifySignedReceiptHandoff } from "../cross-origin-bridge/index.js";
 
 /**
- * Create baseline valid normalized offers for the 4 affected/soft commitments on Friday 2026-11-20.
+ * Create baseline valid normalized offers for the 4 affected/soft commitments on Friday 2027-11-19.
  */
 export function buildBaselineFridayOffers(origins = {}) {
   const o = {
@@ -95,7 +95,7 @@ export function buildBaselineFridayOffers(origins = {}) {
       provider_origin: o.moveco,
       raw_capability: "reschedule_van_booking",
       semantic_kind: "RESCHEDULE_IN_PLACE",
-      proposed_date: "2026-11-20",
+      proposed_date: "2027-11-19",
       window: "08:00–13:00",
       base_price_eur: 390,
       change_fee_eur: 25,
@@ -108,7 +108,7 @@ export function buildBaselineFridayOffers(origins = {}) {
       supports_idempotency: true,
       supports_status_reconciliation: true,
       is_replacement_provider: false,
-      expires_at: "2026-11-20T23:59:59Z",
+      expires_at: "2027-11-19T23:59:59Z",
     }),
     normalizePeerOffer({
       offer_id: "off_permitflow_fri",
@@ -118,7 +118,7 @@ export function buildBaselineFridayOffers(origins = {}) {
       provider_origin: o.permitflow,
       raw_capability: "prepare_permit_date_update",
       semantic_kind: "PREPARE_PERMIT_DOSSIER",
-      proposed_date: "2026-11-20",
+      proposed_date: "2027-11-19",
       window: "07:30–14:00",
       base_price_eur: 35,
       change_fee_eur: 10,
@@ -131,7 +131,7 @@ export function buildBaselineFridayOffers(origins = {}) {
       supports_idempotency: true,
       supports_status_reconciliation: true,
       is_replacement_provider: false,
-      expires_at: "2026-11-20T23:59:59Z",
+      expires_at: "2027-11-19T23:59:59Z",
     }),
     normalizePeerOffer({
       offer_id: "off_homeconnect_fri_pm",
@@ -141,7 +141,7 @@ export function buildBaselineFridayOffers(origins = {}) {
       provider_origin: o.homeconnect,
       raw_capability: "change_fiber_appointment",
       semantic_kind: "RESCHEDULE_IN_PLACE",
-      proposed_date: "2026-11-20",
+      proposed_date: "2027-11-19",
       window: "14:00–17:00",
       base_price_eur: 49,
       change_fee_eur: 0,
@@ -154,7 +154,7 @@ export function buildBaselineFridayOffers(origins = {}) {
       supports_idempotency: true,
       supports_status_reconciliation: true,
       is_replacement_provider: false,
-      expires_at: "2026-11-20T23:59:59Z",
+      expires_at: "2027-11-19T23:59:59Z",
     }),
     normalizePeerOffer({
       offer_id: "off_powerflow_fri_am",
@@ -164,7 +164,7 @@ export function buildBaselineFridayOffers(origins = {}) {
       provider_origin: o.powerflow,
       raw_capability: "shift_grid_activation",
       semantic_kind: "RESCHEDULE_IN_PLACE",
-      proposed_date: "2026-11-20",
+      proposed_date: "2027-11-19",
       window: "08:00–12:00",
       base_price_eur: 30,
       change_fee_eur: 0,
@@ -177,7 +177,7 @@ export function buildBaselineFridayOffers(origins = {}) {
       supports_idempotency: true,
       supports_status_reconciliation: true,
       is_replacement_provider: false,
-      expires_at: "2026-11-20T23:59:59Z",
+      expires_at: "2027-11-19T23:59:59Z",
     }),
   ];
 }
@@ -208,7 +208,7 @@ export async function createSimulatedProviderHarness() {
           hold_id: `hold_${pid}_${holdCounter}`,
           booking_ref: bookingRef,
           proposed_date: proposedDate,
-          expires_at: "2026-11-20T23:59:59Z",
+          expires_at: "2027-11-19T23:59:59Z",
         };
         activeHolds.set(hold.hold_id, bookingRef);
         return hold;
@@ -233,7 +233,7 @@ export async function createSimulatedProviderHarness() {
           window: args.window,
           total_charged_eur: charged,
           idempotency_key: idempotencyKey,
-          issued_at: "2026-11-13T10:00:00Z",
+          issued_at: "2027-11-12T10:00:00Z",
         };
         const envelope = await signProviderReceipt(body, keys[pid]);
         const response = {
@@ -277,17 +277,17 @@ export const CHAOS_SCENARIOS = [
         plan: solved.plans[0],
         maximumBudgetEur: 700,
         providerClients: clients,
-        nowIso: "2026-11-13T10:00:00Z",
+        nowIso: "2027-11-12T10:00:00Z",
       });
       const approvals = await saga.approvePreparedOperations(
         prep.operations.map((o) => o.operation_id),
-        { nowIso: "2026-11-13T10:01:00Z" },
+        { nowIso: "2027-11-12T10:01:00Z" },
       );
       delete clients.homeconnect; // Inject total provider outage before commit
       const exec = await saga.executeApprovedSaga({
         approvedItems: approvals.map((a) => ({ operationId: a.operation_id, approvalId: a.approval_id })),
         providerClients: clients,
-        nowIso: "2026-11-13T10:02:00Z",
+        nowIso: "2027-11-12T10:02:00Z",
       });
       const hcOp = exec.operations.find((o) => o.provider_id === "homeconnect");
       return {
@@ -325,11 +325,11 @@ export const CHAOS_SCENARIOS = [
         plan: solved.plans[0],
         maximumBudgetEur: 700,
         providerClients: clients,
-        nowIso: "2026-11-13T10:00:00Z",
+        nowIso: "2027-11-12T10:00:00Z",
       });
       const approvals = await saga.approvePreparedOperations(
         prep.operations.map((o) => o.operation_id),
-        { nowIso: "2026-11-13T10:01:00Z" },
+        { nowIso: "2027-11-12T10:01:00Z" },
       );
       const exec = await saga.executeApprovedSaga({
         approvedItems: approvals.map((a) => ({
@@ -338,7 +338,7 @@ export const CHAOS_SCENARIOS = [
           currentOpOverride: a.operation_id.includes("moveco") ? { change_fee_eur: 55 } : undefined,
         })),
         providerClients: clients,
-        nowIso: "2026-11-13T10:02:00Z",
+        nowIso: "2027-11-12T10:02:00Z",
       });
       const mcOp = exec.operations.find((o) => o.provider_id === "moveco");
       return {
@@ -381,16 +381,16 @@ export const CHAOS_SCENARIOS = [
         plan: solved.plans[0],
         maximumBudgetEur: 700,
         providerClients: clients,
-        nowIso: "2026-11-13T10:00:00Z",
+        nowIso: "2027-11-12T10:00:00Z",
       });
       const approvals = await saga.approvePreparedOperations(
         prep.operations.map((o) => o.operation_id),
-        { nowIso: "2026-11-13T10:01:00Z" },
+        { nowIso: "2027-11-12T10:01:00Z" },
       );
       const exec = await saga.executeApprovedSaga({
         approvedItems: approvals.map((a) => ({ operationId: a.operation_id, approvalId: a.approval_id })),
         providerClients: clients,
-        nowIso: "2026-11-13T10:02:00Z",
+        nowIso: "2027-11-12T10:02:00Z",
       });
       const mcHistory = exec.history.filter((h) => h.operation_id.includes("moveco")).map((h) => h.to_state);
       return {
@@ -432,21 +432,21 @@ export const CHAOS_SCENARIOS = [
         plan: solved.plans[0],
         maximumBudgetEur: 700,
         providerClients: clients,
-        nowIso: "2026-11-13T10:00:00Z",
+        nowIso: "2027-11-12T10:00:00Z",
       });
       const approvals = await saga.approvePreparedOperations(
         prep.operations.map((o) => o.operation_id),
-        { nowIso: "2026-11-13T10:01:00Z" },
+        { nowIso: "2027-11-12T10:01:00Z" },
       );
       await saga.executeApprovedSaga({
         approvedItems: approvals.map((a) => ({ operationId: a.operation_id, approvalId: a.approval_id })),
         providerClients: clients,
-        nowIso: "2026-11-13T10:02:00Z",
+        nowIso: "2027-11-12T10:02:00Z",
       });
       const replayCheck = await saga.approvalEngine.verifyApprovalBinding(
         approvals[0].approval_id,
         prep.operations[0],
-        { nowIso: "2026-11-13T10:03:00Z" },
+        { nowIso: "2027-11-12T10:03:00Z" },
       );
       return {
         simulation_mode: true,
@@ -486,7 +486,7 @@ export const CHAOS_SCENARIOS = [
             ...res.receipt_envelope,
             receipt_body: {
               ...res.receipt_envelope.receipt_body,
-              scheduled_date: "2026-11-24", // Tampered after signing!
+              scheduled_date: "2027-11-23", // Tampered after signing!
             },
           },
         };
@@ -497,16 +497,16 @@ export const CHAOS_SCENARIOS = [
         plan: solved.plans[0],
         maximumBudgetEur: 700,
         providerClients: clients,
-        nowIso: "2026-11-13T10:00:00Z",
+        nowIso: "2027-11-12T10:00:00Z",
       });
       const approvals = await saga.approvePreparedOperations(
         prep.operations.map((o) => o.operation_id),
-        { nowIso: "2026-11-13T10:01:00Z" },
+        { nowIso: "2027-11-12T10:01:00Z" },
       );
       const exec = await saga.executeApprovedSaga({
         approvedItems: approvals.map((a) => ({ operationId: a.operation_id, approvalId: a.approval_id })),
         providerClients: clients,
-        nowIso: "2026-11-13T10:02:00Z",
+        nowIso: "2027-11-12T10:02:00Z",
       });
       const mcOp = exec.operations.find((o) => o.provider_id === "moveco");
       return {
@@ -544,16 +544,16 @@ export const CHAOS_SCENARIOS = [
         plan: solved.plans[0],
         maximumBudgetEur: 700,
         providerClients: clients,
-        nowIso: "2026-11-13T10:00:00Z",
+        nowIso: "2027-11-12T10:00:00Z",
       });
       const approvals = await saga.approvePreparedOperations(
         prep.operations.map((o) => o.operation_id),
-        { nowIso: "2026-11-13T10:01:00Z" },
+        { nowIso: "2027-11-12T10:01:00Z" },
       );
       const exec = await saga.executeApprovedSaga({
         approvedItems: approvals.map((a) => ({ operationId: a.operation_id, approvalId: a.approval_id })),
         providerClients: clients,
-        nowIso: "2026-11-25T10:00:00Z", // Past expiry
+        nowIso: "2027-11-24T10:00:00Z", // Past expiry
       });
       return {
         simulation_mode: true,
@@ -587,7 +587,7 @@ export const CHAOS_SCENARIOS = [
         provider_origin: "http://127.0.0.1:8081",
         raw_capability: "reschedule_van_booking",
         semantic_kind: "REPLACE_WITH_BACKUP_PROVIDER",
-        proposed_date: "2026-11-20",
+        proposed_date: "2027-11-19",
         window: "09:30–14:30",
         base_price_eur: 405,
         change_fee_eur: 0,
@@ -600,7 +600,7 @@ export const CHAOS_SCENARIOS = [
         supports_idempotency: true,
         supports_status_reconciliation: true,
         is_replacement_provider: true,
-        expires_at: "2026-11-20T23:59:59Z",
+        expires_at: "2027-11-19T23:59:59Z",
       });
       const solved = solveMinimalChangePlans({
         graph,
@@ -667,8 +667,8 @@ export const CHAOS_SCENARIOS = [
           mission_type: "home_relocation",
           requested_change: {
             field: "move_date",
-            previous_value: "2026-11-17",
-            new_value: "2026-11-20",
+            previous_value: "2027-11-16",
+            new_value: "2027-11-19",
             target_commitment_id: "cmt_moveco_van",
           },
           invariants: {
@@ -764,7 +764,7 @@ export const CHAOS_SCENARIOS = [
         provider_origin: "http://127.0.0.1:8083",
         raw_capability: "change_fiber_appointment",
         semantic_kind: "RESCHEDULE_IN_PLACE",
-        proposed_date: "2026-11-21",
+        proposed_date: "2027-11-20",
         window: "09:00–12:00",
         base_price_eur: 39, // €10 off-peak Saturday discount
         change_fee_eur: 0,
@@ -830,7 +830,7 @@ export const CHAOS_SCENARIOS = [
     id: "CHAOS_13_CONFLICTING_DATES",
     number: 13,
     title: "Conflicting Provider Schedules",
-    injectedFailure: "Fiber technician only available Thursday Nov 19 while Moving Van arrives Friday Nov 20.",
+    injectedFailure: "Fiber technician only available Thursday Nov 18 while Moving Van arrives Friday Nov 19.",
     humanInterventionRequired: true,
     async run() {
       const mission = createSignatureMoveMission();
@@ -838,7 +838,7 @@ export const CHAOS_SCENARIOS = [
       const { proposal } = compileMissionChange("Move Tuesday to Friday under €700", mission);
       const impact = analyzeMissionImpact(graph, proposal);
       const conflictingOffers = buildBaselineFridayOffers().map((o) =>
-        o.provider_id === "homeconnect" ? { ...o, proposed_date: "2026-11-19" } : o,
+        o.provider_id === "homeconnect" ? { ...o, proposed_date: "2027-11-18" } : o,
       );
       const solved = solveMinimalChangePlans({
         graph,
@@ -887,16 +887,16 @@ export const CHAOS_SCENARIOS = [
         plan: solved.plans[0],
         maximumBudgetEur: 700,
         providerClients: clients,
-        nowIso: "2026-11-13T10:00:00Z",
+        nowIso: "2027-11-12T10:00:00Z",
       });
       const approvals = await saga.approvePreparedOperations(
         prep.operations.map((o) => o.operation_id),
-        { nowIso: "2026-11-13T10:01:00Z" },
+        { nowIso: "2027-11-12T10:01:00Z" },
       );
       const exec = await saga.executeApprovedSaga({
         approvedItems: approvals.map((a) => ({ operationId: a.operation_id, approvalId: a.approval_id })),
         providerClients: clients,
-        nowIso: "2026-11-13T10:02:00Z",
+        nowIso: "2027-11-12T10:02:00Z",
       });
       return {
         simulation_mode: true,
@@ -938,16 +938,16 @@ export const CHAOS_SCENARIOS = [
         plan: solved.plans[0],
         maximumBudgetEur: 700,
         providerClients: clients,
-        nowIso: "2026-11-13T10:00:00Z",
+        nowIso: "2027-11-12T10:00:00Z",
       });
       const approvals = await saga.approvePreparedOperations(
         prep.operations.map((o) => o.operation_id),
-        { nowIso: "2026-11-13T10:01:00Z" },
+        { nowIso: "2027-11-12T10:01:00Z" },
       );
       const exec = await saga.executeApprovedSaga({
         approvedItems: approvals.map((a) => ({ operationId: a.operation_id, approvalId: a.approval_id })),
         providerClients: clients,
-        nowIso: "2026-11-13T10:02:00Z",
+        nowIso: "2027-11-12T10:02:00Z",
       });
       const mcOp = exec.operations.find((o) => o.provider_id === "moveco");
       return {
@@ -974,7 +974,7 @@ export const CHAOS_SCENARIOS = [
           receipt_id: "rcpt_spoof_99",
           provider_id: "permitflow",
           booking_ref: "PF-2049",
-          scheduled_date: "2026-11-20",
+          scheduled_date: "2027-11-19",
           window: "07:30–14:00",
           total_charged_eur: 45,
         },
@@ -1006,17 +1006,17 @@ export const CHAOS_SCENARIOS = [
         method: "artifact",
         targetType: "application/a2a-agent-card+json",
         targetUrl: "https://example.org/agent-card.json",
-        issuedAt: "2026-11-15T09:00:00Z",
-        expiresAt: "2026-11-16T09:00:00Z",
+        issuedAt: "2027-11-14T09:00:00Z",
+        expiresAt: "2027-11-15T09:00:00Z",
         authority: { type: "domain-control", issuer: "https://example.org" },
       };
       const first = await resolver.verifyResolutionTarget(
         { ...baseTarget, sequence: 5 },
-        { nowIso: "2026-11-15T10:00:00Z" },
+        { nowIso: "2027-11-14T10:00:00Z" },
       );
       const replay = await resolver.verifyResolutionTarget(
         { ...baseTarget, sequence: 3 },
-        { nowIso: "2026-11-15T10:05:00Z" },
+        { nowIso: "2027-11-14T10:05:00Z" },
       );
       return {
         simulation_mode: true,
@@ -1053,11 +1053,11 @@ export const CHAOS_SCENARIOS = [
         plan: solved.plans[0],
         maximumBudgetEur: 700,
         providerClients: clients,
-        nowIso: "2026-11-15T10:00:00Z",
+        nowIso: "2027-11-14T10:00:00Z",
       });
       const rel = await saga.releasePreparedHolds({
         providerClients: clients,
-        nowIso: "2026-11-15T10:02:00Z",
+        nowIso: "2027-11-14T10:02:00Z",
       });
       const vanNode = graph.nodes.get("cmt_moveco_van");
       return {
@@ -1066,7 +1066,7 @@ export const CHAOS_SCENARIOS = [
           rel.ok === true
           && rel.feeChargedEur === 0
           && rel.releasedOperationIds.length === 3
-          && vanNode.scheduled_date === "2026-11-17",
+          && vanNode.scheduled_date === "2027-11-16",
         expectedTransition: "AWAITING_APPROVAL -> COMPENSATION_PENDING -> COMPENSATED (€0.00)",
         observedState: "COMPENSATED",
         sagaStatus: "ORIGINALS_PRESERVED",
@@ -1126,16 +1126,16 @@ export const CHAOS_SCENARIOS = [
         plan: solved.plans[0],
         maximumBudgetEur: 700,
         providerClients: clients,
-        nowIso: "2026-11-15T10:00:00Z",
+        nowIso: "2027-11-14T10:00:00Z",
       });
       const approvals = await saga.approvePreparedOperations(
         prep.operations.map((o) => o.operation_id),
-        { nowIso: "2026-11-15T10:01:00Z" },
+        { nowIso: "2027-11-14T10:01:00Z" },
       );
       const exec = await saga.executeApprovedSaga({
         approvedItems: approvals.map((a) => ({ operationId: a.operation_id, approvalId: a.approval_id })),
         providerClients: clients,
-        nowIso: "2026-11-15T10:02:00Z",
+        nowIso: "2027-11-14T10:02:00Z",
       });
       const bundle = await exportVerifiableAuditBundle({
         mission,
@@ -1332,13 +1332,13 @@ export const CHAOS_SCENARIOS = [
         });
       });
       const cleanRes = await bridge.invokeTool("quote_slot", {
-        targetDate: "2026-11-20",
+        targetDate: "2027-11-19",
         activation_capsule: { trace_id: "ns_0_7_23" },
       });
       let rogueRejected = false;
       try {
         await bridge.invokeTool("quote_slot", {
-          targetDate: "2026-11-20",
+          targetDate: "2027-11-19",
           bypassFee: true,
         });
       } catch {
@@ -1446,7 +1446,7 @@ export const CHAOS_SCENARIOS = [
       return {
         simulation_mode: true,
         passed:
-          proposal.requested_change.new_value === "2026-11-20"
+          proposal.requested_change.new_value === "2027-11-19"
           && proposal.invariants.maximum_budget_eur === 680
           && proposal.invariants.unauthorized_cancellation === false
           && proposal.permissions.commit_changes === false
@@ -1504,7 +1504,7 @@ export const CHAOS_SCENARIOS = [
           receipt_id: "rcpt_forged_bc",
           provider_id: "moveco",
           booking_ref: "MC-8841",
-          scheduled_date: "2026-12-25",
+          scheduled_date: "2027-12-24",
           total_price_eur: 0,
         },
         rogueSiblingKey,
@@ -1536,12 +1536,12 @@ export const CHAOS_SCENARIOS = [
       const mission = createSignatureMoveMission();
       const { clients, verifier } = await createSimulatedProviderHarness();
 
-      // Wave 1: Tuesday (2026-11-17) -> Thursday (2026-11-19)
+      // Wave 1: Tuesday (2027-11-16) -> Thursday (2027-11-18)
       const g1 = MissionGraph.fromMission(mission);
       const { proposal: p1 } = compileMissionChange("Move relocation from Tuesday to Thursday under €700", mission);
       const imp1 = analyzeMissionImpact(g1, p1);
       const offers1 = buildBaselineFridayOffers().map((o) =>
-        o.proposed_date === "2026-11-20" ? { ...o, proposed_date: "2026-11-19" } : o,
+        o.proposed_date === "2027-11-19" ? { ...o, proposed_date: "2027-11-18" } : o,
       );
       const solved1 = solveMinimalChangePlans({ graph: g1, proposal: p1, impact: imp1, normalizedOffers: offers1 });
       const saga1 = new SagaCoordinator({ graph: g1, receiptVerifier: verifier });
@@ -1558,7 +1558,7 @@ export const CHAOS_SCENARIOS = [
       });
 
       // Synchronize authoritative mission state after Wave 1 commit
-      mission.anchor_date = "2026-11-19";
+      mission.anchor_date = "2027-11-18";
       for (const op of ex1.operations) {
         if (op.state === "COMMITTED") {
           const cmt = mission.commitments.find((c) => c.id === op.commitment_id);
@@ -1566,7 +1566,7 @@ export const CHAOS_SCENARIOS = [
         }
       }
 
-      // Wave 2: Thursday (2026-11-19) -> Friday (2026-11-20)
+      // Wave 2: Thursday (2027-11-18) -> Friday (2027-11-19)
       const g2 = MissionGraph.fromMission(mission);
       const { proposal: p2 } = compileMissionChange("Move relocation from Thursday to Friday under €700", mission);
       const imp2 = analyzeMissionImpact(g2, p2);
@@ -1581,8 +1581,8 @@ export const CHAOS_SCENARIOS = [
         simulation_mode: true,
         passed:
           ex1.status === "ALL_COMMITTED_AND_VERIFIED"
-          && p2.requested_change.previous_value === "2026-11-19"
-          && p2.requested_change.new_value === "2026-11-20"
+          && p2.requested_change.previous_value === "2027-11-18"
+          && p2.requested_change.new_value === "2027-11-19"
           && solved2.feasible === true,
         expectedTransition: "Tue -> Thu COMMITTED -> fresh Thu -> Fri plans solved cleanly",
         observedState: "CHAINED_CONTINUITY_OK",
@@ -1671,7 +1671,7 @@ export const CHAOS_SCENARIOS = [
         {
           provider_id: "moveco",
           booking_ref: "MC-OTHER-999",
-          scheduled_date: "2026-11-20",
+          scheduled_date: "2027-11-19",
           total_charged_eur: 415,
           idempotency_key: "idem_33",
         },
@@ -1681,7 +1681,7 @@ export const CHAOS_SCENARIOS = [
         expectedOp: {
           provider_id: "moveco",
           original_booking_ref: "MC-8841",
-          proposed_date: "2026-11-20",
+          proposed_date: "2027-11-19",
           base_price_eur: 390,
           change_fee_eur: 25,
           cancellation_penalty_eur: 0,
@@ -1721,7 +1721,7 @@ export const CHAOS_SCENARIOS = [
               commitment_id: "cmt_moveco_van",
               commitment_title: "Van",
               original_booking_ref: "MC-8841",
-              original_date: "2026-11-17",
+              original_date: "2027-11-16",
               offer: {
                 offer_id: "o1",
                 provider_id: "moveco",
@@ -1729,7 +1729,7 @@ export const CHAOS_SCENARIOS = [
                 provider_origin: "https://mc.example",
                 raw_capability: "reschedule",
                 semantic_kind: "RESCHEDULE_IN_PLACE",
-                proposed_date: "2026-11-20",
+                proposed_date: "2027-11-19",
                 window: "08:00–12:00",
                 base_price_eur: 390,
                 change_fee_eur: 25,
@@ -1745,7 +1745,7 @@ export const CHAOS_SCENARIOS = [
               commitment_id: "cmt_homeconnect_fiber",
               commitment_title: "Fiber",
               original_booking_ref: "HC-5510",
-              original_date: "2026-11-17",
+              original_date: "2027-11-16",
               offer: {
                 offer_id: "o2",
                 provider_id: "homeconnect",
@@ -1753,7 +1753,7 @@ export const CHAOS_SCENARIOS = [
                 provider_origin: "https://hc.example",
                 raw_capability: "reschedule",
                 semantic_kind: "RESCHEDULE_IN_PLACE",
-                proposed_date: "2026-11-20",
+                proposed_date: "2027-11-19",
                 window: "13:00–17:00",
                 base_price_eur: 49,
                 change_fee_eur: 0,
@@ -1831,8 +1831,8 @@ export const CHAOS_SCENARIOS = [
         "VERSION:2.0",
         "BEGIN:VEVENT",
         "UID:MC-8841@mc",
-        "DTSTART:20261117T080000Z",
-        "DTEND:20261117T120000Z",
+        "DTSTART:20271116T080000Z",
+        "DTEND:20271116T120000Z",
         "SUMMARY:[ANCHOR] Moving Van",
         "BEGIN:VALARM",
         "ACTION:DISPLAY",
@@ -1842,8 +1842,8 @@ export const CHAOS_SCENARIOS = [
         "END:VEVENT",
         "BEGIN:VEVENT",
         "UID:HC-5510@hc",
-        "DTSTART:20261117T140000Z",
-        "DTEND:20261117T170000Z",
+        "DTSTART:20271116T140000Z",
+        "DTEND:20271116T170000Z",
         "SUMMARY:Fiber Install",
         "DESCRIPTION:Ref: HC-5510 | Price: €49 | After arrival",
         "END:VEVENT",
@@ -1987,7 +1987,7 @@ export const CHAOS_SCENARIOS = [
           receipt_id: "rcpt_chaos40",
           provider_id: "moveco",
           booking_ref: "MC-8841",
-          scheduled_date: "2026-11-20",
+          scheduled_date: "2027-11-19",
           total_charged_eur: 415,
         },
         kp,
@@ -2001,7 +2001,7 @@ export const CHAOS_SCENARIOS = [
             provider_id: "moveco",
             provider_name: "MoveCo",
             state: "COMMITTED",
-            proposed_date: "2026-11-20",
+            proposed_date: "2027-11-19",
             receipt_envelope: receiptEnv,
           },
         ],
@@ -2064,12 +2064,12 @@ export const CHAOS_SCENARIOS = [
     id: "CHAOS_42_CRITICAL_PATH_ZERO_SLACK_BOTTLENECK_DETECTION",
     number: 42,
     title: "Critical-Path Method (CPM) Identifies Zero-Slack Commitments vs Positive-Float & Untouched Nodes",
-    injectedFailure: "Anchor shifts to Friday 2026-11-20; CPM must separate 0d-slack critical bookings from +1d float fiber & untouched storage.",
+    injectedFailure: "Anchor shifts to Friday 2027-11-19; CPM must separate 0d-slack critical bookings from +1d float fiber & untouched storage.",
     humanInterventionRequired: false,
     async run() {
       const mission = createSignatureMoveMission();
       const graph = MissionGraph.fromMission(mission);
-      const cpm = analyzeCriticalPathSlack(graph, "2026-11-20", mission.anchor_commitment_id);
+      const cpm = analyzeCriticalPathSlack(graph, "2027-11-19", mission.anchor_commitment_id);
       const byId = new Map(cpm.nodes.map((n) => [n.nodeId, n]));
       return {
         simulation_mode: true,

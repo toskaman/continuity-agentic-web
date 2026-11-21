@@ -16,7 +16,7 @@ import {
 import { canonicalizeJson, sha256Hex } from "../packages/shared-schemas/index.js";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
-const STABLE_FACTS_DATE = "2026-11-15";
+const STABLE_FACTS_DATE = "2027-11-14";
 
 export async function writeAgentCardsAndHeaders(origins = {}) {
   const defaults = {

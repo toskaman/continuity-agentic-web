@@ -13,9 +13,9 @@ test("PowerFlow site-actions register cleanly and update smart-meter energizatio
   const st = App.page.getState();
   const ok = App.page.confirmDateShift({
     activationRef: "PFW-9921",
-    targetDate: "2026-11-20",
+    targetDate: "2027-11-19",
     expectedVersion: st.version,
   });
   assert.equal(ok.ok, true);
-  assert.equal(ok.activation.scheduledDate, "2026-11-20");
+  assert.equal(ok.activation.scheduledDate, "2027-11-19");
 });

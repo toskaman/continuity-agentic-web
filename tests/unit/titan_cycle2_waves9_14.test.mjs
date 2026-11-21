@@ -148,7 +148,7 @@ test("Cycle II Wave 10 (#356-#404) — RFC 6962 Domain-Separated Merkle Tree (n=
       receipt_id: "rcpt_c2_1",
       provider_id: "moveco",
       booking_ref: "MC-8841",
-      scheduled_date: "2026-11-20",
+      scheduled_date: "2027-11-19",
       window: "08:00–13:00",
       total_charged_eur: 415,
     },
@@ -168,7 +168,7 @@ test("Cycle II Wave 10 (#356-#404) — RFC 6962 Domain-Separated Merkle Tree (n=
         provider_id: "moveco",
         provider_name: "MoveCo Express",
         state: "COMMITTED",
-        proposed_date: "2026-11-20",
+        proposed_date: "2027-11-19",
         receipt_envelope: receipt,
       },
     ],
@@ -193,7 +193,7 @@ test("Cycle II Wave 10 (#356-#404) — RFC 6962 Domain-Separated Merkle Tree (n=
   // Critical-Path Slack across Outpatient Surgery (with ON_OR_BEFORE pre-op lab prerequisite!)
   const surgMission = createScenarioMission("outpatient_surgery");
   const surgGraph = MissionGraph.fromMission(surgMission);
-  const surgCpm = analyzeCriticalPathSlack(surgGraph, "2026-11-20", surgMission.anchor_commitment_id);
+  const surgCpm = analyzeCriticalPathSlack(surgGraph, "2027-11-19", surgMission.anchor_commitment_id);
   assert.ok(surgCpm.criticalPathNodeIds.includes(surgMission.anchor_commitment_id));
   assert.ok(surgCpm.scheduleSpanDays >= 1);
 
@@ -287,7 +287,7 @@ test("Cycle II Wave 11 (#405-#460) — Coordinator Selective Passport, 5-Primiti
 test("Cycle II Wave 12 (#461-#500) — continuity-audit v2.2.0 CLI (--scan-dlp & --verify-passport)", async () => {
   let dlpCleanOut = "";
   assert.equal(
-    await runContinuityCli(["--json", "--scan-dlp", "Booking MC-8841 on 2026-11-20"], {
+    await runContinuityCli(["--json", "--scan-dlp", "Booking MC-8841 on 2027-11-19"], {
       stdout: (s) => (dlpCleanOut += s),
     }),
     0,
@@ -320,7 +320,7 @@ test("Cycle II Wave 12 (#461-#500) — continuity-audit v2.2.0 CLI (--scan-dlp &
     assert.equal(JSON.parse(passOut).valid, true);
 
     const tampered = JSON.parse(JSON.stringify(proof));
-    tampered.disclosed_commitment.final_date = "2026-12-31";
+    tampered.disclosed_commitment.final_date = "2027-12-30";
     const badPath = path.join(tmpDir, "tampered.json");
     await writeFile(badPath, JSON.stringify(tampered, null, 2), "utf8");
     assert.equal(await runContinuityCli(["--verify-passport", badPath], { stdout: () => {} }), 1);
@@ -333,19 +333,19 @@ test("Cycle II Wave 13 (#501-#550) — 7-Language NL Compiler (IT/PT/NL + 'withi
   const mission = createSignatureMoveMission();
 
   const it = compileMissionChange("Sposta tutto a venerdì sotto 690€", mission);
-  assert.equal(it.proposal.requested_change.new_value, "2026-11-20");
+  assert.equal(it.proposal.requested_change.new_value, "2027-11-19");
   assert.equal(it.proposal.invariants.maximum_budget_eur, 690);
 
   const pt = compileMissionChange("Mudar tudo para sexta-feira abaixo de 685 EUR", mission);
-  assert.equal(pt.proposal.requested_change.new_value, "2026-11-20");
+  assert.equal(pt.proposal.requested_change.new_value, "2027-11-19");
   assert.equal(pt.proposal.invariants.maximum_budget_eur, 685);
 
   const nl = compileMissionChange("Verplaats alles naar vrijdag onder 680 euro", mission);
-  assert.equal(nl.proposal.requested_change.new_value, "2026-11-20");
+  assert.equal(nl.proposal.requested_change.new_value, "2027-11-19");
   assert.equal(nl.proposal.invariants.maximum_budget_eur, 680);
 
   const pullFwd = compileMissionChange("Pull forward by 1 day within €695", mission);
-  assert.equal(pullFwd.proposal.requested_change.new_value, "2026-11-16");
+  assert.equal(pullFwd.proposal.requested_change.new_value, "2027-11-15");
   assert.equal(pullFwd.proposal.invariants.maximum_budget_eur, 695);
 
   for (const peer of ["demo-moveco", "demo-permitflow", "demo-homeconnect", "demo-powerflow"]) {

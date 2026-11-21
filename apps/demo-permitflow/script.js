@@ -4,16 +4,16 @@ export class PermitFlowPage {
     this.dossier = {
       dossierRef: "PF-2049",
       zone: "Zone B Curbside Loading Bay (15m)",
-      scheduledDate: "2026-11-17",
-      scheduledLabel: "Tue, Nov 17, 2026",
+      scheduledDate: "2027-11-16",
+      scheduledLabel: "Tue, Nov 16, 2027",
       window: "07:30–14:00",
       prepFeeEur: "€35.00",
       amendmentFeeEur: "€10.00",
       status: "PREPARED_DOSSIER",
     };
     this.eligibleDates = [
-      { date: "2026-11-20", label: "Fri, Nov 20, 2026", window: "07:30–14:00", totalEur: "€45.00" },
-      { date: "2026-11-21", label: "Sat, Nov 21, 2026", window: "08:00–14:00", totalEur: "€45.00" },
+      { date: "2027-11-19", label: "Fri, Nov 19, 2027", window: "07:30–14:00", totalEur: "€45.00" },
+      { date: "2027-11-20", label: "Sat, Nov 20, 2027", window: "08:00–14:00", totalEur: "€45.00" },
     ];
     this.previewDate = null;
     this.lastReceipt = null;
@@ -67,8 +67,8 @@ export class PermitFlowPage {
     this.dossier = {
       dossierRef: "PF-2049",
       zone: "Zone B Curbside Loading Bay (15m)",
-      scheduledDate: "2026-11-17",
-      scheduledLabel: "Tue, Nov 17, 2026",
+      scheduledDate: "2027-11-16",
+      scheduledLabel: "Tue, Nov 16, 2027",
       window: "07:30–14:00",
       prepFeeEur: "€35.00",
       amendmentFeeEur: "€10.00",
@@ -76,7 +76,7 @@ export class PermitFlowPage {
     };
     this.previewDate = null;
     this.lastReceipt = null;
-    this.render("Reset PermitFlow dossier PF-2049 to baseline Tue, Nov 17, 2026.");
+    this.render("Reset PermitFlow dossier PF-2049 to baseline Tue, Nov 16, 2027.");
     return { ok: true, version: this.version };
   }
 
@@ -136,11 +136,11 @@ export class PermitFlowPage {
     if (typeof document === "undefined") return;
     this.render();
     document.querySelector("#draft-btn")?.addEventListener("click", () => {
-      const date = document.querySelector("#date-select")?.value || "2026-11-20";
+      const date = document.querySelector("#date-select")?.value || "2027-11-19";
       this.stageDraftDate(date);
     });
     document.querySelector("#amend-btn")?.addEventListener("click", () => {
-      const date = document.querySelector("#date-select")?.value || "2026-11-20";
+      const date = document.querySelector("#date-select")?.value || "2027-11-19";
       this.updatePreparedDossier({
         dossierRef: this.dossier.dossierRef,
         targetDate: date,

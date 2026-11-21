@@ -14,7 +14,7 @@ export function buildFallbackOffersForRelocationNode({
   if (node.provider_id === "moveco") {
     if (rippleFailureInjected) {
       providerAlerts.push(
-        `MoveCo Alert: Primary 08:00 crew full on ${targetDate}; recovered with MoveCo Partner Overflow Fleet while keeping MC-8841 held.`,
+        `MoveCo: the usual 08:00 crew is fully booked on ${targetDate}, so a partner crew was found. Your current booking (MC-8841) is kept until you decide.`,
       );
       return [
         normalizePeerOffer({
@@ -38,7 +38,7 @@ export function buildFallbackOffersForRelocationNode({
           supports_idempotency: true,
           supports_status_reconciliation: true,
           is_replacement_provider: true,
-          expires_at: "2027-01-20T23:59:59Z",
+          expires_at: "2028-01-19T23:59:59Z",
         }),
       ];
     }
@@ -64,7 +64,7 @@ export function buildFallbackOffersForRelocationNode({
         supports_idempotency: true,
         supports_status_reconciliation: true,
         is_replacement_provider: false,
-        expires_at: "2027-01-20T23:59:59Z",
+        expires_at: "2028-01-19T23:59:59Z",
       }),
     ];
   }
@@ -92,7 +92,7 @@ export function buildFallbackOffersForRelocationNode({
         supports_idempotency: true,
         supports_status_reconciliation: true,
         is_replacement_provider: false,
-        expires_at: "2027-01-20T23:59:59Z",
+        expires_at: "2028-01-19T23:59:59Z",
       }),
     ];
   }
@@ -123,7 +123,7 @@ export function buildFallbackOffersForRelocationNode({
         supports_idempotency: true,
         supports_status_reconciliation: true,
         is_replacement_provider: false,
-        expires_at: "2027-01-20T23:59:59Z",
+        expires_at: "2028-01-19T23:59:59Z",
       }),
       normalizePeerOffer({
         offer_id: "off_homeconnect_sat_am",
@@ -146,7 +146,7 @@ export function buildFallbackOffersForRelocationNode({
         supports_idempotency: true,
         supports_status_reconciliation: true,
         is_replacement_provider: false,
-        expires_at: "2027-01-20T23:59:59Z",
+        expires_at: "2028-01-19T23:59:59Z",
       }),
     ];
   }
@@ -174,7 +174,7 @@ export function buildFallbackOffersForRelocationNode({
         supports_idempotency: true,
         supports_status_reconciliation: true,
         is_replacement_provider: false,
-        expires_at: "2027-01-20T23:59:59Z",
+        expires_at: "2028-01-19T23:59:59Z",
       }),
     ];
   }

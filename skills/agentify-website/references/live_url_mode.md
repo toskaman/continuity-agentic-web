@@ -33,7 +33,7 @@ Tell the user this before building, so they can decide whether a companion is us
    ```json
    {
      "source": "https://example.com/",
-     "fetchedAt": "2026-11-09",
+     "fetchedAt": "2027-11-08",
      "pages": [
        {
          "url": "https://example.com/menu",
@@ -64,7 +64,7 @@ Tell the user this before building, so they can decide whether a companion is us
    where the assistant will be hosted:
 
    ```shell
-   curl -s -D - -o /dev/null -H "Origin: https://assistant.example" "https://example.com/api/availability?date=2026-12-01"
+   curl -s -D - -o /dev/null -H "Origin: https://assistant.example" "https://example.com/api/availability?date=2027-11-30"
    curl -s -D - -o /dev/null -X OPTIONS -H "Origin: https://assistant.example" \
      -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: content-type" \
      "https://example.com/api/orders"

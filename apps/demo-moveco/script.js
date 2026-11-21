@@ -5,8 +5,8 @@ export class MoveCoPage {
     this.booking = {
       bookingRef: "MC-8841",
       service: "20m3 Luton Van + 3 Movers",
-      scheduledDate: "2026-11-17",
-      scheduledLabel: "Tue, Nov 17, 2026",
+      scheduledDate: "2027-11-16",
+      scheduledLabel: "Tue, Nov 16, 2027",
       window: "08:00–13:00",
       basePriceEur: "€390.00",
       baseCents: 39000,
@@ -17,8 +17,8 @@ export class MoveCoPage {
     this.hold = null;
     this.slots = [
       {
-        date: "2026-11-20",
-        label: "Fri, Nov 20, 2026",
+        date: "2027-11-19",
+        label: "Fri, Nov 19, 2027",
         window: "08:00–13:00",
         basePriceEur: "€390.00",
         rescheduleFeeEur: "€25.00",
@@ -26,8 +26,8 @@ export class MoveCoPage {
         totalCents: 41500,
       },
       {
-        date: "2026-11-21",
-        label: "Sat, Nov 21, 2026",
+        date: "2027-11-20",
+        label: "Sat, Nov 20, 2027",
         window: "09:00–14:00",
         basePriceEur: "€420.00",
         rescheduleFeeEur: "€25.00",
@@ -99,8 +99,8 @@ export class MoveCoPage {
     this.booking = {
       bookingRef: "MC-8841",
       service: "20m3 Luton Van + 3 Movers",
-      scheduledDate: "2026-11-17",
-      scheduledLabel: "Tue, Nov 17, 2026",
+      scheduledDate: "2027-11-16",
+      scheduledLabel: "Tue, Nov 16, 2027",
       window: "08:00–13:00",
       basePriceEur: "€390.00",
       baseCents: 39000,
@@ -110,7 +110,7 @@ export class MoveCoPage {
     };
     this.hold = null;
     this.lastReceipt = null;
-    this.render("Reset MoveCo booking MC-8841 to baseline Tue, Nov 17, 2026.");
+    this.render("Reset MoveCo booking MC-8841 to baseline Tue, Nov 16, 2027.");
     return { ok: true, version: this.version };
   }
 
@@ -194,11 +194,11 @@ export class MoveCoPage {
     if (typeof document === "undefined") return;
     this.render();
     document.querySelector("#hold-btn")?.addEventListener("click", () => {
-      const date = document.querySelector("#slot-select")?.value || "2026-11-20";
+      const date = document.querySelector("#slot-select")?.value || "2027-11-19";
       this.holdSlot(date);
     });
     document.querySelector("#reschedule-btn")?.addEventListener("click", () => {
-      const date = document.querySelector("#slot-select")?.value || "2026-11-20";
+      const date = document.querySelector("#slot-select")?.value || "2027-11-19";
       this.confirmReschedule({
         bookingRef: this.booking.bookingRef,
         targetDate: date,

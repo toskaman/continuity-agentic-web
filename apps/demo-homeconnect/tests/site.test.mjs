@@ -10,14 +10,14 @@ test("HomeConnect site-actions register cleanly and reschedule fiber appointment
   registerActions({ register: (def) => registry.register(scope, def) });
   assert.equal(registry.catalog(scope).length, 3);
 
-  const hold = App.page.holdWindow("2026-11-20");
+  const hold = App.page.holdWindow("2027-11-19");
   assert.equal(hold.ok, true);
 
   const ok = App.page.confirmAppointmentChange({
     appointmentRef: "HC-5510",
-    targetDate: "2026-11-20",
+    targetDate: "2027-11-19",
     expectedVersion: hold.version,
   });
   assert.equal(ok.ok, true);
-  assert.equal(ok.appointment.scheduledDate, "2026-11-20");
+  assert.equal(ok.appointment.scheduledDate, "2027-11-19");
 });

@@ -15,9 +15,9 @@ test("PermitFlow site-actions register cleanly and update prepared demonstration
 
   const upd = App.page.updatePreparedDossier({
     dossierRef: "PF-2049",
-    targetDate: "2026-11-20",
+    targetDate: "2027-11-19",
     expectedVersion: st.version,
   });
   assert.equal(upd.ok, true);
-  assert.equal(upd.dossier.scheduledDate, "2026-11-20");
+  assert.equal(upd.dossier.scheduledDate, "2027-11-19");
 });

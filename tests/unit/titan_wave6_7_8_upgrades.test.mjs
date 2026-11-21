@@ -33,43 +33,43 @@ test("Wave 6 (#195-#239) — Lazy adk-hocon-converter code-splitting, 4-peer rev
 
   // MoveCo peer lifecycle
   const mc = new MoveCoPage();
-  assert.equal(mc.holdSlot("2026-11-20").ok, true);
+  assert.equal(mc.holdSlot("2027-11-19").ok, true);
   const mcRel = mc.releaseHold();
   assert.equal(mcRel.ok, true);
   assert.equal(mcRel.feeChargedEur, 0);
   assert.equal(mc.getState().activeHold, null);
   assert.match(mc.exportIcs(), /BEGIN:VCALENDAR/);
-  mc.booking.scheduledDate = "2026-11-20";
+  mc.booking.scheduledDate = "2027-11-19";
   mc.resetToInitial();
-  assert.equal(mc.booking.scheduledDate, "2026-11-17");
+  assert.equal(mc.booking.scheduledDate, "2027-11-16");
 
   // PermitFlow peer lifecycle
   const pf = new PermitFlowPage();
-  assert.equal(pf.stageDraftDate("2026-11-20").ok, true);
+  assert.equal(pf.stageDraftDate("2027-11-19").ok, true);
   assert.equal(pf.clearPreview().ok, true);
   assert.equal(pf.getState().previewDate, null);
   assert.match(pf.exportIcs(), /PF-2049/);
-  pf.dossier.scheduledDate = "2026-11-20";
+  pf.dossier.scheduledDate = "2027-11-19";
   pf.resetToInitial();
-  assert.equal(pf.dossier.scheduledDate, "2026-11-17");
+  assert.equal(pf.dossier.scheduledDate, "2027-11-16");
 
   // HomeConnect peer lifecycle
   const hc = new HomeConnectPage();
-  assert.equal(hc.holdWindow("2026-11-20").ok, true);
+  assert.equal(hc.holdWindow("2027-11-19").ok, true);
   assert.equal(hc.releaseHold().feeChargedEur, 0);
   assert.match(hc.exportIcs(), /HC-5510/);
-  hc.appointment.scheduledDate = "2026-11-20";
+  hc.appointment.scheduledDate = "2027-11-19";
   hc.resetToInitial();
-  assert.equal(hc.appointment.scheduledDate, "2026-11-17");
+  assert.equal(hc.appointment.scheduledDate, "2027-11-16");
 
   // PowerFlow peer lifecycle
   const pfw = new PowerFlowPage();
-  assert.equal(pfw.stageDate("2026-11-20").ok, true);
+  assert.equal(pfw.stageDate("2027-11-19").ok, true);
   assert.equal(pfw.clearStaged().ok, true);
   assert.match(pfw.exportIcs(), /PFW-9921/);
-  pfw.activation.scheduledDate = "2026-11-20";
+  pfw.activation.scheduledDate = "2027-11-19";
   pfw.resetToInitial();
-  assert.equal(pfw.activation.scheduledDate, "2026-11-17");
+  assert.equal(pfw.activation.scheduledDate, "2027-11-16");
 
   // Verify peer-embed.html & peer-sync.js + ui.js across all 4 peers
   const embedTpl = await readFile(path.join(ROOT, "design-system", "peer-embed.html"), "utf8");

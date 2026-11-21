@@ -35,7 +35,7 @@
           "manifestUrl": "http://localhost:8084/agent-manifest.json",
           "networkUrl": "http://localhost:8084/powerflow_grid.network.json",
           "factsManifestUrl": "http://localhost:8084/facts/agent-manifest.json",
-          "factsNetworkDigest": "sha256:33dee61426b673a224bbfe25c57eacf3be59e537140320dbb41ee6979d31c365"
+          "factsNetworkDigest": "sha256:137f92df2c71a5cd6a71f2a96346c46f25bb44398865d182b6a24844a1eb739e"
         }
       }
     }

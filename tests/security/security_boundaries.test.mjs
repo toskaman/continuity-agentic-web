@@ -49,7 +49,7 @@ test("S3 Self-asserted / unpinned Ed25519 provider receipt key is rejected", asy
       receipt_id: "rcpt_forged",
       provider_id: "moveco",
       booking_ref: "MC-8841",
-      scheduled_date: "2026-11-20",
+      scheduled_date: "2027-11-19",
       total_charged_eur: 415,
     },
     { keyId: legitimateKeys.keyId, privateJwk: rogueKeys.privateJwk },
@@ -61,7 +61,7 @@ test("S3 Self-asserted / unpinned Ed25519 provider receipt key is rejected", asy
 
   // Unsigned plain object is classified honestly as UNSIGNED_PROVIDER_RESPONSE, never trusted
   const unsignedCheck = await verifier.verifyReceipt("moveco", {
-    receipt_body: { provider_id: "moveco", scheduled_date: "2026-11-20" },
+    receipt_body: { provider_id: "moveco", scheduled_date: "2027-11-19" },
   });
   assert.equal(unsignedCheck.valid, false);
   assert.equal(unsignedCheck.level, "UNSIGNED_PROVIDER_RESPONSE");
@@ -89,13 +89,13 @@ test("S5 Concurrent duplicate approval consumption is race-safe (exactly one suc
     provider_origin: "http://127.0.0.1:8081",
     provider_id: "moveco",
     capability: "reschedule_van_booking",
-    arguments: { booking_ref: "MC-8841", new_date: "2026-11-20" },
-    proposed_date: "2026-11-20",
+    arguments: { booking_ref: "MC-8841", new_date: "2027-11-19" },
+    proposed_date: "2027-11-19",
     base_price_eur: 390,
     change_fee_eur: 25,
     cancellation_penalty_eur: 0,
     maximum_budget_eur: 700,
-    expires_at: "2027-01-01T00:00:00Z",
+    expires_at: "2027-12-31T00:00:00Z",
   };
   const appr = await engine.createBoundApproval(spec);
   const [resA, resB] = await Promise.all([
@@ -139,7 +139,7 @@ test("S7 Cross-origin #continuity_receipt handoff rejects provider_id swap, XSS 
       receipt_id: "rcpt_mc_1",
       provider_id: "moveco",
       booking_ref: "MC-8841",
-      scheduled_date: "2026-11-20",
+      scheduled_date: "2027-11-19",
       total_charged_eur: 415,
     },
     movecoKey,
@@ -171,7 +171,7 @@ test("S7 Cross-origin #continuity_receipt handoff rejects provider_id swap, XSS 
       receipt_id: "rcpt_pf_rogue",
       provider_id: "permitflow",
       booking_ref: "PF-2049",
-      scheduled_date: "2026-11-20",
+      scheduled_date: "2027-11-19",
       total_charged_eur: 45,
     },
     rogueKey,
@@ -290,12 +290,12 @@ test("S11 Multilingual EN/FR + word-number natural-language compiler parses spon
     "Décale mon déménagement à vendredi sous 685 euros, le moins cher possible.",
     mission,
   );
-  assert.equal(fr.proposal.requested_change.new_value, "2026-11-20");
+  assert.equal(fr.proposal.requested_change.new_value, "2027-11-19");
   assert.equal(fr.proposal.invariants.maximum_budget_eur, 685);
   assert.equal(fr.proposal.preferences.priority_mode, "lowest_cost");
 
   const rel = compileMissionChange("Move everything four days later under €690.", mission);
-  assert.equal(rel.proposal.requested_change.new_value, "2026-11-21");
+  assert.equal(rel.proposal.requested_change.new_value, "2027-11-20");
   assert.equal(rel.proposal.invariants.maximum_budget_eur, 690);
 });
 
@@ -339,7 +339,7 @@ test("S14 Continuous Day-2 -> Day-3 Chained Re-Planning updates anchor & commitm
   // Wave 1: Tuesday -> Thursday
   const prep1 = await page.analyzeAndPrepareChange("Move relocation from Tuesday to Thursday under €700.");
   assert.equal(prep1.ok, true);
-  assert.equal(prep1.targetDate, "2026-11-19");
+  assert.equal(prep1.targetDate, "2027-11-18");
   const st1 = page.getState();
   const commit1 = await page.commitPreparedPackage({
     planId: st1.selectedPlanId,
@@ -347,13 +347,13 @@ test("S14 Continuous Day-2 -> Day-3 Chained Re-Planning updates anchor & commitm
     expectedTotalEur: st1.selectedPlanSummary.metrics.totalMissionCostEur,
   });
   assert.equal(commit1.ok, true);
-  assert.equal(page.mission.anchor_date, "2026-11-19");
+  assert.equal(page.mission.anchor_date, "2027-11-18");
 
   // Wave 2: Thursday -> Friday (without calling resetMission!)
   const prep2 = await page.analyzeAndPrepareChange("Now move relocation from Thursday to Friday under €700.");
   assert.equal(prep2.ok, true);
   assert.equal(page.lastSagaExecution, null, "New change wave must clear previous lastSagaExecution lock");
-  assert.equal(prep2.targetDate, "2026-11-20");
+  assert.equal(prep2.targetDate, "2027-11-19");
   const st2 = page.getState();
   const commit2 = await page.commitPreparedPackage({
     planId: st2.selectedPlanId,
@@ -361,7 +361,7 @@ test("S14 Continuous Day-2 -> Day-3 Chained Re-Planning updates anchor & commitm
     expectedTotalEur: st2.selectedPlanSummary.metrics.totalMissionCostEur,
   });
   assert.equal(commit2.ok, true);
-  assert.equal(page.mission.anchor_date, "2026-11-20");
+  assert.equal(page.mission.anchor_date, "2027-11-19");
 });
 
 test("S15 Hybrid .ics schedule with live peer URLs executes real HTTP quotes, slot holds & Ed25519 commits on MoveCo & HomeConnect while generating Hold-First mailto: draft for legacy vendor", async () => {
@@ -414,8 +414,8 @@ test("S15 Hybrid .ics schedule with live peer URLs executes real HTTP quotes, sl
     // Verify real MoveCo & HomeConnect HTTP servers actually mutated MC-8841 & HC-5510!
     const mcState = await (await fetch(`${eco.peers.moveco.origin()}/api/state`)).json();
     const hcState = await (await fetch(`${eco.peers.homeconnect.origin()}/api/state`)).json();
-    assert.equal(mcState.state.bookings["MC-8841"].scheduled_date, "2026-11-20");
-    assert.ok(["2026-11-20", "2026-11-21"].includes(hcState.state.appointments["HC-5510"].scheduled_date));
+    assert.equal(mcState.state.bookings["MC-8841"].scheduled_date, "2027-11-19");
+    assert.ok(["2027-11-19", "2027-11-20"].includes(hcState.state.appointments["HC-5510"].scheduled_date));
   } finally {
     await eco.stopAll();
   }

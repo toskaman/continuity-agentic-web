@@ -25,7 +25,7 @@ test("Wave 4 (#181-#192) — Cross-Origin Bridge supports release_hold, total_ch
   const hold = await moveco.callTool("hold_moving_slot", {
     booking_ref: "MC-8841",
     offer_id: "off_moveco_partner_overflow_fri",
-    proposed_date: "2026-11-20",
+    proposed_date: "2027-11-19",
     idempotency_key: "idem_w4_1",
   });
   assert.equal(hold.ok, true);
@@ -36,7 +36,7 @@ test("Wave 4 (#181-#192) — Cross-Origin Bridge supports release_hold, total_ch
 
   const commit = await moveco.callTool("reschedule_van_booking", {
     booking_ref: "MC-8841",
-    new_date: "2026-11-20",
+    new_date: "2027-11-19",
     window: "09:30–14:30",
     offer_id: "off_moveco_partner_overflow_fri",
     idempotency_key: "idem_w4_commit_1",
@@ -148,8 +148,8 @@ test("Wave 4 (#219-#240) — IntakeCompiler strips nested VALARM reminders, dedu
     "VERSION:2.0",
     "BEGIN:VEVENT",
     "UID:MC-8841@moveco",
-    "DTSTART;TZID=Europe/Paris:20261117T080000",
-    "DTEND;TZID=Europe/Paris:20261117T120000",
+    "DTSTART;TZID=Europe/Paris:20271116T080000",
+    "DTEND;TZID=Europe/Paris:20271116T120000",
     "SUMMARY:[ANCHOR] Van\\, Crew\\; Lift",
     "BEGIN:VALARM",
     "ACTION:DISPLAY",
@@ -160,13 +160,13 @@ test("Wave 4 (#219-#240) — IntakeCompiler strips nested VALARM reminders, dedu
     // Duplicate UID event ignored cleanly
     "BEGIN:VEVENT",
     "UID:MC-8841@moveco",
-    "DTSTART:20261117T080000Z",
+    "DTSTART:20271116T080000Z",
     "SUMMARY:Duplicate",
     "DESCRIPTION:Ref: MC-8841 | Price: €390",
     "END:VEVENT",
     "BEGIN:VEVENT",
     "UID:HC-5510@hc",
-    "DTSTART:20261117T140000Z",
+    "DTSTART:20271116T140000Z",
     "SUMMARY:Fiber",
     "DESCRIPTION:Ref: HC-5510 | Price: €49",
     "END:VEVENT",

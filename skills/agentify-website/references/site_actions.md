@@ -72,7 +72,7 @@ named `website_<name>` (`runtime/runner.js`).
    the bookable days, from the clock each time the state is read, not from values the
    page set when it loaded: the page may stay open past midnight. Give each date, today
    and the ends of any date range included, both in the form the actions take, such as
-   "2026-11-10", and with its weekday, such as "Tue, Nov 10, 2026", so the model has to
+   "2027-11-09", and with its weekday, such as "Tue, Nov 9, 2027", so the model has to
    work out neither. Give amounts as the page shows them, such as "$145.00", not raw
    cents. When a later call must pass an amount back, such as an expected fee, also
    return it in the form that call takes, such as `feeCents`.

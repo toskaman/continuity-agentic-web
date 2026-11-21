@@ -283,7 +283,7 @@ export class PeerScriptedReplayLlm {
     }
 
     const st = (readTool ? parseTool(readTool) : null) || {};
-    const targetDate = /\b(sat|2026-11-21)\b/i.test(userText) ? "2026-11-21" : "2026-11-20";
+    const targetDate = /\b(sat|2027-11-20)\b/i.test(userText) ? "2027-11-20" : "2027-11-19";
 
     // 1. Bidirectional consultation of CONTINUITY Change Coordinator
     if (/\b(continuity|coordinate|other bookings|parking|fiber|electricity|align)\b/i.test(userText) && continuityPartnerTool) {
@@ -353,7 +353,7 @@ export class PeerScriptedReplayLlm {
     const ref = record.bookingRef || record.dossierRef || record.appointmentRef || record.activationRef || "active";
     const curDate = record.scheduledLabel || record.scheduledDate || "Tuesday";
     return emitText(
-      `**Grounded Page State *(Scripted Replay)*:** Reference \`${ref}\` is currently scheduled for **${curDate}** (${record.window || "standard window"} · version \`v${st.version ?? 1}\`). Ask to **hold/stage Friday 2026-11-20**, **confirm** a date change, or **ask CONTINUITY** about multi-provider coordination.`,
+      `**Grounded Page State *(Scripted Replay)*:** Reference \`${ref}\` is currently scheduled for **${curDate}** (${record.window || "standard window"} · version \`v${st.version ?? 1}\`). Ask to **hold/stage Friday 2027-11-19**, **confirm** a date change, or **ask CONTINUITY** about multi-provider coordination.`,
     );
   }
 }

@@ -10,24 +10,24 @@ test("MoveCo site-actions register cleanly, hold slot, and enforce expectedVersi
   registerActions({ register: (def) => registry.register(scope, def) });
   assert.equal(registry.catalog(scope).length, 3);
 
-  const holdRes = App.page.holdSlot("2026-11-20");
+  const holdRes = App.page.holdSlot("2027-11-19");
   assert.equal(holdRes.ok, true);
   assert.equal(holdRes.hold.originalBookingPreserved, true);
 
   const badVer = App.page.confirmReschedule({
     bookingRef: "MC-8841",
-    targetDate: "2026-11-20",
+    targetDate: "2027-11-19",
     expectedVersion: 1,
   });
   assert.equal(badVer.ok, false);
 
   const okRes = App.page.confirmReschedule({
     bookingRef: "MC-8841",
-    targetDate: "2026-11-20",
+    targetDate: "2027-11-19",
     expectedVersion: holdRes.version,
   });
   assert.equal(okRes.ok, true);
-  assert.equal(okRes.receipt.newDate, "2026-11-20");
+  assert.equal(okRes.receipt.newDate, "2027-11-19");
 });
 
 test("Cycle 23 & 24 — PeerScriptedReplayLlm drives zero-key website_* tools and cross-origin CONTINUITY consultation on peer websites", async () => {
@@ -41,7 +41,7 @@ test("Cycle 23 & 24 — PeerScriptedReplayLlm drives zero-key website_* tools an
 
   // Step 1: First turn reads state
   const step1 = await llm.chat({
-    messages: [{ role: "user", content: "Hold Friday 2026-11-20 crew slot." }],
+    messages: [{ role: "user", content: "Hold Friday 2027-11-19 crew slot." }],
     tools,
   });
   assert.equal(step1.toolCalls[0].function.name, "website_get_moveco_state");
@@ -49,13 +49,13 @@ test("Cycle 23 & 24 — PeerScriptedReplayLlm drives zero-key website_* tools an
   // Step 2: Second turn places hold
   const step2 = await llm.chat({
     messages: [
-      { role: "user", content: "Hold Friday 2026-11-20 crew slot." },
+      { role: "user", content: "Hold Friday 2027-11-19 crew slot." },
       { role: "tool", name: "website_get_moveco_state", content: JSON.stringify({ result: App.page.getState() }) },
     ],
     tools,
   });
   assert.equal(step2.toolCalls[0].function.name, "website_hold_crew_slot");
-  assert.deepEqual(JSON.parse(step2.toolCalls[0].function.arguments), { targetDate: "2026-11-20" });
+  assert.deepEqual(JSON.parse(step2.toolCalls[0].function.arguments), { targetDate: "2027-11-19" });
 
   // Step 3: Bidirectional CONTINUITY partner consultation tool call
   const step3 = await llm.chat({

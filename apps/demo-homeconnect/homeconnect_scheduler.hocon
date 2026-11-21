@@ -3,8 +3,8 @@
         "description": "Check HomeConnect 2 Gbps fiber installation technician windows, hold a slot, or reschedule appointment HC-5510.",
         "sample_queries": [
             "What technician windows and fees are available to reschedule fiber appointment HC-5510?",
-            "Hold the Friday 2026-11-20 technician window without changing my current appointment.",
-            "Confirm rescheduling fiber appointment HC-5510 to Friday 2026-11-20.",
+            "Hold the Friday 2027-11-19 technician window without changing my current appointment.",
+            "Confirm rescheduling fiber appointment HC-5510 to Friday 2027-11-19.",
             "Can you port my mobile phone SIM card or sell a Wi-Fi mesh router?"
         ]
     },

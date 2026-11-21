@@ -98,16 +98,16 @@ test("V2.2 — Multi-Domain Scenarios (Outpatient Surgery & Product Launch Expo)
     commitment_id: "cmt_moveco_van",
     original_booking_ref: "MC-8841",
     state: "AWAITING_APPROVAL",
-    proposed_date: "2026-11-20",
+    proposed_date: "2027-11-19",
     window: "09:30–14:30",
     provider_name: "Overflow Crew (Demo)",
   };
   const crewEvent = (operation) => exportMissionToIcs(relocation, relocationGraph, [operation]).split("BEGIN:VEVENT")[1];
   const pending = crewEvent(movingCrew);
-  assert.match(pending, /DTSTART:20261117T080000/);
-  assert.match(pending, /DTEND:20261117T130000/);
+  assert.match(pending, /DTSTART:20271116T080000/);
+  assert.match(pending, /DTEND:20271116T130000/);
   assert.match(pending, /LOCATION:MoveCo Express/);
-  assert.doesNotMatch(pending, /20261120|Overflow Crew/);
+  assert.doesNotMatch(pending, /20271119|Overflow Crew/);
   assert.match(crewEvent({ ...movingCrew, state: "NEEDS_USER" }), /STATUS:TENTATIVE/);
 
   const digest = "a".repeat(64);
@@ -120,8 +120,8 @@ test("V2.2 — Multi-Domain Scenarios (Outpatient Surgery & Product Launch Expo)
   assert.match(unverified, /RECEIPT UNVERIFIED/);
   assert.doesNotMatch(unverified, /MC-OVERFLOW|payload SHA-256/);
   const verified = crewEvent({ ...result, proof_verification: { valid: true, trusted: true, payload_sha256: digest } });
-  assert.match(verified, /DTSTART:20261120T093000/);
-  assert.match(verified, /DTEND:20261120T143000/);
+  assert.match(verified, /DTSTART:20271119T093000/);
+  assert.match(verified, /DTEND:20271119T143000/);
   assert.match(verified, /LOCATION:Overflow Crew \(Demo\)/);
   assert.match(verified, /Ref: MC-OVERFLOW/);
   assert.ok(verified.includes(`Verified demo receipt payload SHA-256: ${digest}`));
@@ -153,7 +153,7 @@ test("V2.3 — Cross-Origin Browser Bridge Engine signs verifiable Ed25519 recei
 
   const quote = await moveco.callTool("get_moving_quote", {
     booking_ref: "MC-8841",
-    target_date: "2026-11-20",
+    target_date: "2027-11-19",
   });
   assert.equal(quote.ok, true);
   assert.equal(quote.primary_refused, true);
@@ -162,7 +162,7 @@ test("V2.3 — Cross-Origin Browser Bridge Engine signs verifiable Ed25519 recei
   const hold = await moveco.callTool("hold_moving_slot", {
     booking_ref: "MC-8841",
     offer_id: "off_moveco_partner_overflow_fri",
-    proposed_date: "2026-11-20",
+    proposed_date: "2027-11-19",
     idempotency_key: "idem_bridge_hold_1",
   });
   assert.equal(hold.ok, true);
@@ -170,7 +170,7 @@ test("V2.3 — Cross-Origin Browser Bridge Engine signs verifiable Ed25519 recei
 
   const commit = await moveco.callTool("reschedule_van_booking", {
     booking_ref: "MC-8841",
-    new_date: "2026-11-20",
+    new_date: "2027-11-19",
     window: "09:30–14:30",
     offer_id: "off_moveco_partner_overflow_fri",
     hold_id: hold.hold_id,
@@ -182,7 +182,7 @@ test("V2.3 — Cross-Origin Browser Bridge Engine signs verifiable Ed25519 recei
   // Verify signed cross-tab handoff token
   const okHandoff = await verifySignedReceiptHandoff("moveco", commit.handoff_token);
   assert.equal(okHandoff.valid, true);
-  assert.equal(okHandoff.receiptBody.scheduled_date, "2026-11-20");
+  assert.equal(okHandoff.receiptBody.scheduled_date, "2027-11-19");
 
   const restored = createPeerBrowserDomainEngine("moveco", options);
   const observed = await restored.callTool("get_booking_status", { idempotency_key: "idem_bridge_commit_1" });
@@ -278,7 +278,7 @@ test("V2.6 — Mandate Arbiter enforces immutable SHA-256 mandates, integer-cent
   // Outbound boundary request strips budget & free text
   const outbound = buildSanitizedPeerBoundaryRequest({
     booking_ref: "MC-8841",
-    target_date: "2026-11-20",
+    target_date: "2027-11-19",
     maximum_budget_eur: 700,
     sly_data: { secret: "123" },
   });

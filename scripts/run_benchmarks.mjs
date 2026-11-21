@@ -269,9 +269,9 @@ async function measureUncoordinatedSequentialFailure() {
       tool: "prepare_permit_date_update",
       arguments: {
         booking_ref: "PF-2049",
-        new_date: "2026-11-20",
+        new_date: "2027-11-19",
         window: "07:30–14:00",
-        offer_id: "off_permitflow_2026-11-20",
+        offer_id: "off_permitflow_2027-11-19",
         idempotency_key: "manual_seq_pf_1",
       },
     }),
@@ -283,7 +283,7 @@ async function measureUncoordinatedSequentialFailure() {
       tool: "change_fiber_appointment",
       arguments: {
         booking_ref: "HC-5510",
-        new_date: "2026-11-20",
+        new_date: "2027-11-19",
         window: "14:00–17:00",
         offer_id: "off_homeconnect_fri_pm",
         idempotency_key: "manual_seq_hc_1",
@@ -298,7 +298,7 @@ async function measureUncoordinatedSequentialFailure() {
         tool: "reschedule_van_booking",
         arguments: {
           booking_ref: "MC-8841",
-          new_date: "2026-11-20",
+          new_date: "2027-11-19",
           window: "08:00–13:00",
           offer_id: "off_moveco_fri_am",
           idempotency_key: "manual_seq_mc_1",
@@ -326,7 +326,7 @@ async function measureUncoordinatedSequentialFailure() {
     statesAfterFailure: statesAfter,
     splitBrainScheduleCreated: distinctDates.size > 1,
     prematurelyMutatedProvidersCount: [statesAfter.permitflow, statesAfter.homeconnect].filter(
-      (d) => d === "2026-11-20",
+      (d) => d === "2027-11-19",
     ).length,
   };
 }
@@ -522,7 +522,7 @@ try {
     dlpSamples.push(performance.now() - tD0);
 
     const tC0 = performance.now();
-    analyzeCriticalPathSlack(microGraph, "2026-11-20", microMission.anchor_commitment_id);
+    analyzeCriticalPathSlack(microGraph, "2027-11-19", microMission.anchor_commitment_id);
     cpmSamples.push(performance.now() - tC0);
   }
   const statArr = (arr) => {

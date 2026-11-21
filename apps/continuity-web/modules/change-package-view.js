@@ -18,10 +18,11 @@ export function renderHoldCountdownView(page) {
   const ss = String(remainingSec % 60).padStart(2, "0");
   const holdIds = heldOps.map((o) => o.hold_id).join(", ");
   el.hidden = false;
+  el.title = holdIds ? `Reservation IDs: ${holdIds}` : "";
   el.textContent =
     remainingSec === 0
-      ? `⚠ Hold TTL expired for (${holdIds}) — click Analyze & Prepare to refresh temporary holds before committing`
-      : `🔒 ${heldOps.length} Non-Destructive Replacement Hold(s) Active (${holdIds}) · Lock TTL ${mm}:${ss} remaining · Original bookings untouched`;
+      ? `⚠ The temporary reservations have expired. Prepare the change again to get fresh ones before confirming.`
+      : `🔒 ${heldOps.length} replacement slot${heldOps.length > 1 ? "s" : ""} reserved for you · ${mm}:${ss} left to decide · your current bookings are untouched`;
 }
 
 export function renderWhatIfSliderView(page) {

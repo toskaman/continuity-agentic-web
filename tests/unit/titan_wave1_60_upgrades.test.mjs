@@ -143,11 +143,11 @@ test("Wave 1 (#013-#028) — @continuity/nanda-resolver blocks SSRF metadata/pri
       method: "artifact",
       targetUrl: "https://ex.org/card.json",
       sequence: 1,
-      issuedAt: "2026-11-16T12:30:00Z",
-      expiresAt: "2026-11-17T12:00:00Z",
+      issuedAt: "2027-11-15T12:30:00Z",
+      expiresAt: "2027-11-16T12:00:00Z",
       authority: { type: "origin-self-published", issuer: "https://ex.org" },
     },
-    { nowIso: "2026-11-16T12:00:00Z" },
+    { nowIso: "2027-11-15T12:00:00Z" },
   );
   assert.equal(futureCheck.ok, false);
 

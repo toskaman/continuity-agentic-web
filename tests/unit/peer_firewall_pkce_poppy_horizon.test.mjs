@@ -285,7 +285,7 @@ test("Cycles 101–125 — sweepAnchorHorizon evaluates 6-day target horizon and
   assert.ok(page.horizonSweep.sweepDurationMs < 1000);
   assert.ok(page.horizonSweep.days.some((d) => d.isLowestCostDay));
 
-  const switched = await page.switchTargetAnchorDate("2026-11-21");
+  const switched = await page.switchTargetAnchorDate("2027-11-20");
   assert.equal(switched.ok, true);
-  assert.equal(switched.targetDate, "2026-11-21");
+  assert.equal(switched.targetDate, "2027-11-20");
 });

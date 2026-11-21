@@ -40,10 +40,10 @@ test("Wave 3 (#121-#132) — @continuity/facts-publisher blocks CSS font-size:0 
 
 test("Wave 3 (#133-#146) — MissionGraph topologicalOrder/clone/incomingEdges & ImpactEngine diamond-DAG SOFT->HARD upgrade + ON_OR_BEFORE minOffsetDays", () => {
   const g = new MissionGraph({ missionId: "diamond_01" });
-  g.addNode({ id: "A", title: "Anchor", provider_id: "p1", provider_name: "P1", provider_origin: "https://p1.example", scheduled_date: "2026-11-17", window: "09:00", price_eur: 100 });
-  g.addNode({ id: "B", title: "SoftMid", provider_id: "p2", provider_name: "P2", provider_origin: "https://p2.example", scheduled_date: "2026-11-18", window: "09:00", price_eur: 50 });
-  g.addNode({ id: "C", title: "HardMid", provider_id: "p3", provider_name: "P3", provider_origin: "https://p3.example", scheduled_date: "2026-11-17", window: "09:00", price_eur: 50 });
-  g.addNode({ id: "D", title: "Sink", provider_id: "p4", provider_name: "P4", provider_origin: "https://p4.example", scheduled_date: "2026-11-17", window: "09:00", price_eur: 50 });
+  g.addNode({ id: "A", title: "Anchor", provider_id: "p1", provider_name: "P1", provider_origin: "https://p1.example", scheduled_date: "2027-11-16", window: "09:00", price_eur: 100 });
+  g.addNode({ id: "B", title: "SoftMid", provider_id: "p2", provider_name: "P2", provider_origin: "https://p2.example", scheduled_date: "2027-11-17", window: "09:00", price_eur: 50 });
+  g.addNode({ id: "C", title: "HardMid", provider_id: "p3", provider_name: "P3", provider_origin: "https://p3.example", scheduled_date: "2027-11-16", window: "09:00", price_eur: 50 });
+  g.addNode({ id: "D", title: "Sink", provider_id: "p4", provider_name: "P4", provider_origin: "https://p4.example", scheduled_date: "2027-11-16", window: "09:00", price_eur: 50 });
 
   g.addEdge({ from: "A", to: "B", type: EDGE_TYPES.ON_OR_AFTER, rationale: "soft", rule: { minOffsetDays: 0, maxOffsetDays: 1 } });
   g.addEdge({ from: "A", to: "C", type: EDGE_TYPES.SAME_DAY_REQUIRED, rationale: "hard same day" });
@@ -62,15 +62,15 @@ test("Wave 3 (#133-#146) — MissionGraph topologicalOrder/clone/incomingEdges &
   assert.throws(() => cloned.updateNode("A", { visual_state: "NOT_A_VALID_STATE" }));
 
   const impact = analyzeMissionImpact(g, {
-    requested_change: { field: "move_date", target_commitment_id: "A", previous_value: "2026-11-17", new_value: "2026-11-20" },
+    requested_change: { field: "move_date", target_commitment_id: "A", previous_value: "2027-11-16", new_value: "2027-11-19" },
   });
   assert.equal(impact.nodeDecisions.D.status, "AFFECTED_HARD");
   assert.ok(impact.metrics.blastRadiusRatio > 0);
 
   const preOpCheck = evaluateEdgeImpact(
     { from: "lab", to: "surg", type: EDGE_TYPES.ON_OR_BEFORE, rule: { minOffsetDays: 1, maxOffsetDays: 3 } },
-    "2026-11-20",
-    { title: "Surgery", scheduled_date: "2026-11-20" },
+    "2027-11-19",
+    { title: "Surgery", scheduled_date: "2027-11-19" },
   );
   assert.equal(preOpCheck.hardViolation, true);
 });
@@ -83,7 +83,7 @@ test("Wave 3 (#147-#180) — CapabilityAdapter strips Bidi, TransitionPlaybook o
     provider_name: "MoveCo\u202E Express",
     provider_origin: "https://moveco.example",
     raw_capability: "reschedule_van_booking",
-    proposed_date: "2026-11-20",
+    proposed_date: "2027-11-19",
     window: "08:00–12:00",
     base_price_eur: 390.004,
     change_fee_eur: 25,
@@ -103,15 +103,15 @@ test("Wave 3 (#147-#180) — CapabilityAdapter strips Bidi, TransitionPlaybook o
   // Multilingual ES/DE + earlier shift compilation
   const mission = createSignatureMoveMission();
   const es = compileMissionChange("Mueve todo al viernes bajo 680€", mission);
-  assert.equal(es.proposal.requested_change.new_value, "2026-11-20");
+  assert.equal(es.proposal.requested_change.new_value, "2027-11-19");
   assert.equal(es.proposal.invariants.maximum_budget_eur, 680);
 
   const de = compileMissionChange("Verschiebe den Umzug auf Samstag unter 695 EUR", mission);
-  assert.equal(de.proposal.requested_change.new_value, "2026-11-21");
+  assert.equal(de.proposal.requested_change.new_value, "2027-11-20");
   assert.equal(de.proposal.invariants.maximum_budget_eur, 695);
 
   const earlier = compileMissionChange("Bring forward by 1 day under €700", mission);
-  assert.equal(earlier.proposal.requested_change.new_value, "2026-11-16");
+  assert.equal(earlier.proposal.requested_change.new_value, "2027-11-15");
 
   // Solver branch-and-bound + avoidedCancellationFeesEur + playbook shortSmsDraft
   const g = MissionGraph.fromMission(mission);
@@ -125,7 +125,7 @@ test("Wave 3 (#147-#180) — CapabilityAdapter strips Bidi, TransitionPlaybook o
       provider_name: "MoveCo",
       provider_origin: "https://mc.example",
       raw_capability: "reschedule_van_booking",
-      proposed_date: "2026-11-20",
+      proposed_date: "2027-11-19",
       window: "08:00–13:00",
       base_price_eur: 390,
       change_fee_eur: 25,
@@ -140,7 +140,7 @@ test("Wave 3 (#147-#180) — CapabilityAdapter strips Bidi, TransitionPlaybook o
       provider_name: "MoveCo",
       provider_origin: "https://mc.example",
       raw_capability: "reschedule_van_booking",
-      proposed_date: "2026-11-20",
+      proposed_date: "2027-11-19",
       window: "08:00–13:00",
       base_price_eur: 390,
       change_fee_eur: 25,
@@ -154,7 +154,7 @@ test("Wave 3 (#147-#180) — CapabilityAdapter strips Bidi, TransitionPlaybook o
       provider_name: "PermitFlow",
       provider_origin: "https://pf.example",
       raw_capability: "prepare_permit_date_update",
-      proposed_date: "2026-11-20",
+      proposed_date: "2027-11-19",
       window: "07:30–14:00",
       base_price_eur: 45,
       change_fee_eur: 0,
@@ -167,7 +167,7 @@ test("Wave 3 (#147-#180) — CapabilityAdapter strips Bidi, TransitionPlaybook o
       provider_name: "HomeConnect",
       provider_origin: "https://hc.example",
       raw_capability: "change_fiber_appointment",
-      proposed_date: "2026-11-20",
+      proposed_date: "2027-11-19",
       window: "14:00–18:00",
       base_price_eur: 49,
       change_fee_eur: 0,

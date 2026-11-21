@@ -3,8 +3,8 @@
     "description": "Check public curbside loading-bay eligibility rules and update prepared demonstration permit dossiers on PermitFlow.",
     "sample_queries": [
       "What are the curbside loading-bay notice rules and current date for dossier PF-2049?",
-      "Stage a preview for Friday 2026-11-20 on dossier PF-2049.",
-      "Update prepared dossier PF-2049 to Friday 2026-11-20.",
+      "Stage a preview for Friday 2027-11-19 on dossier PF-2049.",
+      "Update prepared dossier PF-2049 to Friday 2027-11-19.",
       "Can you directly approve an official city hall permit or cancel a municipal parking fine?"
     ]
   },

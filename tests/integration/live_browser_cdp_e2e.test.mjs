@@ -230,7 +230,7 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
     assert.deepEqual(releaseOutcome.before, [1, 1]);
     assert.deepEqual(releaseOutcome.after, [0, 0]);
     assert.equal(releaseOutcome.releasedCount, 2);
-    assert.equal(releaseOutcome.movecoDate, "2026-11-17");
+    assert.equal(releaseOutcome.movecoDate, "2027-11-16");
 
     // 3. Test Ripple Recovery + Commit + Bundle Verifier + €0.01 Tamper Alarm + 20 Chaos + 9-Point Auditor
     const fullOutcome = await cdp.evalJson(`(async () => {
@@ -277,7 +277,7 @@ test("Cycle 14 — Real Headless Chromium E2E verifies 5-origin live UI, counter
     const calendarEvents = fullOutcome.calendar.content.split("BEGIN:VEVENT").slice(1);
     assert.equal(calendarEvents.length, 6);
     assert.equal(calendarEvents.filter((event) => event.includes("Verified demo receipt payload SHA-256")).length, 3);
-    assert.match(calendarEvents.find((event) => event.includes("PFW-9921")), /DTSTART:20261117T080000/);
+    assert.match(calendarEvents.find((event) => event.includes("PFW-9921")), /DTSTART:20271116T080000/);
     assert.equal(fullOutcome.bundleValid, true);
     assert.equal(fullOutcome.tamperCaught, true);
     assert.equal(fullOutcome.chaosPassed, 42);

@@ -33,9 +33,9 @@ test("Cycle 3.1 — FactsPublisher extracts visible data-agent-facts, rejects hi
     siteUrl: "https://example.org/moveco/",
     networkName: "moveco_dispatch",
     htmlText: cleanHtml,
-    todayIso: "2026-11-12",
+    todayIso: "2027-11-11",
   });
-  assert.equal(bundle1.asOf, "2026-11-12");
+  assert.equal(bundle1.asOf, "2027-11-11");
   assert.equal(bundle1.networkJson.tools[0].tools.length, 0);
 
   // Rebuilding on a later date with identical facts keeps the original as_of date
@@ -44,10 +44,10 @@ test("Cycle 3.1 — FactsPublisher extracts visible data-agent-facts, rejects hi
     siteUrl: "https://example.org/moveco/",
     networkName: "moveco_dispatch",
     htmlText: cleanHtml,
-    todayIso: "2026-11-15",
+    todayIso: "2027-11-14",
     previousNetworkJson: bundle1.networkJson,
   });
-  assert.equal(bundle2.asOf, "2026-11-12");
+  assert.equal(bundle2.asOf, "2027-11-11");
 
   // Hidden / folded / form injection vectors MUST fail closed
   const badSamples = [

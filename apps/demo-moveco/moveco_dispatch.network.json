@@ -3,8 +3,8 @@
     "description": "Check MoveCo Express residential moving van availability, place a 15-minute slot hold, or confirm a crew reschedule.",
     "sample_queries": [
       "What crew dates and reschedule fees are available for booking MC-8841?",
-      "Place a 15-minute hold on the Friday November 20 crew slot without changing my current booking.",
-      "Confirm rescheduling booking MC-8841 to Friday 2026-11-20.",
+      "Place a 15-minute hold on the Friday November 19 crew slot without changing my current booking.",
+      "Confirm rescheduling booking MC-8841 to Friday 2027-11-19.",
       "Can you ship a container overseas through customs and sell packing boxes?"
     ]
   },

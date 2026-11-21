@@ -4,16 +4,16 @@ export class PowerFlowPage {
     this.activation = {
       activationRef: "PFW-9921",
       meterPoint: "PRM-7510299481",
-      scheduledDate: "2026-11-17",
-      scheduledLabel: "Tue, Nov 17, 2026",
+      scheduledDate: "2027-11-16",
+      scheduledLabel: "Tue, Nov 16, 2027",
       window: "08:00–12:00",
       feeEur: "€30.00",
       status: "CONFIRMED",
     };
     this.stagedDate = null;
     this.dates = [
-      { date: "2026-11-19", label: "Thu, Nov 19, 2026", window: "08:00–12:00", feeEur: "€30.00" },
-      { date: "2026-11-20", label: "Fri, Nov 20, 2026", window: "08:00–12:00", feeEur: "€30.00" },
+      { date: "2027-11-18", label: "Thu, Nov 18, 2027", window: "08:00–12:00", feeEur: "€30.00" },
+      { date: "2027-11-19", label: "Fri, Nov 19, 2027", window: "08:00–12:00", feeEur: "€30.00" },
     ];
     this.lastReceipt = null;
   }
@@ -66,15 +66,15 @@ export class PowerFlowPage {
     this.activation = {
       activationRef: "PFW-9921",
       meterPoint: "PRM-7510299481",
-      scheduledDate: "2026-11-17",
-      scheduledLabel: "Tue, Nov 17, 2026",
+      scheduledDate: "2027-11-16",
+      scheduledLabel: "Tue, Nov 16, 2027",
       window: "08:00–12:00",
       feeEur: "€30.00",
       status: "CONFIRMED",
     };
     this.stagedDate = null;
     this.lastReceipt = null;
-    this.render("Reset PowerFlow activation PFW-9921 to baseline Tue, Nov 17, 2026.");
+    this.render("Reset PowerFlow activation PFW-9921 to baseline Tue, Nov 16, 2027.");
     return { ok: true, version: this.version };
   }
 
@@ -133,12 +133,12 @@ export class PowerFlowPage {
     if (typeof document === "undefined") return;
     this.render();
     document.querySelector("#stage-btn")?.addEventListener("click", () => {
-      this.stageDate(document.querySelector("#grid-select")?.value || "2026-11-20");
+      this.stageDate(document.querySelector("#grid-select")?.value || "2027-11-19");
     });
     document.querySelector("#shift-btn")?.addEventListener("click", () => {
       this.confirmDateShift({
         activationRef: this.activation.activationRef,
-        targetDate: document.querySelector("#grid-select")?.value || "2026-11-20",
+        targetDate: document.querySelector("#grid-select")?.value || "2027-11-19",
         expectedVersion: this.version,
       });
     });

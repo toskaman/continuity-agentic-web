@@ -4,16 +4,16 @@ export class HomeConnectPage {
     this.appointment = {
       appointmentRef: "HC-5510",
       plan: "2 Gbps Symmetric Fiber + ONT Splice",
-      scheduledDate: "2026-11-17",
-      scheduledLabel: "Tue, Nov 17, 2026",
+      scheduledDate: "2027-11-16",
+      scheduledLabel: "Tue, Nov 16, 2027",
       window: "14:00–17:00",
       installFeeEur: "€49.00",
       status: "CONFIRMED",
     };
     this.hold = null;
     this.windows = [
-      { date: "2026-11-20", label: "Fri, Nov 20, 2026", window: "14:00–17:00", feeEur: "€49.00" },
-      { date: "2026-11-21", label: "Sat, Nov 21, 2026", window: "09:00–12:00", feeEur: "€39.00" },
+      { date: "2027-11-19", label: "Fri, Nov 19, 2027", window: "14:00–17:00", feeEur: "€49.00" },
+      { date: "2027-11-20", label: "Sat, Nov 20, 2027", window: "09:00–12:00", feeEur: "€39.00" },
     ];
     this.lastReceipt = null;
   }
@@ -68,15 +68,15 @@ export class HomeConnectPage {
     this.appointment = {
       appointmentRef: "HC-5510",
       plan: "2 Gbps Symmetric Fiber + ONT Splice",
-      scheduledDate: "2026-11-17",
-      scheduledLabel: "Tue, Nov 17, 2026",
+      scheduledDate: "2027-11-16",
+      scheduledLabel: "Tue, Nov 16, 2027",
       window: "14:00–17:00",
       installFeeEur: "€49.00",
       status: "CONFIRMED",
     };
     this.hold = null;
     this.lastReceipt = null;
-    this.render("Reset HomeConnect appointment HC-5510 to baseline Tue, Nov 17, 2026.");
+    this.render("Reset HomeConnect appointment HC-5510 to baseline Tue, Nov 16, 2027.");
     return { ok: true, version: this.version };
   }
 
@@ -136,12 +136,12 @@ export class HomeConnectPage {
     if (typeof document === "undefined") return;
     this.render();
     document.querySelector("#hold-btn")?.addEventListener("click", () => {
-      this.holdWindow(document.querySelector("#win-select")?.value || "2026-11-20");
+      this.holdWindow(document.querySelector("#win-select")?.value || "2027-11-19");
     });
     document.querySelector("#change-btn")?.addEventListener("click", () => {
       this.confirmAppointmentChange({
         appointmentRef: this.appointment.appointmentRef,
-        targetDate: document.querySelector("#win-select")?.value || "2026-11-20",
+        targetDate: document.querySelector("#win-select")?.value || "2027-11-19",
         expectedVersion: this.version,
       });
     });

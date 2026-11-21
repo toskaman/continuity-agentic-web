@@ -67,14 +67,14 @@ test("Wave 2 (#073-#082) — @continuity/approval-engine binds hold_id & mandate
     capability: "reschedule",
     arguments: { hold_id: "hold_1" },
     mandate_sha256: "a".repeat(64),
-    proposed_date: "2026-11-20",
+    proposed_date: "2027-11-19",
     base_price_eur: 390,
     change_fee_eur: 25,
     cancellation_penalty_eur: 0,
     maximum_budget_eur: 700,
-    expires_at: "2027-01-01T00:00:00Z",
+    expires_at: "2027-12-31T00:00:00Z",
   };
-  const appr = await engine.createBoundApproval(baseSpec, { nowIso: "2026-11-16T10:00:00Z" });
+  const appr = await engine.createBoundApproval(baseSpec, { nowIso: "2027-11-15T10:00:00Z" });
   assert.equal(Object.isFrozen(appr), true);
   assert.equal(Object.isFrozen(appr.canonical_payload), true);
 
@@ -82,7 +82,7 @@ test("Wave 2 (#073-#082) — @continuity/approval-engine binds hold_id & mandate
   const swappedMandate = await engine.verifyApprovalBinding(
     appr.approval_id,
     { ...baseSpec, mandate_sha256: "b".repeat(64) },
-    { nowIso: "2026-11-16T10:01:00Z" },
+    { nowIso: "2027-11-15T10:01:00Z" },
   );
   assert.equal(swappedMandate.valid, false);
   assert.match(swappedMandate.reason, /mandate_sha256/);
@@ -95,7 +95,7 @@ test("Wave 2 (#073-#082) — @continuity/approval-engine binds hold_id & mandate
 
   assert.equal(engine.revokeApproval(appr.approval_id), true);
   const afterRevoke = await engine.verifyApprovalBinding(appr.approval_id, baseSpec, {
-    nowIso: "2026-11-16T10:01:00Z",
+    nowIso: "2027-11-15T10:01:00Z",
   });
   assert.equal(afterRevoke.valid, false);
 });
@@ -106,7 +106,7 @@ test("Wave 2 (#083-#106) — OutcomeReconciliation blocks missing envelope, wron
   const expectedOp = {
     provider_id: "moveco",
     original_booking_ref: "MC-8841",
-    proposed_date: "2026-11-20",
+    proposed_date: "2027-11-19",
     base_price_eur: 390,
     change_fee_eur: 25,
     cancellation_penalty_eur: 0,
@@ -116,7 +116,7 @@ test("Wave 2 (#083-#106) — OutcomeReconciliation blocks missing envelope, wron
   // Missing receipt_envelope when verifier is active -> NEEDS_USER
   const missingEnv = await reconcileOperationOutcome({
     expectedOp,
-    providerStatus: { execution_state: "COMMITTED", scheduled_date: "2026-11-20", total_charged_eur: 415 },
+    providerStatus: { execution_state: "COMMITTED", scheduled_date: "2027-11-19", total_charged_eur: 415 },
     receiptVerifier: verifier,
   });
   assert.equal(missingEnv.outcomeState, OP_STATES.NEEDS_USER);
@@ -126,7 +126,7 @@ test("Wave 2 (#083-#106) — OutcomeReconciliation blocks missing envelope, wron
     {
       provider_id: "moveco",
       booking_ref: "MC-OTHER-999",
-      scheduled_date: "2026-11-20",
+      scheduled_date: "2027-11-19",
       total_charged_eur: 415,
       idempotency_key: "idem_1",
     },
@@ -144,7 +144,7 @@ test("Wave 2 (#083-#106) — OutcomeReconciliation blocks missing envelope, wron
     {
       provider_id: "moveco",
       booking_ref: "MC-8841",
-      scheduled_date: "2026-11-20",
+      scheduled_date: "2027-11-19",
       total_price_eur: 999,
       idempotency_key: "idem_1",
     },
@@ -171,7 +171,7 @@ test("Wave 2 (#083-#106) — OutcomeReconciliation blocks missing envelope, wron
           commitment_id: "cmt_moveco_van",
           commitment_title: "Van",
           original_booking_ref: "MC-8841",
-          original_date: "2026-11-17",
+          original_date: "2027-11-16",
           offer: {
             offer_id: "off_1",
             provider_id: "moveco",
@@ -179,7 +179,7 @@ test("Wave 2 (#083-#106) — OutcomeReconciliation blocks missing envelope, wron
             provider_origin: "https://mc.example",
             raw_capability: "reschedule",
             semantic_kind: "RESCHEDULE_IN_PLACE",
-            proposed_date: "2026-11-20",
+            proposed_date: "2027-11-19",
             window: "08:00–12:00",
             base_price_eur: 390,
             change_fee_eur: 25,
@@ -195,7 +195,7 @@ test("Wave 2 (#083-#106) — OutcomeReconciliation blocks missing envelope, wron
           commitment_id: "cmt_homeconnect_fiber",
           commitment_title: "Fiber",
           original_booking_ref: "HC-5510",
-          original_date: "2026-11-17",
+          original_date: "2027-11-16",
           offer: {
             offer_id: "off_2",
             provider_id: "homeconnect",
@@ -203,7 +203,7 @@ test("Wave 2 (#083-#106) — OutcomeReconciliation blocks missing envelope, wron
             provider_origin: "https://hc.example",
             raw_capability: "reschedule",
             semantic_kind: "RESCHEDULE_IN_PLACE",
-            proposed_date: "2026-11-20",
+            proposed_date: "2027-11-19",
             window: "13:00–17:00",
             base_price_eur: 49,
             change_fee_eur: 0,
@@ -242,7 +242,7 @@ test("Wave 2 (#107-#120) — MandateArbiter & ZK Budget Attestation verify manda
   const mandate = await issuePolicyBoundMandate(mission, proposal);
   assert.equal((await verifyPolicyMandateIntegrity(mandate)).valid, true);
 
-  assert.throws(() => buildSanitizedPeerBoundaryRequest({ booking_ref: "BAD REF!<script>", target_date: "2026-11-20" }));
+  assert.throws(() => buildSanitizedPeerBoundaryRequest({ booking_ref: "BAD REF!<script>", target_date: "2027-11-19" }));
   assert.throws(() => buildSanitizedPeerBoundaryRequest({ booking_ref: "MC-8841", target_date: "2026-02-30" }));
 
   const arb = new SealedBidArbiter(mandate, 44_000);

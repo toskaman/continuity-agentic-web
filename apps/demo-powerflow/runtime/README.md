@@ -4,7 +4,7 @@ This folder runs the agent network in the visitor's browser. Copy it into each
 agentified site, and do not change it there.
 
 It is a copy of the [nsdeploy](https://github.com/cognizant-ai-lab/nsdeploy) browser
-runtime (Apache 2.0, see `LICENSE.txt`) at nsdeploy commit `53a787c` (2026-11-11), with
+runtime (Apache 2.0, see `LICENSE.txt`) at nsdeploy commit `53a787c` (2027-11-10), with
 the edits listed below.
 
 Why it is edited. A site's page has its own functions, called actions, like a room

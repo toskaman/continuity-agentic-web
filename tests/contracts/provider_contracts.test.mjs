@@ -46,7 +46,7 @@ test("C2 Provider MCP/API rejects missing fields, extra fields, and invalid date
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       tool: "get_moving_quote",
-      arguments: { booking_ref: "MC-8841", target_date: "2026-11-20", sneak_admin: true },
+      arguments: { booking_ref: "MC-8841", target_date: "2027-11-19", sneak_admin: true },
     }),
   });
   assert.equal(r2.status, 400);
@@ -75,7 +75,7 @@ test("C3 Provider commit is idempotent and returns verifiable Ed25519 receipt", 
   const client = new McpClient({ url: `${origin}/mcp` });
   const raw1 = await client.callTool("reschedule_van_booking", {
     booking_ref: "MC-8841",
-    new_date: "2026-11-20",
+    new_date: "2027-11-19",
     window: "08:00–13:00",
     offer_id: "off_moveco_fri_am",
     idempotency_key: "idem_contract_test_001",
@@ -86,7 +86,7 @@ test("C3 Provider commit is idempotent and returns verifiable Ed25519 receipt", 
   // Duplicate call with same idempotency_key returns the exact same receipt without re-charging!
   const raw2 = await client.callTool("reschedule_van_booking", {
     booking_ref: "MC-8841",
-    new_date: "2026-11-20",
+    new_date: "2027-11-19",
     window: "08:00–13:00",
     offer_id: "off_moveco_fri_am",
     idempotency_key: "idem_contract_test_001",
@@ -107,7 +107,7 @@ test("C4 PermitFlow explicitly discloses demonstration dossier scope and never c
   const client = new McpClient({ url: `${origin}/mcp` });
   const raw = await client.callTool("check_bay_eligibility", {
     booking_ref: "PF-2049",
-    target_date: "2026-11-20",
+    target_date: "2027-11-19",
   });
   const data = JSON.parse(raw);
   assert.equal(data.ok, true);
