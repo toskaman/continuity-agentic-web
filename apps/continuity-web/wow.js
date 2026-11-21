@@ -21,7 +21,7 @@ const STEPS = ["describe", "impact", "plans", "hold", "approve", "verify"];
 
 const T = {
   en: {
-    lang: "FR", langTitle: "Passer en français",
+    lang: "FR", langTitle: "FR · Voir en français",
     h1: 'Moving day changed.<br><span>Keep the rest on track.</span>',
     sub: "Your Friday moving crew is full. What happens to the van, parking and fiber?",
     lead: "CONTINUITY checks the affected bookings, finds replacements and shows you the price before you decide.",
@@ -32,6 +32,8 @@ const T = {
     otherLives: "Same engine, other lives:",
     scen: { home_relocation: "🏠 Moving house", outpatient_surgery: "🏥 Surgery day", product_launch_expo: "📦 Product launch" },
     replay: "▶ Replay the story",
+    mydate: "Try it with your own new moving day:", go: "Run it →",
+    days: { Wednesday: "Wednesday", Thursday: "Thursday", Friday: "Friday", Saturday: "Saturday" },
     nav: { workspace: "Try it", mission: "Your bookings", plans: "Plans", network: "Providers", trust: "Proof", assistant: "Ask", kit: "Builder kit" },
     steps: [
       ["Describe the change", "Plain language or a calendar"],
@@ -66,7 +68,7 @@ const T = {
     },
   },
   fr: {
-    lang: "EN", langTitle: "Switch to English",
+    lang: "EN", langTitle: "EN · Switch to English",
     h1: 'Le déménagement a changé.<br><span>Tout le reste suit.</span>',
     sub: "Votre équipe de déménageurs du vendredi est complète. Que deviennent le camion, le stationnement et la fibre ?",
     lead: "CONTINUITY repère les réservations concernées, trouve des remplaçants et vous montre le prix avant que vous décidiez.",
@@ -77,6 +79,8 @@ const T = {
     otherLives: "Le même moteur, d’autres vies :",
     scen: { home_relocation: "🏠 Déménagement", outpatient_surgery: "🏥 Jour d’opération", product_launch_expo: "📦 Lancement produit" },
     replay: "▶ Rejouer l’histoire",
+    mydate: "Essayez avec votre nouveau jour de déménagement :", go: "Lancer →",
+    days: { Wednesday: "Mercredi", Thursday: "Jeudi", Friday: "Vendredi", Saturday: "Samedi" },
     nav: { workspace: "Essayer", mission: "Vos réservations", plans: "Plans", network: "Prestataires", trust: "Preuves", assistant: "Demander", kit: "Kit" },
     steps: [
       ["Décrire le changement", "En français ou avec un agenda"],
@@ -131,40 +135,29 @@ function addIcons() {
 
 /* ---------------- Hero: "under the hood" + scenario chips + replay ---------------- */
 function buildHeroExtras() {
-  const copy = $(".hero-copy");
-  const meta = $(".hero-meta");
-  if (!copy || $("#wow-lives")) return;
-  if (meta) {
-    meta.classList.add("wow-under");
-    const label = document.createElement("span");
-    label.className = "wow-under-label";
-    meta.prepend(label);
-    copy.append(meta);
-  }
-  const lives = document.createElement("div");
-  lives.id = "wow-lives";
-  lives.className = "wow-lives";
-  lives.innerHTML = `<span class="wow-lives-label"></span>${Object.keys(T.en.scen)
-    .map((id) => `<button type="button" class="wow-chip" data-wow-scenario="${id}"></button>`).join("")}`;
-  $(".hero-ctas")?.after(lives);
-  lives.addEventListener("click", (ev) => {
+  $("#wow-lives")?.addEventListener("click", (ev) => {
     const btn = ev.target.closest("[data-wow-scenario]");
     if (!btn) return;
     $(`.scenario-pill[data-scenario-id="${btn.dataset.wowScenario}"]`)?.click();
     $("#workspace")?.scrollIntoView({ behavior: reduced() ? "auto" : "smooth" });
     setTimeout(() => $("#analyze-plan-btn")?.click(), 450);
   });
-
-  const eco = $("#eco");
-  if (eco && !$("#wow-replay")) {
-    const replay = document.createElement("button");
-    replay.type = "button"; replay.id = "wow-replay"; replay.className = "wow-replay";
-    replay.addEventListener("click", () => playHeroStory(true));
-    eco.append(replay);
-    const counter = document.createElement("div");
-    counter.id = "wow-counter"; counter.className = "wow-counter"; counter.setAttribute("aria-hidden", "true");
-    eco.append(counter);
-  }
+  $("#wow-replay")?.addEventListener("click", () => playHeroStory(true));
+  $("#wow-mydate")?.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const day = $("#wow-mydate-select")?.value || "Friday";
+    $('.scenario-pill[data-scenario-id="home_relocation"]')?.click();
+    setTimeout(() => {
+      const input = $("#mission-input");
+      if (input) {
+        input.value = `Move my relocation from Tuesday to ${day} under €700 without cancelling anything.`;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      startNarration();
+      $("#workspace")?.scrollIntoView({ behavior: reduced() ? "auto" : "smooth" });
+      setTimeout(() => $("#analyze-plan-btn")?.click(), 350);
+    }, 300);
+  });
 }
 
 /* ---------------- Hero story animation ---------------- */
@@ -311,6 +304,27 @@ function confetti() {
   setTimeout(() => box.remove(), 4200);
 }
 
+/* ---------------- Live wall stamp ---------------- */
+const NAMES = { moveco: "MoveCo", permitflow: "PermitFlow", homeconnect: "HomeConnect", powerflow: "PowerFlow" };
+const stamped = new Set();
+function watchWall() {
+  const labels = $$("[data-live-state]");
+  if (!labels.length) return;
+  const check = () => labels.forEach((label) => {
+    const pid = label.getAttribute("data-live-state");
+    const fig = label.closest(".live-site") || $(`.live-site[data-peer="${pid}"]`);
+    if (label.dataset.state === "committed" && /verified/i.test(label.textContent || "") && !stamped.has(pid) && fig) {
+      stamped.add(pid);
+      const st = document.createElement("div");
+      st.className = "wow-stamp"; st.setAttribute("aria-hidden", "true");
+      st.innerHTML = `✓ ${lang === "fr" ? "Confirmé par" : "Confirmed by"} ${NAMES[pid]}<small>${lang === "fr" ? "sur son propre site · reçu signé" : "on its own site · signed receipt"}</small>`;
+      setTimeout(() => { fig.append(st); setTimeout(() => st.remove(), 5000); }, [...stamped].length * 350);
+    }
+    if (label.dataset.state !== "committed") stamped.delete(pid);
+  });
+  labels.forEach((l) => new MutationObserver(check).observe(l, { attributes: true, childList: true, characterData: true, subtree: true }));
+}
+
 /* ---------------- Language ---------------- */
 function setHTML(sel, html) { const el = $(sel); if (el && el.innerHTML !== html) el.innerHTML = html; }
 function setText(sel, txt) { const el = $(sel); if (el && el.textContent !== txt) el.textContent = txt; }
@@ -337,22 +351,21 @@ function applyLang() {
     if (de && de.textContent !== s[1]) de.textContent = s[1];
   });
   const btn = $("#wow-lang");
-  if (btn) { btn.textContent = L.lang; btn.title = L.langTitle; btn.setAttribute("aria-label", L.langTitle); }
+  if (btn) { btn.textContent = L.lang; btn.title = L.langTitle; btn.setAttribute("aria-label", L.langTitle); btn.lang = lang === "en" ? "fr" : "en"; }
+  setText(".wow-mydate-label", L.mydate);
+  setText(".wow-mydate-go", L.go);
+  $$("#wow-mydate-select option").forEach((o) => { o.textContent = L.days[o.value] || o.value; });
   renderBar();
 }
 function buildLangButton() {
-  const host = $(".header-meta");
-  if (!host || $("#wow-lang")) return;
-  const btn = document.createElement("button");
-  btn.type = "button"; btn.id = "wow-lang"; btn.className = "ghost-btn btn-sm wow-lang";
-  btn.addEventListener("click", () => { lang = lang === "en" ? "fr" : "en"; store.set("continuity.lang", lang); applyLang(); });
-  host.prepend(btn);
+  $("#wow-lang")?.addEventListener("click", () => { lang = lang === "en" ? "fr" : "en"; store.set("continuity.lang", lang); applyLang(); });
 }
 
 /* ---------------- Wiring ---------------- */
 function init() {
   addIcons();
   buildHeroExtras();
+  watchWall();
   buildLangButton();
   applyLang();
 

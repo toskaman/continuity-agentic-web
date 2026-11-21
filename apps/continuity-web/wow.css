@@ -25,6 +25,13 @@
 .wow-under-label { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: #8F9BB3; margin-right: 4px; }
 .wow-lang { min-width: 44px; font-weight: 700; letter-spacing: .04em; }
 
+/* Own date */
+.wow-mydate { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.wow-mydate-label { color: #8F9BB3; font-size: .85rem; }
+.wow-mydate-select { font: inherit; font-size: .85rem; color: #fff; background: #111827; border: 1px solid #2A3756; border-radius: 999px; padding: 6px 12px; }
+.wow-mydate-select:focus-visible { outline: 2px solid #6E8BFF; outline-offset: 2px; }
+.wow-mydate-go { background: rgba(110,139,255,.16); border-color: #4C66E0; }
+
 /* Hero story */
 .wow-replay {
   position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%);
@@ -97,10 +104,10 @@ body:has(#outcome-panel) .wow-story { left: 24px; transform: none; width: min(56
   .eco { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
   .eco-node { position: relative; left: auto; top: auto; overflow-wrap: anywhere; }
   .eco-dot.wow-icon { width: 26px; height: 26px; font-size: 14px; }
-  .wow-bubble { position: static; transform: none; grid-column: 1 / -1; justify-self: start; margin-top: 6px; animation: none; white-space: normal; }
+  .wow-bubble { top: 6px; right: 6px; left: auto; transform: none; animation: none; font-size: .62rem; padding: 3px 7px; }
   .wow-replay { position: static; transform: none; grid-column: 1 / -1; justify-self: center; margin-top: 4px; }
-  .wow-counter { position: static; transform: none; grid-column: 1 / -1; text-align: center; display: none; }
-  .wow-counter.show { display: block; }
+  .wow-counter { position: static; transform: none; grid-column: 1 / -1; text-align: center; height: 1.3em; opacity: 0; }
+  .wow-counter.show { opacity: 1; transform: none; }
   .wow-story { bottom: 10px; padding: 12px 14px 10px; border-radius: 14px; }
   .wow-bubble { font-size: .66rem; padding: 4px 8px; }
   .wow-lives-label { width: 100%; }
@@ -125,3 +132,25 @@ body:has(#outcome-panel) .wow-story { left: 24px; transform: none; width: min(56
 .gantt-trail { position: absolute; top: 50%; height: 3px; transform: translateY(-50%); border-radius: 2px;
   background: linear-gradient(90deg, color-mix(in srgb, #F59E0B 15%, transparent), #F59E0B); opacity: .7; }
 @media (prefers-reduced-motion: reduce) { .gantt-dot { transition: none; } }
+
+/* Provider cards: tool names folded */
+.agent-tech { margin: 10px 0 4px; }
+.agent-tech summary { cursor: pointer; font-size: .8rem; color: #8F9BB3; }
+.agent-tech summary:hover { color: #fff; }
+.agent-tech .agent-caps { margin-top: 8px; }
+
+/* Live wall: confirmation stamp */
+.live-site { position: relative; }
+.wow-stamp {
+  position: absolute; left: 50%; top: 46%; z-index: 3; pointer-events: none;
+  transform: translate(-50%, -50%) rotate(-6deg);
+  padding: 10px 16px; border-radius: 14px; text-align: center; white-space: nowrap;
+  background: rgba(4, 19, 11, .9); color: #6CE9A6; border: 2px solid #12B76A;
+  font-weight: 800; font-size: 1.05rem; letter-spacing: .01em;
+  box-shadow: 0 0 0 6px rgba(18,183,106,.15), 0 18px 40px -12px rgba(0,0,0,.8);
+  animation: wow-stamp .55s cubic-bezier(.2,1.4,.4,1) both, wow-stamp-out .6s 4.2s ease forwards;
+}
+.wow-stamp small { display: block; font-size: .7rem; font-weight: 600; color: #A7F3D0; margin-top: 2px; }
+@keyframes wow-stamp { from { opacity: 0; transform: translate(-50%, -50%) rotate(-6deg) scale(1.8) } to { opacity: 1; transform: translate(-50%, -50%) rotate(-6deg) scale(1) } }
+@keyframes wow-stamp-out { to { opacity: 0; transform: translate(-50%, -50%) rotate(-6deg) scale(.92) } }
+@media (prefers-reduced-motion: reduce) { .wow-stamp { animation: wow-stamp-out .3s 4s forwards; } }

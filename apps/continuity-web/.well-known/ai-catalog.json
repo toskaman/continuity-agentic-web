@@ -35,7 +35,7 @@
           "manifestUrl": "http://127.0.0.1:8080/agent-manifest.json",
           "networkUrl": "http://127.0.0.1:8080/continuity_coordinator.network.json",
           "factsManifestUrl": "http://127.0.0.1:8080/facts/agent-manifest.json",
-          "factsNetworkDigest": "sha256:7403f7e0efc766375939d144a171cbb0adbf167c90da9aeda2d42e4eeeeaccbf"
+          "factsNetworkDigest": "sha256:4f23e04fc1ec8d1be9db89c185633f4128bd2538ba60b570935be2eae4f61b5d"
         }
       }
     }

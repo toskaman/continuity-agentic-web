@@ -50,6 +50,7 @@
         <a href="./community-kit.html">Builder kit</a>
       </nav>
       <div class="header-meta top-actions">
+        <button id="wow-lang" type="button" class="ghost-btn btn-sm wow-lang" aria-label="FR · Voir en français" title="Voir en français">FR</button>
         <button id="cmd-palette-open-btn" type="button" class="ghost-btn btn-sm" title="Open keyboard command palette (Ctrl+K or Cmd+K)">Quick actions <kbd aria-hidden="true">Ctrl K</kbd></button>
         <button id="guided-demo-btn" type="button" class="btn btn-primary top-demo-btn" title="Runs the full mission: ripple failure, recovery, plan selection and the approval dialog">Run the live demo</button>
       </div>
@@ -61,10 +62,7 @@
     <section class="hero" aria-labelledby="hero-heading">
       <div class="shell hero-grid">
         <div class="hero-copy reveal">
-          <div class="hero-meta">
-            <span class="spec-pill">Open Agentic Web · MVP 0.2</span>
-            <span id="webmcp-badge" class="spec-pill" title="Site actions are exposed to Neuro SAN website_* tools and to navigator.modelContext (WebMCP)">WebMCP · 8 tools</span>
-          </div>
+
           <h1 id="hero-heading">Moving day changed.<br><span>Keep the rest on track.</span></h1>
           <p class="hero-sub">Your Friday moving crew is full. What happens to the van, parking and fiber?</p>
           <p class="hero-lead" data-agent-facts="mission_coordination">CONTINUITY checks the affected bookings, finds replacements and shows you the price before you decide.</p>
@@ -72,9 +70,30 @@
             <button type="button" class="btn btn-primary btn-lg" id="hero-demo-btn">See how the move is saved <span class="arrow" aria-hidden="true">→</span></button>
             <a href="#workspace" class="btn btn-lg btn-on-dark" id="launch-workspace-link">Open the workspace</a>
           </div>
+          <div id="wow-lives" class="wow-lives">
+            <span class="wow-lives-label">Same engine, other lives:</span>
+            <button type="button" class="wow-chip" data-wow-scenario="home_relocation">🏠 Moving house</button>
+            <button type="button" class="wow-chip" data-wow-scenario="outpatient_surgery">🏥 Surgery day</button>
+            <button type="button" class="wow-chip" data-wow-scenario="product_launch_expo">📦 Product launch</button>
+          </div>
+          <form id="wow-mydate" class="wow-mydate" action="#workspace">
+            <label for="wow-mydate-select" class="wow-mydate-label">Try it with your own new moving day:</label>
+            <select id="wow-mydate-select" class="wow-mydate-select">
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday" selected>Friday</option>
+              <option value="Saturday">Saturday</option>
+            </select>
+            <button type="submit" class="wow-chip wow-mydate-go">Run it →</button>
+          </form>
           <div class="hero-status">
             <span id="transport-badge" class="mode-pill">Detecting peer origins…</span>
             <span class="hero-hint">Simulated move · no account or API key needed</span>
+          </div>
+          <div class="hero-meta wow-under">
+            <span class="wow-under-label">Under the hood</span>
+            <span class="spec-pill">Open Agentic Web · MVP 0.2</span>
+            <span id="webmcp-badge" class="spec-pill" title="Site actions are exposed to Neuro SAN website_* tools and to navigator.modelContext (WebMCP)">WebMCP · 8 tools</span>
           </div>
         </div>
 
@@ -104,33 +123,35 @@
             <span id="eco-core-state">Coordinator</span>
           </div>
           <a id="peer-link-moveco" href="http://127.0.0.1:8081/" target="_blank" rel="noopener" class="eco-node peer-chip" data-peer="moveco" style="--x:17.7%;--y:20.8%">
-            <span class="eco-dot dot-moveco" aria-hidden="true"></span>
+            <span class="eco-dot dot-moveco wow-icon" aria-hidden="true">🚚</span>
             <span class="eco-name peer-name-txt">MoveCo Express</span>
             <span class="eco-role">Moving crew</span>
             <span class="eco-state" data-peer-state="moveco">Independent site</span>
             <span id="peer-sync-moveco" class="peer-sync-tag" hidden>Synced</span>
           </a>
           <a id="peer-link-permitflow" href="http://localhost:8082/" target="_blank" rel="noopener" class="eco-node peer-chip" data-peer="permitflow" style="--x:82.3%;--y:20.8%">
-            <span class="eco-dot dot-permitflow" aria-hidden="true"></span>
+            <span class="eco-dot dot-permitflow wow-icon" aria-hidden="true">🅿️</span>
             <span class="eco-name peer-name-txt">PermitFlow Civic</span>
             <span class="eco-role">Parking dossier</span>
             <span class="eco-state" data-peer-state="permitflow">Independent site</span>
             <span id="peer-sync-permitflow" class="peer-sync-tag" hidden>Synced</span>
           </a>
           <a id="peer-link-homeconnect" href="http://127.0.0.1:8083/" target="_blank" rel="noopener" class="eco-node peer-chip" data-peer="homeconnect" style="--x:17.7%;--y:79.2%">
-            <span class="eco-dot dot-homeconnect" aria-hidden="true"></span>
+            <span class="eco-dot dot-homeconnect wow-icon" aria-hidden="true">🌐</span>
             <span class="eco-name peer-name-txt">HomeConnect Fiber</span>
             <span class="eco-role">Fiber technician</span>
             <span class="eco-state" data-peer-state="homeconnect">Independent site</span>
             <span id="peer-sync-homeconnect" class="peer-sync-tag" hidden>Synced</span>
           </a>
           <a id="peer-link-powerflow" href="http://localhost:8084/" target="_blank" rel="noopener" class="eco-node peer-chip" data-peer="powerflow" style="--x:82.3%;--y:79.2%">
-            <span class="eco-dot dot-powerflow" aria-hidden="true"></span>
+            <span class="eco-dot dot-powerflow wow-icon" aria-hidden="true">⚡</span>
             <span class="eco-name peer-name-txt">PowerFlow Energy</span>
             <span class="eco-role">Smart meter</span>
             <span class="eco-state" data-peer-state="powerflow">Independent site</span>
             <span id="peer-sync-powerflow" class="peer-sync-tag" hidden>Synced</span>
           </a>
+          <button type="button" id="wow-replay" class="wow-replay">▶ Replay the story</button>
+          <div id="wow-counter" class="wow-counter" aria-hidden="true"></div>
         </div>
       </div>
 
@@ -432,25 +453,25 @@ Do not cancel anything or approve additional fees without my confirmation.</text
         <div class="agent-grid" id="agent-grid">
           <article class="agent-card reveal" data-peer="moveco">
             <div class="agent-top"><span class="eco-dot dot-moveco" aria-hidden="true"></span><div><h3>MoveCo Express</h3><p>Residential moving crews</p></div><span class="badge agent-status" data-agent-status="moveco">Not contacted</span></div>
-            <ul class="agent-caps"><li><code>get_moveco_state</code></li><li><code>hold_crew_slot</code></li><li><code>confirm_van_reschedule</code></li></ul>
+            <details class="agent-tech"><summary>What this site lets agents do</summary><ul class="agent-caps"><li><code>get_moveco_state</code></li><li><code>hold_crew_slot</code></li><li><code>confirm_van_reschedule</code></li></ul></details>
             <p class="agent-last" data-agent-last="moveco">No interaction yet in this session.</p>
             <div class="agent-links"><a data-peer-href="moveco" data-path="" target="_blank" rel="noopener">Open site ↗</a><a data-peer-href="moveco" data-path="?ask_continuity=1#assistant" target="_blank" rel="noopener" title="Open MoveCo Express and trigger an inbound cross-origin agent call back into CONTINUITY">Inbound → CONTINUITY ↗</a><a data-peer-href="moveco" data-path="agent-manifest.json" target="_blank" rel="noopener">Manifest</a><a data-peer-href="moveco" data-path=".well-known/agent-card.json" target="_blank" rel="noopener">Agent card</a></div>
           </article>
           <article class="agent-card reveal" data-peer="permitflow">
             <div class="agent-top"><span class="eco-dot dot-permitflow" aria-hidden="true"></span><div><h3>PermitFlow Civic</h3><p>Parking dossier preparation</p></div><span class="badge agent-status" data-agent-status="permitflow">Not contacted</span></div>
-            <ul class="agent-caps"><li><code>get_permitflow_state</code></li><li><code>stage_dossier_preview</code></li><li><code>amend_prepared_dossier</code></li></ul>
+            <details class="agent-tech"><summary>What this site lets agents do</summary><ul class="agent-caps"><li><code>get_permitflow_state</code></li><li><code>stage_dossier_preview</code></li><li><code>amend_prepared_dossier</code></li></ul></details>
             <p class="agent-last" data-agent-last="permitflow">No interaction yet in this session.</p>
             <div class="agent-links"><a data-peer-href="permitflow" data-path="" target="_blank" rel="noopener">Open site ↗</a><a data-peer-href="permitflow" data-path="?ask_continuity=1#assistant" target="_blank" rel="noopener" title="Open PermitFlow Civic Prep and trigger an inbound cross-origin agent call back into CONTINUITY">Inbound → CONTINUITY ↗</a><a data-peer-href="permitflow" data-path="agent-manifest.json" target="_blank" rel="noopener">Manifest</a><a data-peer-href="permitflow" data-path=".well-known/agent-card.json" target="_blank" rel="noopener">Agent card</a></div>
           </article>
           <article class="agent-card reveal" data-peer="homeconnect">
             <div class="agent-top"><span class="eco-dot dot-homeconnect" aria-hidden="true"></span><div><h3>HomeConnect Fiber</h3><p>Fiber installation visits</p></div><span class="badge agent-status" data-agent-status="homeconnect">Not contacted</span></div>
-            <ul class="agent-caps"><li><code>get_homeconnect_state</code></li><li><code>hold_fiber_window</code></li><li><code>confirm_fiber_reschedule</code></li></ul>
+            <details class="agent-tech"><summary>What this site lets agents do</summary><ul class="agent-caps"><li><code>get_homeconnect_state</code></li><li><code>hold_fiber_window</code></li><li><code>confirm_fiber_reschedule</code></li></ul></details>
             <p class="agent-last" data-agent-last="homeconnect">No interaction yet in this session.</p>
             <div class="agent-links"><a data-peer-href="homeconnect" data-path="" target="_blank" rel="noopener">Open site ↗</a><a data-peer-href="homeconnect" data-path="?ask_continuity=1#assistant" target="_blank" rel="noopener" title="Open HomeConnect Fiber and trigger an inbound cross-origin agent call back into CONTINUITY">Inbound → CONTINUITY ↗</a><a data-peer-href="homeconnect" data-path="agent-manifest.json" target="_blank" rel="noopener">Manifest</a><a data-peer-href="homeconnect" data-path=".well-known/agent-card.json" target="_blank" rel="noopener">Agent card</a></div>
           </article>
           <article class="agent-card reveal" data-peer="powerflow">
             <div class="agent-top"><span class="eco-dot dot-powerflow" aria-hidden="true"></span><div><h3>PowerFlow Energy</h3><p>Smart-meter activation</p></div><span class="badge agent-status" data-agent-status="powerflow">Not contacted</span></div>
-            <ul class="agent-caps"><li><code>get_powerflow_state</code></li><li><code>stage_energization_date</code></li><li><code>confirm_energization_shift</code></li></ul>
+            <details class="agent-tech"><summary>What this site lets agents do</summary><ul class="agent-caps"><li><code>get_powerflow_state</code></li><li><code>stage_energization_date</code></li><li><code>confirm_energization_shift</code></li></ul></details>
             <p class="agent-last" data-agent-last="powerflow">No interaction yet in this session.</p>
             <div class="agent-links"><a data-peer-href="powerflow" data-path="" target="_blank" rel="noopener">Open site ↗</a><a data-peer-href="powerflow" data-path="?ask_continuity=1#assistant" target="_blank" rel="noopener" title="Open PowerFlow Energy and trigger an inbound cross-origin agent call back into CONTINUITY">Inbound → CONTINUITY ↗</a><a data-peer-href="powerflow" data-path="agent-manifest.json" target="_blank" rel="noopener">Manifest</a><a data-peer-href="powerflow" data-path=".well-known/agent-card.json" target="_blank" rel="noopener">Agent card</a></div>
           </article>

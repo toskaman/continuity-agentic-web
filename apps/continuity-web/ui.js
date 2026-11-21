@@ -46,7 +46,9 @@ function peerStates(page) {
     const s = op.state === "COMMITTED" ? "committed" : /FAILED|NEEDS_USER|UNKNOWN/.test(op.state) ? "failed" : "prepared";
     const rank = { idle: 0, contacted: 1, prepared: 2, failed: 3, committed: 4 };
     if (rank[s] >= rank[out[pid].state]) out[pid].state = s;
-    out[pid].last = `${op.commitment_title} → ${op.proposed_date} · ${op.state.replace(/_/g, " ").toLowerCase()}${op.hold_id ? ` · hold ${op.hold_id}` : ""}`;
+    const when = new Date(`${String(op.proposed_date).slice(0, 10)}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+    const plainState = { COMMITTED: "confirmed", PREPARED: "slot held for you", AWAITING_APPROVAL: "waiting for your OK", FAILED: "refused", NEEDS_USER: "needs you", UNKNOWN: "being checked" }[op.state] || op.state.replace(/_/g, " ").toLowerCase();
+    out[pid].last = `${op.commitment_title} → ${when} · ${plainState}`;
   }
   return out;
 }
