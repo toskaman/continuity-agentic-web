@@ -2,7 +2,7 @@
   "metadata": {
     "description": "Dated public service, fee, and policy facts for PowerFlow Energy Assistant (answers calling sites in one model turn with no tools).",
     "as_of": "2027-11-14",
-    "source_html_sha256": "e9bd0b660f4a55de8f745d6e8418cc9a8ae2b49762d53dee9e7164146345fe59",
+    "source_html_sha256": "7a15a248c275d650e774407a954fa600377d713a73efbd659cd18781c91b4819",
     "marked_topics": [
       "service_overview",
       "activation_fee"

@@ -6,7 +6,7 @@
 
 Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agenticweb.devpost.com/)** · All 5 sites pass the official Cognizant validators (`build_network.mjs --check`, `check_partner.mjs`) for the **[Worldwide Agentic Web MVP Specification (Profile 0.2)](https://github.com/cognizant-ai-labs/agentic-web/blob/main/docs/worldwide_agentic_web_mvp_spec.md)**.
 
-![CONTINUITY coordinator](docs/submission/screenshots/01_continuity_mission_baseline.png)
+![MoveCo's Friday crew is full; CONTINUITY asks every provider and puts the move back on track](docs/submission/hero.gif)
 
 ![Four provider sites verify their signed receipt](docs/submission/screenshots/13_live_provider_wall.png)
 

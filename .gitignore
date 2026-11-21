@@ -10,3 +10,4 @@ dist-temp/
 test-results/
 playwright-report/
 prompt.txt
+qc_r11_tmp/

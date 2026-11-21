@@ -35,7 +35,7 @@
           "manifestUrl": "http://localhost:8082/agent-manifest.json",
           "networkUrl": "http://localhost:8082/permitflow_advisor.network.json",
           "factsManifestUrl": "http://localhost:8082/facts/agent-manifest.json",
-          "factsNetworkDigest": "sha256:b80466ec6eed32ef1c36dd5e7b10c257d4641be20c58f3ac2726b2da5ce944ca"
+          "factsNetworkDigest": "sha256:5fa5fc474b2b8c41d54a97e2ee6004f9e77d263c3f9112bf30d0ae14a3324895"
         }
       }
     }
