@@ -29,6 +29,51 @@ export const STATE_PALETTE = Object.freeze({
   NEEDS_USER: { fill: "#450a0a", stroke: "#f87171", badgeBg: "#991b1b", text: "#fef2f2" },
 });
 
+const CARD_W = 250;
+const CARD_H = 104;
+const PROVIDER_ICONS = [
+  [/moveco|moving|luton/i, "🚚"], [/permit|parking|bay|curb/i, "🅿️"], [/fiber|homeconnect|internet|\bONT\b/i, "🌐"],
+  [/power|meter|grid|energy/i, "⚡"], [/storage|vault|\bpod\b/i, "📦"], [/sofa|furniture|nordic/i, "🛋️"],
+  [/surgery|arthroscopy|hospital|clinic/i, "🏥"], [/blood|lab|panel/i, "🧪"], [/shuttle|wheelchair|transport/i, "🚐"],
+  [/physio|therapy/i, "🩺"], [/brace|cryo/i, "🦵"], [/freight|air|cargo/i, "✈️"], [/dock|forklift/i, "🏗️"],
+  [/led|stage|calibration/i, "💡"], [/caption|stream/i, "💬"], [/security|pass/i, "🪪"], [/dinner|press/i, "🍽️"],
+];
+const PLAIN_BADGES = {
+  PRESERVED: "UNCHANGED", AFFECTED: "AFFECTED", EVALUATING: "CHECKING", PROPOSED: "PROPOSED",
+  PREPARED: "SLOT HELD", "APPROVAL REQ": "NEEDS YOUR OK", COMMITTED: "DONE ✓", FAILED: "REFUSED",
+  UNKNOWN: "CHECKING", "HUMAN REQ": "NEEDS YOU",
+};
+function plainWhy(reasons, fmt) {
+  return reasons.map((r) => String(r).replace(
+    /^User requested primary (\w+) shift from (\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})\.$/,
+    (_, field, a, b) => `You asked to change the ${String(field).replace(/_/g, " ")} from ${fmt(a)} to ${fmt(b)}.`,
+  )).join(" ");
+}
+function iconFor(node) {
+  const hay = `${node.title} ${node.provider_name} ${node.id}`;
+  return (PROVIDER_ICONS.find(([re]) => re.test(hay)) || [null, "📌"])[1];
+}
+/** Wrap text into at most `maxLines` lines of roughly `perLine` characters, never cutting words when possible. */
+export function wrapLabel(text, perLine = 27, maxLines = 2) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let cur = "";
+  for (const w of words) {
+    if (!cur) cur = w;
+    else if ((cur + " " + w).length <= perLine) cur += ` ${w}`;
+    else { lines.push(cur); cur = w; }
+  }
+  if (cur) lines.push(cur);
+  if (lines.length > maxLines) {
+    const kept = lines.slice(0, maxLines);
+    let last = kept[maxLines - 1];
+    if (last.length > perLine - 1) last = last.slice(0, perLine - 1).trimEnd();
+    kept[maxLines - 1] = `${last}…`;
+    return kept;
+  }
+  return lines.map((l) => (l.length > perLine + 3 ? `${l.slice(0, perLine).trimEnd()}…` : l));
+}
+
 export function renderMissionGraphSvg(page) {
   const svg = document.querySelector("#mission-graph-svg");
   if (!svg) return;
@@ -36,7 +81,26 @@ export function renderMissionGraphSvg(page) {
   const zoomReadout = document.querySelector("#zoom-readout");
   if (zoomReadout) zoomReadout.textContent = `${Math.round(page.zoomScale * 100)}%`;
 
-  const coordsMap = MissionGraph.computeTopologicalLayout(page.graph, RELOCATION_PRESET_COORDS);
+  const coordsMap = { ...MissionGraph.computeTopologicalLayout(page.graph, RELOCATION_PRESET_COORDS) };
+  // Bigger, readable cards: keep the columns but make sure cards in one column never overlap.
+  const byCol = new Map();
+  for (const [id, c] of Object.entries(coordsMap)) {
+    const key = Math.round(c.x);
+    if (!byCol.has(key)) byCol.set(key, []);
+    byCol.get(key).push(id);
+  }
+  let maxBottom = 0;
+  for (const ids of byCol.values()) {
+    ids.sort((m, n) => coordsMap[m].y - coordsMap[n].y);
+    let prev = -Infinity;
+    for (const id of ids) {
+      const y = Math.max(coordsMap[id].y, prev + CARD_H + 14);
+      coordsMap[id] = { x: coordsMap[id].x, y };
+      prev = y;
+      maxBottom = Math.max(maxBottom, y + CARD_H);
+    }
+  }
+  svg.setAttribute("viewBox", `0 0 980 ${Math.max(430, Math.ceil(maxBottom + 22))}`);
   const snap = page.graph.toJSON();
   const parts = [
     `<defs>
@@ -54,12 +118,12 @@ export function renderMissionGraphSvg(page) {
 
   const nodesById = new Map(snap.nodes.map((n) => [n.id, n]));
   const SHORT_EDGE_NAMES = {
-    SAME_DAY_REQUIRED: "SAME DAY",
-    ON_OR_AFTER: "ON / AFTER",
-    ON_OR_BEFORE: "ON / BEFORE",
-    WITHIN_COVERAGE_SPAN: "IN SPAN",
-    ALTERNATIVE_PROVIDER: "OVERFLOW",
-    COMPENSATION_LINK: "ROLLBACK",
+    SAME_DAY_REQUIRED: "same day",
+    ON_OR_AFTER: "after",
+    ON_OR_BEFORE: "before",
+    WITHIN_COVERAGE_SPAN: "during",
+    ALTERNATIVE_PROVIDER: "backup",
+    COMPENSATION_LINK: "undo",
   };
   const edgeBadges = [];
 
@@ -86,10 +150,10 @@ export function renderMissionGraphSvg(page) {
     const labelColor = isCommittedEdge ? "#6ee7b7" : isRippleEdge ? "#fde68a" : "#cbd5e1";
     const pillStroke = isCommittedEdge ? "#059669" : isRippleEdge ? "#d97706" : "#334155";
 
-    const x1 = src.x + 225;
-    const y1 = src.y + 44;
+    const x1 = src.x + CARD_W;
+    const y1 = src.y + CARD_H / 2;
     const x2 = dst.x;
-    const y2 = dst.y + 44;
+    const y2 = dst.y + CARD_H / 2;
     const spansTwoCols = x2 - x1 > 300;
     const midX = (x1 + x2) / 2;
     const curveLift = spansTwoCols ? (y2 < y1 ? -52 : 52) : 0;
@@ -119,9 +183,9 @@ export function renderMissionGraphSvg(page) {
 
   for (let i = 0; i < edgeBadges.length; i++) {
     for (let j = 0; j < i; j++) {
-      if (Math.abs(edgeBadges[i].x - edgeBadges[j].x) < 88 && Math.abs(edgeBadges[i].y - edgeBadges[j].y) < 20) {
-        edgeBadges[j].y -= 11;
-        edgeBadges[i].y += 11;
+      if (Math.abs(edgeBadges[i].x - edgeBadges[j].x) < 92 && Math.abs(edgeBadges[i].y - edgeBadges[j].y) < 24) {
+        edgeBadges[j].y -= 13;
+        edgeBadges[i].y += 13;
       }
     }
   }
@@ -138,23 +202,28 @@ export function renderMissionGraphSvg(page) {
 
     parts.push(
       `<g class="graph-node-group" role="button" tabindex="0" aria-pressed="${isSelected}" data-node-id="${page.escapeXml(node.id)}">
-        <rect x="${pos.x}" y="${pos.y}" width="225" height="90" rx="10" fill="${pal.fill}" stroke="${pal.stroke}" stroke-width="${strokeW}" />
-        <rect x="${pos.x + 10}" y="${pos.y + 9}" width="114" height="18" rx="5" fill="${pal.badgeBg}" />
-        <text x="${pos.x + 16}" y="${pos.y + 22}" fill="#ffffff" font-size="10" font-weight="700" font-family="system-ui, sans-serif">${page.escapeXml(`${meta.icon} ${meta.badge}`)}</text>
-        <text x="${pos.x + 214}" y="${pos.y + 22}" text-anchor="end" fill="${pal.text}" font-size="10.5" font-weight="700" font-family="system-ui, sans-serif">${page.escapeXml(priceLabel)}</text>
-        <text x="${pos.x + 12}" y="${pos.y + 44}" fill="${pal.text}" font-size="12" font-weight="700" font-family="system-ui, sans-serif">${page.escapeXml(node.title.length > 28 ? `${node.title.slice(0, 26).trimEnd()}…` : node.title)}</text>
-        <text x="${pos.x + 12}" y="${pos.y + 62}" fill="#cbd5e1" font-size="10.5" font-family="system-ui, sans-serif">${page.escapeXml(node.provider_name.length > 30 ? `${node.provider_name.slice(0, 28).trimEnd()}…` : node.provider_name)}</text>
-        <text x="${pos.x + 12}" y="${pos.y + 79}" fill="#93c5fd" font-size="10.5" font-weight="600" font-family="system-ui, sans-serif">${page.escapeXml(`${node.booking_ref} · ${formatDateWithWeekday(node.scheduled_date)}`)}</text>
+        <title>${page.escapeXml(`${node.title} — ${node.provider_name} · ${node.booking_ref} · ${formatDateWithWeekday(node.scheduled_date)}`)}</title>
+        <rect x="${pos.x}" y="${pos.y}" width="${CARD_W}" height="${CARD_H}" rx="12" fill="${pal.fill}" stroke="${pal.stroke}" stroke-width="${strokeW}" />
+        <rect x="${pos.x + 10}" y="${pos.y + 9}" width="${Math.max(96, String(PLAIN_BADGES[meta.badge] || meta.badge).length * 7.6 + 30)}" height="20" rx="6" fill="${pal.badgeBg}" />
+        <text x="${pos.x + 17}" y="${pos.y + 23}" fill="#ffffff" font-size="11" font-weight="700" font-family="system-ui, sans-serif">${page.escapeXml(`${meta.icon === "✓" ? "" : `${meta.icon} `}${PLAIN_BADGES[meta.badge] || meta.badge}`)}</text>
+        <text x="${pos.x + CARD_W - 12}" y="${pos.y + 24}" text-anchor="end" fill="${pal.text}" font-size="13" font-weight="750" font-family="system-ui, sans-serif">${page.escapeXml(priceLabel)}</text>
+        ${(() => {
+          const lines = wrapLabel(node.title, 25, 2);
+          const icon = iconFor(node);
+          const y0 = pos.y + (lines.length > 1 ? 48 : 54);
+          return `<text x="${pos.x + 12}" y="${y0}" fill="${pal.text}" font-size="14.5" font-weight="700" font-family="system-ui, sans-serif"><tspan font-size="15">${icon}</tspan> ${page.escapeXml(lines[0])}${lines[1] ? `<tspan x="${pos.x + 32}" dy="17">${page.escapeXml(lines[1])}</tspan>` : ""}</text>`;
+        })()}
+        <text x="${pos.x + 12}" y="${pos.y + CARD_H - 11}" fill="#cbd5e1" font-size="11.5" font-family="system-ui, sans-serif"><tspan fill="#93c5fd" font-weight="650">${page.escapeXml(formatDateWithWeekday(node.scheduled_date))}</tspan> · ${page.escapeXml(wrapLabel(node.provider_name.replace(/\s*\((Demo|Demo Fixture|Backup)\)/i, ""), 20, 1)[0])}</text>
       </g>`,
     );
   }
 
   for (const b of edgeBadges) {
-    const pillW = Math.max(66, Math.round(b.label.length * 5.6 + 14));
+    const pillW = Math.max(56, Math.round(b.label.length * 6.8 + 20));
     parts.push(
       `<g class="graph-edge-badge" pointer-events="none">
-        <rect x="${(b.x - pillW / 2).toFixed(1)}" y="${(b.y - 9).toFixed(1)}" width="${pillW}" height="17" rx="6" fill="#0b1220" fill-opacity="0.92" stroke="${b.pillStroke}" stroke-width="1" />
-        <text x="${b.x.toFixed(1)}" y="${(b.y + 3).toFixed(1)}" text-anchor="middle" fill="${b.labelColor}" font-size="8.6" font-weight="${b.bold ? "700" : "600"}" font-family="system-ui, sans-serif">${page.escapeXml(b.label)}</text>
+        <rect x="${(b.x - pillW / 2).toFixed(1)}" y="${(b.y - 10).toFixed(1)}" width="${pillW}" height="20" rx="7" fill="#0b1220" fill-opacity="0.92" stroke="${b.pillStroke}" stroke-width="1" />
+        <text x="${b.x.toFixed(1)}" y="${(b.y + 4).toFixed(1)}" text-anchor="middle" fill="${b.labelColor}" font-size="11" font-weight="${b.bold ? "700" : "600"}" font-family="system-ui, sans-serif">${page.escapeXml(b.label)}</text>
       </g>`,
     );
   }
@@ -251,7 +320,7 @@ export function renderMissionNodeInspector(page, nodeId) {
     </div>
     <div>With <strong>${page.escapeXml(node.provider_name)}</strong> · booking <code>${page.escapeXml(node.booking_ref)}</code></div>
     <div><strong>${page.escapeXml(formatDateWithWeekday(node.scheduled_date))}</strong>, ${page.escapeXml(node.window)} · €${Number(node.price_eur).toFixed(2)} · cancelling would cost €${Number(node.cancellation_fee_eur).toFixed(2)}</div>
-    ${impactInfo ? `<div>Why: ${page.escapeXml(impactInfo.reasons.join(" "))}</div>` : ""}
+    ${impactInfo ? `<div>Why: ${page.escapeXml(plainWhy(impactInfo.reasons, formatDateWithWeekday))}</div>` : ""}
     <details class="tech-details"><summary>Technical details</summary>
       <div>Website: ${page.escapeXml(node.provider_origin)} · Proof source: <code>${page.escapeXml(node.observed?.evidence_trust || "DEMO_FIXTURE_INITIAL")}</code></div>
     </details>

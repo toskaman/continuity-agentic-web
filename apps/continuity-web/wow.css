@@ -108,3 +108,20 @@ body:has(#outcome-panel) .wow-story { left: 24px; transform: none; width: min(56
 @media (prefers-reduced-motion: reduce) {
   .eco-node.wow-alert, .eco-node.wow-scan, .wow-bubble, .wow-story-text.wow-in { animation: none; }
 }
+
+/* Timeline glide track */
+.gantt-axis { position: relative; height: 18px; margin: 0 12px 4px; font-size: .68rem; color: var(--muted); }
+.gantt-axis span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.gantt-track { grid-column: 1 / -1; position: relative; height: 14px; margin-top: 6px; border-radius: 7px;
+  background: color-mix(in srgb, var(--line-strong) 45%, transparent); }
+.gantt-dot { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; transform: translate(-50%, -50%);
+  background: var(--muted); box-shadow: 0 0 0 3px color-mix(in srgb, var(--surface) 80%, transparent);
+  transition: left 1.2s cubic-bezier(.45,0,.55,1); }
+.gantt-dot.is-moved { background: #F59E0B; }
+.gantt-row.is-committed .gantt-dot.is-moved, .gantt-dot.is-moved.is-done { background: #12B76A; }
+.gantt-dot.is-safe { background: #12B76A; opacity: .7; }
+.gantt-ghost { position: absolute; top: 50%; width: 10px; height: 10px; border-radius: 50%; transform: translate(-50%, -50%);
+  border: 2px dashed var(--muted); opacity: .8; }
+.gantt-trail { position: absolute; top: 50%; height: 3px; transform: translateY(-50%); border-radius: 2px;
+  background: linear-gradient(90deg, color-mix(in srgb, #F59E0B 15%, transparent), #F59E0B); opacity: .7; }
+@media (prefers-reduced-motion: reduce) { .gantt-dot { transition: none; } }

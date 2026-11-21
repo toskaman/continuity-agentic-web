@@ -25,6 +25,36 @@ export function renderScheduleGanttView(page) {
   const prepOpById = new Map((page.preparedOps || []).map((o) => [o.commitment_id, o]));
   const baseById = new Map((page.mission.commitments || []).map((c) => [c.id, c]));
 
+  // Shared day axis for the glide track.
+  const dayMs = 86400000;
+  const toDay = (iso) => Math.floor(Date.parse(`${String(iso).slice(0, 10)}T00:00:00Z`) / dayMs);
+  const allDays = [];
+  for (const item of cpm.nodes) {
+    const base = baseById.get(item.nodeId)?.scheduled_date || item.baselineDate;
+    const after = prepOpById.get(item.nodeId)?.proposed_date || planOpById.get(item.nodeId)?.offer?.proposed_date || item.projectedEarliestDate;
+    for (const d of [base, after]) if (d && !Number.isNaN(toDay(d))) allDays.push(toDay(d));
+  }
+  const minDay = Math.min(...allDays);
+  const maxDay = Math.max(minDay + 1, ...allDays);
+  const span = maxDay - minDay;
+  const pct = (iso) => (((toDay(iso) - minDay) / span) * 92 + 4).toFixed(2);
+  // Each marker keeps its motion across re-renders: { from, to, t0 } in % and ms.
+  const GLIDE_MS = 1200;
+  const anims = page._ganttAnim || (page._ganttAnim = {});
+  const nowMs = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const at = (a) => {
+    const k = Math.min(1, Math.max(0, (nowMs - a.t0) / GLIDE_MS));
+    const e = k < 0.5 ? 2 * k * k : 1 - ((-2 * k + 2) ** 2) / 2;
+    return a.from + (a.to - a.from) * e;
+  };
+  const axisLabels = span <= 14
+    ? Array.from({ length: span + 1 }, (_, i) => {
+        const d = new Date((minDay + i) * dayMs);
+        const label = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", timeZone: "UTC" });
+        return `<span style="left:${(((i) / span) * 92 + 4).toFixed(2)}%">${label}</span>`;
+      }).join("")
+    : "";
+
   const rowsHtml = cpm.nodes
     .map((item) => {
       const baseCmt = baseById.get(item.nodeId);
@@ -47,6 +77,13 @@ export function renderScheduleGanttView(page) {
       }
 
       const isSel = page.selectedNodeId === item.nodeId;
+      const fromPct = pct(beforeIso);
+      const toPct = pct(afterIso);
+      let anim = anims[item.nodeId];
+      if (!anim) anim = anims[item.nodeId] = { from: +fromPct, to: +toPct, t0: nowMs };
+      else if (anim.to !== +toPct) anim = anims[item.nodeId] = { from: at(anim), to: +toPct, t0: nowMs };
+      const startPct = at(anim).toFixed(2);
+      const remainMs = Math.max(0, Math.round(GLIDE_MS - (nowMs - anim.t0)));
       return `
         <button type="button" class="gantt-row ${isSel ? "is-selected" : ""}" data-gantt-node="${page.escapeXml(item.nodeId)}" aria-pressed="${isSel}">
           <span class="gantt-title">
@@ -59,6 +96,10 @@ export function renderScheduleGanttView(page) {
             <strong>${moved ? page.escapeXml(formatDateWithWeekday(afterIso)) : "Preserved"}</strong>
           </span>
           ${slackBadge}
+          <span class="gantt-track" aria-hidden="true">
+            ${moved ? `<i class="gantt-ghost" style="left:${fromPct}%"></i><i class="gantt-trail" style="left:${Math.min(+fromPct, +toPct)}%;width:${Math.abs(toPct - fromPct).toFixed(2)}%"></i>` : ""}
+            <i class="gantt-dot ${moved ? "is-moved" : item.unaffected ? "is-safe" : ""}" data-to="${toPct}" style="left:${startPct}%;transition-duration:${remainMs}ms"></i>
+          </span>
         </button>
       `;
     })
@@ -69,8 +110,16 @@ export function renderScheduleGanttView(page) {
       <strong>Timeline · before → after</strong>
       <span class="mono-ref">${cpm.criticalPathNodeIds.length} tied to the move date</span>
     </div>
+    ${axisLabels ? `<div class="gantt-axis" aria-hidden="true">${axisLabels}</div>` : ""}
     <div class="gantt-list">${rowsHtml}</div>
   `;
+  // Glide each marker from where it was to its new date.
+  const dots = container.querySelectorAll(".gantt-dot[data-to]");
+  const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) dots.forEach((dot) => { dot.style.transitionDuration = "0ms"; });
+  // Force a style flush so the browser registers the start position, then set the target.
+  void container.offsetWidth;
+  dots.forEach((dot) => { void dot.getBoundingClientRect(); dot.style.left = `${dot.dataset.to}%`; });
 
   container.querySelectorAll("[data-gantt-node]").forEach((btn) => {
     btn.addEventListener("click", () => {
