@@ -16,7 +16,8 @@ Built for the **[Cognizant Open Agentic Web Challenge](https://cognizant-agentic
 2. CONTINUITY injects a real provider failure (MoveCo's Friday crew is full), recovers through an overflow partner, compares plans and holds replacements — your original bookings stay untouched.
 3. The approval dialog lists every operation, price and provider. Click **Confirm these changes**: three providers commit, three bookings stay untouched (two are never even contacted), and each commit returns an Ed25519-signed receipt.
 4. The page scrolls to **Watch the providers react**. The three affected demo providers verify their signed receipts on their own pages. PowerFlow stays on its original date. Choose **Download demo calendar**, or reload the same tab to check the demo providers for the completed changes again. If you choose **Keep my bookings** in the review instead, the coordinator asks the providers to release the temporary holds and reports any release it cannot confirm.
-5. Optional: **Try without a key** in *Ask CONTINUITY* runs the real agent networks, `website_*` tools and consent cards with a scripted model.
+5. A caption bar explains every step in plain words while the demo runs. Switch the page to French with the **FR** button (or `?lang=fr`).
+6. Optional: **Try without a key** in *Ask CONTINUITY* runs the real agent networks, `website_*` tools and consent cards with a scripted model.
 
 **Lighthouse 13.6 (desktop), all 5 live sites:** 100 Performance · 100 Accessibility · 100 Best Practices · 100 SEO · 100 Agentic Browsing — [details](docs/benchmarks/BROWSER_PERF_AND_MEMORY_AUDIT.md).
 
@@ -46,7 +47,10 @@ Normally you would call or email each company, one by one, and hope nothing gets
 
 ---
 
-## What CONTINUITY Does
+## What CONTINUITY does, for engineers
+
+<details>
+<summary>Open the full technical description (compilers, solvers, signatures, discovery)</summary>
 
 When a real-world commitment changes (such as shifting a home relocation, an outpatient surgical procedure, or an international product-launch freight slot from Tuesday to Friday), **CONTINUITY**:
 1. **Compiles Any Schedule (`.ics` Calendar, Raw Confirmation Emails, or Plain English)** via `@continuity/intake-compiler` and `@continuity/mission-core`, inferring typed semantic dependency edges while locking hard invariants (`maximum_budget_eur`, `preserve_existing_commitments = true`, `unauthorized_cancellation = false`).
@@ -55,6 +59,8 @@ When a real-world commitment changes (such as shifting a home relocation, an out
 4. **Solves Pareto-Optimal Minimal-Change Plans & Counterfactual Relaxations** (`Plan A — Minimum Changes`, `Plan B — Lowest Cost`, `Plan C — Fastest Alignment` + NSGA-II crowding distances, interactive What-If budget sweep, and **1-click Minimal Unsatisfiable Core counterfactual relaxation** when constraints conflict), recovering automatically from injected ripple failures (e.g., MoveCo's primary Friday crew full).
 5. **Prepares First, Releases Safely, Commits Last, and Bridges Legacy Vendors** — placing reversible slot holds (`Release holds (€0)` keeps originals intact at zero cost), binding approvals with canonical SHA-256 digests (`€0.01` drift invalidates approval), reconciling `UNKNOWN` timeouts, verifying **Ed25519 provider receipts**, syncing top-level peer tabs via signed `#continuity_receipt` handoff tokens, generating **Hybrid Hold-First Reschedule Playbooks & `mailto:` Drafts (`@continuity/transition-playbook`)** for unagentified `.ics`/email vendors, and exporting + verifying **RFC 5545 `.ics` calendars** & **Zero-Trust Cryptographic Audit Bundles (`.json`)**.
 6. **Publishes Single-Turn Public Facts (`facts/`) & Audits Any Open Agentic Website Live** — built-in **9-Point MVP Profile 0.2, Public Facts Network, & Project NANDA (`urn:air`, `ai-catalog.json`, `POST /resolve` `draft-raskar-02`, `agent-card.json`) Verifier** (`auditOpenAgenticSite` + `continuity-audit` CLI with `--json`, `--sarif`, and `--verify-bundle`), plus optional **Zero-Key On-Device AI (`@continuity/local-browser-router` — Chrome `LanguageModel` Gemini Nano & local Ollama)**.
+
+</details>
 
 ---
 
